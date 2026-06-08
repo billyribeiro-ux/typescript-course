@@ -1,0 +1,25 @@
+{
+  "name": "p02-type-safe-schema-validator",
+  "version": "1.0.0",
+  "description": "Project P02 — a from-scratch, type-safe schema validator (mini-Zod). Advanced type-level TypeScript.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:types": "vitest run --typecheck",
+    "test:watch": "vitest"
+  },
+  "keywords": ["typescript", "validation", "schema", "types", "course"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
