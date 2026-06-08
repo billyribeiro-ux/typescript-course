@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-07 · Discriminated Unions &amp; Exhaustiveness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 7</div>
+        <h1>Discriminated Unions &amp; Exhaustiveness</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced · pivotal</span>
+          <span class="chip">⏱️ ~36 min</span>
+          <span class="chip">🚦 Modeling states</span>
+        </div>
+        <p class="lead">
+          This is the most important <em>applied</em> pattern in all of TypeScript: using discriminated unions to
+          make <strong>illegal states unrepresentable</strong>. It's how you model async data, UI state machines,
+          API responses, and Redux actions so that entire categories of bugs become compile errors. If you take
+          one pattern from this course to your Meta/Google interview, make it this one.
+        </p>
+
+        <h2>1. From boolean soup to a clean state machine</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">states.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ "Boolean soup" — permits nonsense like isLoading && hasError && data.
+interface BadState&lt;T&gt; {
+  isLoading: boolean;
+  data?: T;
+  error?: string;
+}
+
+// ✅ Discriminated union — only the FOUR valid states can exist.
+type RequestState&lt;T&gt; =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: T }
+  | { status: "error"; error: string };
+
+function render&lt;T&gt;(state: RequestState&lt;T&gt;): string {
+  switch (state.status) {
+    case "idle":    return "Start";
+    case "loading": return "Spinner";
+    case "success": return `Got ${JSON.stringify(state.data)}`; // data exists here
+    case "error":   return `Error: ${state.error}`;             // error exists here
+  }
+}</pre>
+          <div class="annot">
+            <strong>The win:</strong> in <code>BadState</code> you can construct
+            <code>{ isLoading: true, error: "x", data: {...} }</code> — a meaningless state your UI must defend
+            against. In <code>RequestState</code>, that's <em>impossible to even write</em>. The shared
+            <code>status</code> literal (the "discriminant") lets the compiler narrow to the exact variant in each
+            branch, so <code>state.data</code> is only reachable when it actually exists.
+          </div>
+        </div>
+
+        <h2>2. Bullet-proof exhaustiveness</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">exhaustive.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Shape =
+  | { kind: "circle"; r: number }
+  | { kind: "square"; side: number }
+  | { kind: "rect"; w: number; h: number };
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled case: ${JSON.stringify(value)}`);
+}
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle": return Math.PI * shape.r ** 2;
+    case "square": return shape.side ** 2;
+    case "rect":   return shape.w * shape.h;
+    default:       return assertNever(shape); // compile error if a case is missed
+  }
+}
+// Add a "triangle" variant to Shape and `area` fails to compile until you
+// handle it — the compiler becomes your checklist.</pre>
+          <div class="annot">
+            <strong>This is the professional pattern.</strong> <code>assertNever</code> in the <code>default</code>
+            branch turns "I forgot to handle a case" from a silent runtime bug into a <em>compile error</em>. When
+            you extend the union months later, every unhandled <code>switch</code> across the codebase lights up
+            red. This is how large teams safely evolve shared types.
+          </div>
+        </div>
+
+        <h2>3. Real applications</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">applications.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A Result type — type-safe errors without exceptions (Rust-style):
+type Result&lt;T, E = Error&gt; =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+function parseAge(input: string): Result&lt;number, string&gt; {
+  const n = Number(input);
+  return Number.isInteger(n) &amp;&amp; n &gt;= 0
+    ? { ok: true, value: n }
+    : { ok: false, error: "Not a valid age" };
+}
+const r = parseAge("42");
+if (r.ok) console.log(r.value); else console.log(r.error);
+
+// Redux-style actions — the discriminant is `type`:
+type Action =
+  | { type: "increment"; by: number }
+  | { type: "reset" }
+  | { type: "setName"; name: string };
+
+function reducer(state: { count: number; name: string }, action: Action) {
+  switch (action.type) {
+    case "increment": return { ...state, count: state.count + action.by };
+    case "reset":     return { ...state, count: 0 };
+    case "setName":   return { ...state, name: action.name };
+  }
+}</pre>
+          <div class="annot">
+            <strong>You'll meet this everywhere ahead:</strong> <code>useReducer</code> (Part 4) and Redux Toolkit
+            (Part 6) are built on discriminated-union actions. The <code>Result</code> type is how serious
+            codebases handle expected failures without throwing. This single pattern is the backbone of reliable
+            application state.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Choose a consistent discriminant</div>
+            <p style="margin:6px 0 0">
+              Pick one discriminant name and stick to it across the codebase — <code>type</code>,
+              <code>kind</code>, or <code>status</code>. Consistency lets you write generic helpers (like a typed
+              event bus or a pattern-matcher) that work across all your unions. Mixing discriminant names is a
+              smell.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Model a checkout flow</div>
+            <p style="margin:6px 0 0">
+              Design a discriminated union <code>Checkout</code> with states: <code>cart</code> (has items),
+              <code>shipping</code> (has address), <code>payment</code> (has a token), <code>confirmed</code> (has
+              an order id). Write a <code>summary(c: Checkout): string</code> with an exhaustive <code>switch</code>
+              + <code>assertNever</code>. Then add a <code>"failed"</code> state and watch the compiler demand you
+              handle it.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Discriminated unions</b> make illegal states unrepresentable — model state machines, not boolean soup.</li>
+            <li>A shared literal discriminant (<code>status</code>/<code>kind</code>/<code>type</code>) lets the compiler narrow to the exact variant.</li>
+            <li><b><code>assertNever</code></b> in <code>default</code> turns missed cases into compile errors — your future-proof checklist.</li>
+            <li>The <code>Result&lt;T,E&gt;</code> type handles expected failures without exceptions.</li>
+            <li>This pattern underpins <code>useReducer</code>, Redux actions, and reliable async UI state.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

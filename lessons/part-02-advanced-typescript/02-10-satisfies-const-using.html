@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-10 · satisfies, const Type Params &amp; using</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 10</div>
+        <h1><code>satisfies</code>, <code>const</code> Type Params &amp; <code>using</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced · modern</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">✨ TS 5.x features</span>
+        </div>
+        <p class="lead">
+          The newest tools in the language, from TypeScript 5.0 through 5.9. <code>satisfies</code> validates
+          without widening, <code>const</code> type parameters preserve literal types through functions, and
+          <code>using</code> (explicit resource management) brings deterministic cleanup to JavaScript. These are
+          the features that mark code as <em>current</em> in 2026.
+        </p>
+
+        <h2>1. <code>satisfies</code> — validate without widening</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">satisfies.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Config = Record&lt;string, string | number&gt;;
+
+// ❌ Annotation widens — you lose the specific keys/value types:
+const a: Config = { host: "localhost", port: 8080 };
+a.host.toUpperCase(); // ERROR: host is string | number, not string
+
+// ✅ `satisfies` CHECKS against Config but KEEPS the precise inferred type:
+const b = { host: "localhost", port: 8080 } satisfies Config;
+b.host.toUpperCase(); // ✅ host is string
+b.port.toFixed(0);    // ✅ port is number
+// b.missing;         // ✅ still errors — unknown key caught
+
+// The classic use: a typed palette that keeps literal keys for autocomplete.
+const palette = {
+  primary: "#2563eb",
+  danger: "#b42318",
+} satisfies Record&lt;string, `#${string}`&gt;;
+type ColorName = keyof typeof palette; // "primary" | "danger" (not string!)</pre>
+          <div class="annot">
+            <strong>The best of both worlds:</strong> <code>satisfies</code> verifies your value matches a type
+            <em>without</em> replacing the precise inferred type with the broader one. You get the constraint
+            check AND keep literal keys/values for autocomplete and narrowing. Use it for config objects, route
+            maps, and design tokens. This is one of the most-loved modern features.
+          </div>
+        </div>
+
+        <h2>2. <code>const</code> type parameters</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">const-params.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Without `const`: literals widen when captured by a generic.
+function loose&lt;T&gt;(value: T): T { return value; }
+const x = loose(["a", "b"]); // string[]  (widened)
+
+// With a `const` type parameter: literals are preserved, as if `as const`.
+function exact&lt;const T&gt;(value: T): T { return value; }
+const y = exact(["a", "b"]); // readonly ["a", "b"]  (narrow!)
+
+// Real use — a router/builder that keeps your literal paths:
+function defineRoutes&lt;const T extends readonly string[]&gt;(routes: T): T {
+  return routes;
+}
+const routes = defineRoutes(["/home", "/about"]);
+type Route = (typeof routes)[number]; // "/home" | "/about"
+// The CALLER didn't need `as const` — the library demanded narrowness for them.</pre>
+          <div class="annot">
+            <strong>This is what made your P02 <code>v.literal()</code> infer <code>"admin"</code> not
+            <code>string</code>.</strong> A <code>const</code> type parameter tells the compiler "infer the
+            narrowest literal type here", sparing your users from sprinkling <code>as const</code> at every call
+            site. It's how modern libraries deliver precise inference ergonomically.
+          </div>
+        </div>
+
+        <h2>3. <code>using</code> — explicit resource management</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">using.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A resource that knows how to clean itself up via Symbol.dispose:
+function openConnection(name: string) {
+  console.log(`open ${name}`);
+  return {
+    query: (sql: string) =&gt; console.log(`query: ${sql}`),
+    [Symbol.dispose]() { console.log(`close ${name}`); },
+  };
+}
+
+function run() {
+  using db = openConnection("primary"); // disposed automatically...
+  db.query("SELECT 1");
+} // ...HERE, at end of scope — even if an error was thrown. No try/finally!
+
+run();
+// open primary / query: SELECT 1 / close primary
+
+// `await using` does the same for async cleanup (Symbol.asyncDispose).</pre>
+          <div class="annot">
+            <strong><code>using</code> brings deterministic cleanup to JavaScript</strong> (like C#'s <code>using</code>
+            or Python's <code>with</code>). When the variable goes out of scope, its <code>[Symbol.dispose]()</code>
+            runs automatically — guaranteeing files, connections, locks, and subscriptions are released even on
+            errors. It replaces error-prone <code>try/finally</code> ladders. Shipped in TS 5.2 and standardized in
+            ECMAScript.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 timeline · know your versions</div>
+            <p style="margin:6px 0 0">
+              <b>5.0</b> const type params + standard decorators · <b>5.2</b> <code>using</code> · <b>5.4</b>
+              <code>NoInfer&lt;T&gt;</code> · <b>5.5</b> inferred type predicates + <code>isolatedDeclarations</code> ·
+              <b>5.9</b> the current stable line. Knowing which feature landed when signals you keep current —
+              and you can read any modern codebase fluently.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Apply all three</div>
+            <p style="margin:6px 0 0">
+              1) Define a <code>const navItems = [...] satisfies readonly NavItem[]</code> and extract a union of
+              their <code>id</code>s with <code>typeof</code>. 2) Write a <code>createEnum&lt;const T extends readonly string[]&gt;(values: T)</code>
+              that returns the tuple but keeps literals. 3) Build a <code>timer()</code> resource with
+              <code>[Symbol.dispose]</code> that logs elapsed time, and consume it with <code>using</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>satisfies</code></b> checks a value against a type without widening it — keep literal keys/values + autocomplete.</li>
+            <li><b><code>const</code> type parameters</b> preserve literal types through generic functions (no caller <code>as const</code>).</li>
+            <li><b><code>using</code>/<code>await using</code></b> give deterministic, error-safe cleanup via <code>Symbol.dispose</code>.</li>
+            <li>These power ergonomic library APIs — exactly what made your P02 validator's literals narrow.</li>
+            <li>Knowing the 5.x feature timeline marks you as current in 2026.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

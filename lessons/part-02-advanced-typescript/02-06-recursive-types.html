@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-06 · Recursive Types &amp; Type-Level Programming</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 6</div>
+        <h1>Recursive Types &amp; Type-Level Programming</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Expert</span>
+          <span class="chip">⏱️ ~40 min</span>
+          <span class="chip">🌀 Turing-complete types</span>
+        </div>
+        <p class="lead">
+          TypeScript's type system is <strong>Turing-complete</strong> — a programming language in its own right.
+          With recursion, you can model self-similar data (JSON, trees), and even perform computation on
+          <em>tuples</em> as if they were lists. This is the deepest end of the pool. You won't write this every
+          day, but understanding it gives you total command of types — and explains how the most magical
+          libraries work.
+        </p>
+
+        <h2>1. Recursive data types</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">recursive-data.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Model JSON precisely — a type that references itself:
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | Json[]
+  | { [key: string]: Json };
+
+const data: Json = {
+  name: "Ada",
+  scores: [10, 20, { bonus: true }],
+  meta: null,
+};
+// const bad: Json = { fn: () =&gt; {} }; // ❌ functions aren't valid JSON
+
+// A tree structure:
+interface TreeNode&lt;T&gt; {
+  value: T;
+  children: TreeNode&lt;T&gt;[];
+}</pre>
+          <div class="annot">
+            <strong>Self-referential types model self-similar data.</strong> The <code>Json</code> type is the
+            <em>correct</em> type for anything that came from <code>JSON.parse</code> — far better than
+            <code>any</code>. Recursive interfaces model trees, file systems, comment threads, and org charts.
+          </div>
+        </div>
+
+        <h2>2. Type-level recursion = computation</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tuple-recursion.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Reverse a tuple by recursively peeling off the head:
+type Reverse&lt;T extends unknown[]&gt; =
+  T extends [infer Head, ...infer Tail] ? [...Reverse&lt;Tail&gt;, Head] : [];
+type R = Reverse&lt;[1, 2, 3]&gt;; // [3, 2, 1]
+
+// Compute a tuple's length as a literal number:
+type Length&lt;T extends readonly unknown[]&gt; = T["length"];
+type L = Length&lt;["a", "b", "c"]&gt;; // 3
+
+// Build a tuple of N elements (type-level counting):
+type BuildTuple&lt;N extends number, Acc extends unknown[] = []&gt; =
+  Acc["length"] extends N ? Acc : BuildTuple&lt;N, [...Acc, unknown]&gt;;
+type Five = BuildTuple&lt;5&gt;["length"]; // 5
+
+// ...which enables type-level ADDITION:
+type Add&lt;A extends number, B extends number&gt; =
+  [...BuildTuple&lt;A&gt;, ...BuildTuple&lt;B&gt;]["length"];
+type Sum = Add&lt;3, 4&gt;; // 7  — arithmetic, in the type system!</pre>
+          <div class="annot">
+            <strong>Yes, that's addition performed by the type checker.</strong> Recursion + variadic tuples (next
+            lesson) turn tuples into lists you can compute on. You'll rarely do type-level math in app code, but
+            this is the engine behind libraries that, say, type a <code>chunk(arr, 3)</code> function's exact
+            output shape. It proves the type system is a real programming language.
+          </div>
+        </div>
+
+        <h2>3. Practical recursion: Paths of an object</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">object-paths.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Generate all dot-paths into a nested object — used by form libraries,
+// i18n, and config tools to give you autocompleted, type-checked key paths.
+type Paths&lt;T&gt; = T extends object
+  ? {
+      [K in keyof T &amp; string]: T[K] extends object
+        ? `${K}` | `${K}.${Paths&lt;T[K]&gt;}`
+        : `${K}`;
+    }[keyof T &amp; string]
+  : never;
+
+interface Config {
+  server: { host: string; port: number };
+  features: { auth: { enabled: boolean } };
+}
+type ConfigPath = Paths&lt;Config&gt;;
+// "server" | "server.host" | "server.port"
+//   | "features" | "features.auth" | "features.auth.enabled"</pre>
+          <div class="annot">
+            <strong>This is a real, valuable utility.</strong> React Hook Form uses paths exactly like this so
+            <code>setValue("features.auth.enabled", true)</code> is autocompleted and type-checked. Combining
+            recursion, mapped types, template literals, and indexed access, you generate every valid nested key
+            path automatically. That's the full Part 2 toolkit firing at once.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · The recursion depth limit</div>
+            <p style="margin:6px 0 0">
+              TypeScript caps recursive instantiation (historically ~50, deeper for tail-recursive types using
+              the <code>...rest</code> accumulator pattern). Very deep or unbounded recursion produces "Type
+              instantiation is excessively deep". Design with an accumulator and a base case, and keep depth
+              bounded. Power with limits.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Type-level utilities</div>
+            <p style="margin:6px 0 0">
+              1) Write <code>Includes&lt;T extends unknown[], U&gt;</code> returning <code>true</code> if the tuple
+              contains <code>U</code>. 2) Write <code>Get&lt;T, P extends string&gt;</code> that, given an object and a
+              dot-path string, returns the type at that path (recursively splitting on <code>"."</code>). Test
+              both with <code>Expect&lt;Equal&lt;...&gt;&gt;</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Recursive data types</b> model JSON, trees, and other self-similar structures precisely.</li>
+            <li>TypeScript's types are <b>Turing-complete</b>: recursion + tuples enable real computation (even arithmetic).</li>
+            <li>The <code>[infer Head, ...infer Tail]</code> pattern walks tuples like a list.</li>
+            <li><b>Object paths</b> (recursion + templates + mapped types) power typed form/config/i18n keys.</li>
+            <li>Mind the recursion depth limit — use accumulators and base cases, keep it bounded.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

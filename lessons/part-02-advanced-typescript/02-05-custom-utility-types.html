@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-05 · Building Your Own Utility Types</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 5</div>
+        <h1>Building Your Own Utility Types</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~36 min</span>
+          <span class="chip">🛠️ Type engineering</span>
+        </div>
+        <p class="lead">
+          Now you compose everything — conditional types, <code>infer</code>, mapped types, key remapping — into
+          your own production-grade utilities. We'll also learn the <strong>type-testing</strong> discipline that
+          principal engineers use to keep complex types correct: assertion helpers that turn type bugs into
+          compile errors. This is exactly how the P02 validator's types were verified.
+        </p>
+
+        <h2>1. The type-testing toolkit</h2>
+        <p>
+          Before building, learn to <em>test</em>. These tiny helpers let you assert that two types are equal at
+          compile time. If an assertion fails, you get a red error — your type "unit tests".
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">type-tests.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// The canonical strict equality check (handles `any` correctly):
+type Equal&lt;A, B&gt; =
+  (&lt;T&gt;() =&gt; T extends A ? 1 : 2) extends (&lt;T&gt;() =&gt; T extends B ? 1 : 2)
+    ? true : false;
+
+// Assert a type is exactly `true` — fails to compile otherwise:
+type Expect&lt;T extends true&gt; = T;
+
+// Usage — these are your tests:
+type _t1 = Expect&lt;Equal&lt;Pick&lt;{ a: 1; b: 2 }, "a"&gt;, { a: 1 }&gt;&gt;; // ✅ passes
+// type _bad = Expect&lt;Equal&lt;1, 2&gt;&gt;; // ❌ compile error: 1 is not 2
+
+// A simpler (looser) variant when you just need assignability:
+type ExpectAssignable&lt;T, U extends T&gt; = U;</pre>
+          <div class="annot">
+            <strong>This <code>Equal</code> trick is famous</strong> (it uses function-type variance to detect
+            <em>exact</em> equality, distinguishing <code>any</code> from <code>unknown</code>). The
+            <code>Expect&lt;Equal&lt;...&gt;&gt;</code> pattern is how libraries like the validator you built guarantee their
+            inference stays correct as code changes. We ran exactly these assertions to verify Part 2's code.
+          </div>
+        </div>
+
+        <h2>2. Building real utilities</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">my-utils.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Prettify — flatten intersections into one clean object (great for tooltips):
+type Prettify&lt;T&gt; = { [K in keyof T]: T[K] } &amp; {};
+
+// PartialBy / RequiredBy — make SPECIFIC keys optional/required:
+type PartialBy&lt;T, K extends keyof T&gt; = Prettify&lt;Omit&lt;T, K&gt; &amp; Partial&lt;Pick&lt;T, K&gt;&gt;&gt;;
+type RequiredBy&lt;T, K extends keyof T&gt; = Prettify&lt;Omit&lt;T, K&gt; &amp; Required&lt;Pick&lt;T, K&gt;&gt;&gt;;
+
+// ValueOf — the union of a type's value types:
+type ValueOf&lt;T&gt; = T[keyof T];
+
+// Entries — model Object.entries() at the type level:
+type Entries&lt;T&gt; = { [K in keyof T]: [K, T[K]] }[keyof T];
+
+interface Post { id: number; title: string; draft: boolean }
+type DraftInput = PartialBy&lt;Post, "id"&gt;;  // id optional, rest required
+type PostValues = ValueOf&lt;Post&gt;;          // number | string | boolean
+type PostEntries = Entries&lt;Post&gt;;
+// ["id", number] | ["title", string] | ["draft", boolean]</pre>
+          <div class="annot">
+            <strong>These four are workhorses.</strong> <code>Prettify</code> alone dramatically improves the
+            developer experience by collapsing ugly intersection tooltips into clean object types — the P02
+            library uses it. <code>PartialBy</code> models real create/update DTOs. <code>ValueOf</code> and
+            <code>Entries</code> bridge to runtime <code>Object</code> methods.
+          </div>
+        </div>
+
+        <h2>3. A genuinely hard one: DeepPartial</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">deep-partial.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Recurse into nested objects, but DON'T break arrays or functions.
+type DeepPartial&lt;T&gt; = T extends (...args: any[]) =&gt; any
+  ? T
+  : T extends ReadonlyArray&lt;infer U&gt;
+  ? ReadonlyArray&lt;DeepPartial&lt;U&gt;&gt;
+  : T extends object
+  ? { [K in keyof T]?: DeepPartial&lt;T[K]&gt; }
+  : T;
+
+interface Settings {
+  theme: { color: string; mode: "light" | "dark" };
+  plugins: { name: string; enabled: boolean }[];
+}
+type PatchSettings = DeepPartial&lt;Settings&gt;;
+const patch: PatchSettings = { theme: { mode: "dark" } }; // ✅ deeply optional</pre>
+          <div class="annot">
+            <strong>Order matters in conditional chains:</strong> we test for functions and arrays <em>before</em>
+            the generic <code>object</code> branch, because functions and arrays are also objects. Get the order
+            wrong and you'll mangle them. This is the kind of careful, ordered conditional logic that separates
+            robust utilities from subtly-broken ones.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Always test edge cases</div>
+            <p style="margin:6px 0 0">
+              Custom utilities break on edge cases: <code>any</code>, <code>never</code>, unions, optional
+              properties, arrays, functions, <code>readonly</code>. Write <code>Expect&lt;Equal&lt;...&gt;&gt;</code>
+              assertions for each. A utility that works on <code>{ a: number }</code> but mangles
+              <code>string[]</code> is a landmine in a shared codebase.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build and test Mutable + Replace</div>
+            <p style="margin:6px 0 0">
+              1) <code>Mutable&lt;T&gt;</code> — strip all <code>readonly</code> modifiers. 2)
+              <code>Replace&lt;T, K extends keyof T, V&gt;</code> — change the type of key <code>K</code> to
+              <code>V</code> (hint: <code>Omit&lt;T, K&gt; &amp; Record&lt;K, V&gt;</code>, then <code>Prettify</code>). Write at
+              least two <code>Expect&lt;Equal&lt;...&gt;&gt;</code> assertions for each.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Test types with <code>Equal&lt;A,B&gt;</code> + <code>Expect&lt;T extends true&gt;</code> — type bugs become compile errors.</li>
+            <li><code>Prettify</code>, <code>PartialBy</code>/<code>RequiredBy</code>, <code>ValueOf</code>, <code>Entries</code> are everyday custom utilities.</li>
+            <li>Recursive utilities (<code>DeepPartial</code>) must order conditional branches carefully (functions/arrays before objects).</li>
+            <li>Always test edge cases: <code>any</code>, <code>never</code>, unions, arrays, functions, optional, readonly.</li>
+            <li>This is the exact discipline used to verify the P02 validator's inference.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

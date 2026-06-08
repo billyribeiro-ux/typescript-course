@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-08 · Branded &amp; Nominal Types</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 8</div>
+        <h1>Branded &amp; Nominal Types</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🏷️ Type identity</span>
+        </div>
+        <p class="lead">
+          TypeScript is <strong>structurally typed</strong>: two types are compatible if their shapes match,
+          regardless of name. Usually that's a feature — but sometimes you need two same-shaped types to be
+          <em>incompatible</em>: a <code>UserId</code> must never be passed where a <code>PostId</code> is
+          expected, even though both are strings. <strong>Branded types</strong> add nominal (name-based) safety
+          on top of the structural system. This is a hallmark of robust, large-scale codebases.
+        </p>
+
+        <h2>1. The structural-typing problem</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">the-problem.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type UserId = string;
+type PostId = string;
+
+function getUser(id: UserId) { /* ... */ }
+
+const postId: PostId = "post_123";
+getUser(postId); // 😱 compiles fine — both are just `string`!
+
+// Plain type aliases give NO protection. A swapped id is a classic,
+// expensive production bug (fetching the wrong record, leaking data).</pre>
+          <div class="annot">
+            <strong>Type aliases are not new types</strong> — <code>UserId</code> and <code>PostId</code> are both
+            literally <code>string</code>, so the compiler sees no difference. Passing a post id as a user id is
+            exactly the kind of subtle bug that causes security incidents. We need real nominal distinction.
+          </div>
+        </div>
+
+        <h2>2. Branding for nominal safety</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">branding.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A reusable Brand helper. The &amp; { __brand } is a phantom tag — it exists
+// only at the type level (there's no real __brand property at runtime).
+declare const __brand: unique symbol;
+type Brand&lt;T, B&gt; = T &amp; { readonly [__brand]: B };
+
+type UserId = Brand&lt;string, "UserId"&gt;;
+type PostId = Brand&lt;string, "PostId"&gt;;
+
+// "Smart constructors" are the only way to mint a branded value:
+function UserId(raw: string): UserId { return raw as UserId; }
+function PostId(raw: string): PostId { return raw as PostId; }
+
+function getUser(id: UserId) { /* ... */ }
+
+getUser(UserId("u_1"));        // ✅
+// getUser(PostId("p_1"));     // ❌ PostId is not assignable to UserId
+// getUser("u_1");             // ❌ raw string is not a UserId either</pre>
+          <div class="annot">
+            <strong>How it works:</strong> intersecting with a phantom <code>{ [__brand]: B }</code> makes
+            <code>UserId</code> and <code>PostId</code> structurally distinct, even though both are strings at
+            runtime. The only way to create one is through its constructor, which is the single place validation
+            lives. Now the compiler enforces that ids never get crossed.
+          </div>
+        </div>
+
+        <h2>3. Branding for <em>validated</em> values</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">validated.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">declare const __brand: unique symbol;
+type Brand&lt;T, B&gt; = T &amp; { readonly [__brand]: B };
+
+type Email = Brand&lt;string, "Email"&gt;;
+type PositiveInt = Brand&lt;number, "PositiveInt"&gt;;
+
+// The constructor VALIDATES, then brands. Past this point, the type itself
+// guarantees the value was checked — you never re-validate downstream.
+function Email(raw: string): Email {
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw)) throw new Error("Invalid email");
+  return raw as Email;
+}
+function PositiveInt(n: number): PositiveInt {
+  if (!Number.isInteger(n) || n &lt;= 0) throw new Error("Must be positive int");
+  return n as PositiveInt;
+}
+
+// A function can now DEMAND a validated email at the type level:
+function sendWelcome(to: Email) { /* guaranteed valid — no checks needed */ }
+sendWelcome(Email("a@b.com")); // ✅
+// sendWelcome("a@b.com");     // ❌ must go through the validator</pre>
+          <div class="annot">
+            <strong>This is "parse, don't validate" elevated.</strong> A branded <code>Email</code> is a
+            <em>proof</em> that validation happened. Functions accepting <code>Email</code> can't be called with an
+            unchecked string. Validation moves to the system's edge (the constructor), and the type system
+            carries the guarantee everywhere else — eliminating defensive re-checking and "is this validated yet?"
+            uncertainty.
+          </div>
+        </div>
+
+        <div class="callout note">
+          <span class="ic">🔗</span>
+          <div class="body">
+            <div class="tt">Note · This is how Zod's `.brand()` works</div>
+            <p style="margin:6px 0 0">
+              Real validation libraries (Zod, and you could add it to your P02 validator) offer a
+              <code>.brand&lt;"Email"&gt;()</code> method that produces exactly these phantom-branded types — so a
+              parsed value is statically distinguishable from an unparsed one. You now understand the mechanism
+              completely.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Brand money safely</div>
+            <p style="margin:6px 0 0">
+              Create branded types <code>Cents</code> and <code>Dollars</code> (both <code>number</code>) with
+              constructors, plus a <code>toCents(d: Dollars): Cents</code> converter. Write a
+              <code>charge(amount: Cents)</code> function and confirm the compiler rejects passing raw numbers or
+              <code>Dollars</code> directly — preventing the classic "off by 100×" money bug.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>TypeScript is <b>structural</b> — same-shaped types are interchangeable, which is sometimes unsafe.</li>
+            <li><b>Branded types</b> (<code>T &amp; { [__brand]: B }</code>) add nominal distinction using a phantom tag.</li>
+            <li><b>Smart constructors</b> are the only way to mint branded values — the single place validation lives.</li>
+            <li>A branded type is a <b>proof of validation</b>: functions can demand checked values, eliminating defensive re-checks.</li>
+            <li>This underlies Zod's <code>.brand()</code> and is a hallmark of large, safety-critical codebases.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

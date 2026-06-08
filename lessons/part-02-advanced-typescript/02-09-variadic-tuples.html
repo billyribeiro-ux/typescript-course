@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-09 · Variadic Tuples &amp; Function Composition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 9</div>
+        <h1>Variadic Tuples &amp; Function Composition</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Expert</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🧮 Typing the untypeable</span>
+        </div>
+        <p class="lead">
+          Variadic tuple types let you spread and manipulate tuples in type positions — the feature that finally
+          made it possible to <em>fully type</em> notoriously hard functions like <code>compose</code>,
+          <code>curry</code>, and <code>bind</code>. This is how libraries give you perfect inference through
+          chains of operations. It's the engine behind type-safe pipelines.
+        </p>
+
+        <h2>1. Spreading tuples in type positions</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">variadic.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A tuple spread (...) inside another tuple type:
+type Pair = [string, number];
+type Triple = [...Pair, boolean]; // [string, number, boolean]
+
+// Generic head/tail manipulation:
+type Push&lt;T extends unknown[], V&gt; = [...T, V];
+type Unshift&lt;T extends unknown[], V&gt; = [V, ...T];
+type Concat&lt;A extends unknown[], B extends unknown[]&gt; = [...A, ...B];
+
+type P = Push&lt;[1, 2], 3&gt;;        // [1, 2, 3]
+type C = Concat&lt;[1, 2], [3, 4]&gt;; // [1, 2, 3, 4]
+
+// Extract head and tail with infer + spread:
+type Head&lt;T extends unknown[]&gt; = T extends [infer H, ...unknown[]] ? H : never;
+type Tail&lt;T extends unknown[]&gt; = T extends [unknown, ...infer R] ? R : [];
+type H = Head&lt;[1, 2, 3]&gt;; // 1
+type R = Tail&lt;[1, 2, 3]&gt;; // [2, 3]</pre>
+          <div class="annot">
+            <strong>Tuples become first-class lists you can compute on.</strong> The <code>[...T, V]</code> and
+            <code>[infer H, ...infer T]</code> patterns are the primitives. They power the recursive type-level
+            algorithms from lesson 02-06 and the function typing below.
+          </div>
+        </div>
+
+        <h2>2. Typing function arguments precisely</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">args.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Type a function that takes the SAME args as another, plus a leading one.
+// This is exactly how a typed "withLogging" wrapper or DI container works.
+function wrap&lt;Args extends unknown[], R&gt;(
+  fn: (...args: Args) =&gt; R
+): (label: string, ...args: Args) =&gt; R {
+  return (label, ...args) =&gt; {
+    console.log(`calling ${label}`);
+    return fn(...args);
+  };
+}
+
+const add = (a: number, b: number) =&gt; a + b;
+const loggedAdd = wrap(add);
+loggedAdd("sum", 2, 3); // ✅ args after label are typed as (number, number)
+// loggedAdd("sum", 2, "x"); // ❌ second arg must be a number
+
+// Tuples with labels read nicely in tooltips:
+type Range = [start: number, end: number];</pre>
+          <div class="annot">
+            <strong>Capturing a function's argument list as a tuple <code>Args</code></strong> and re-spreading it
+            is how you write perfectly-typed higher-order functions — wrappers, decorators, middleware, currying.
+            Before variadic tuples, these required dozens of hand-written overloads.
+          </div>
+        </div>
+
+        <h2>3. Fully-typed compose &amp; pipe</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">pipe.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A type-safe `pipe`: each function's output must match the next's input,
+// and the final return type is inferred. (Simplified 2-3 step version.)
+function pipe&lt;A, B&gt;(a: A, ab: (a: A) =&gt; B): B;
+function pipe&lt;A, B, C&gt;(a: A, ab: (a: A) =&gt; B, bc: (b: B) =&gt; C): C;
+function pipe&lt;A, B, C, D&gt;(a: A, ab: (a: A) =&gt; B, bc: (b: B) =&gt; C, cd: (c: C) =&gt; D): D;
+function pipe(value: unknown, ...fns: Array&lt;(x: unknown) =&gt; unknown&gt;): unknown {
+  return fns.reduce((acc, fn) =&gt; fn(acc), value);
+}
+
+const result = pipe(
+  "  Hello World  ",
+  (s) =&gt; s.trim(),          // string =&gt; string
+  (s) =&gt; s.toLowerCase(),   // string =&gt; string
+  (s) =&gt; s.split(" ")       // string =&gt; string[]
+);
+// result is typed as string[]  — each step's type flows to the next.</pre>
+          <div class="annot">
+            <strong>This is the holy grail of functional typing.</strong> Each step's output type must be assignable
+            to the next step's input, and the final type is inferred end-to-end. Libraries like Effect, fp-ts, and
+            Remeda use advanced variadic-tuple machinery to type <code>pipe</code> for any number of steps. You're
+            seeing the technique that makes type-safe data pipelines possible.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Type a curry-ish helper</div>
+            <p style="margin:6px 0 0">
+              Write <code>function partial&lt;A extends unknown[], B extends unknown[], R&gt;(fn: (...args: [...A, ...B]) =&gt; R, ...first: A): (...rest: B) =&gt; R</code>
+              that partially applies the leading arguments. Verify that
+              <code>partial((a: number, b: string) =&gt; ..., 1)</code> returns a function expecting just a
+              <code>string</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Variadic tuples</b> allow <code>[...T, V]</code> spreads and <code>[infer H, ...infer T]</code> destructuring in type positions.</li>
+            <li>They let you capture and re-spread a function's argument list as a tuple <code>Args</code>.</li>
+            <li>This is how perfectly-typed higher-order functions (wrappers, middleware, currying) are written.</li>
+            <li>Fully-typed <b>pipe/compose</b> chains flow each step's output type into the next.</li>
+            <li>The same primitives drive the recursive type-level algorithms of lesson 02-06.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

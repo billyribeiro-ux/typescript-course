@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-04 · The Utility Type Catalog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 4</div>
+        <h1>The Utility Type Catalog</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🧰 The standard library</span>
+        </div>
+        <p class="lead">
+          TypeScript ships a toolbox of built-in <strong>utility types</strong> — pre-made transformations you'll
+          use every single day. Having just learned how mapped and conditional types work, you'll understand
+          each one from the inside rather than memorising magic. This lesson is your reference; bookmark it.
+        </p>
+
+        <h2>1. Object-shaping utilities</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">object-utils.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">interface User {
+  id: number;
+  name: string;
+  email: string;
+  password: string;
+}
+
+type T1 = Partial&lt;User&gt;;            // all keys optional
+type T2 = Required&lt;Partial&lt;User&gt;&gt;;  // all keys required again
+type T3 = Readonly&lt;User&gt;;           // all keys readonly
+
+// Pick a subset of keys:
+type PublicUser = Pick&lt;User, "id" | "name" | "email"&gt;;
+// Omit (remove) keys — perfect for stripping sensitive fields:
+type SafeUser = Omit&lt;User, "password"&gt;;  // { id; name; email }
+
+// Record builds a key→value map:
+type RolePermissions = Record&lt;"admin" | "user", string[]&gt;;
+const perms: RolePermissions = { admin: ["*"], user: ["read"] };</pre>
+          <div class="annot">
+            <strong>The four you'll use most:</strong> <code>Partial</code> (forms/patches), <code>Pick</code> and
+            <code>Omit</code> (deriving DTOs from entities), and <code>Record</code> (lookup maps).
+            <code>Omit&lt;User, "password"&gt;</code> is the canonical "never leak the password field" pattern.
+          </div>
+        </div>
+
+        <h2>2. Union-filtering utilities</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">union-utils.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Status = "idle" | "loading" | "success" | "error";
+
+// Exclude removes union members (uses conditional distribution, 02-01):
+type Settled = Exclude&lt;Status, "idle" | "loading"&gt;; // "success" | "error"
+// Extract keeps only matching members:
+type Pending = Extract&lt;Status, "idle" | "loading"&gt;; // "idle" | "loading"
+
+// NonNullable strips null and undefined:
+type T = NonNullable&lt;string | null | undefined&gt;; // string
+
+// Combine with keyof for "keys whose value is a function":
+type Handlers = Record&lt;string, unknown&gt; &amp; { onClick: () =&gt; void; id: number };
+type FnKeys = {
+  [K in keyof Handlers]: Handlers[K] extends Function ? K : never;
+}[keyof Handlers];</pre>
+          <div class="annot">
+            <strong><code>Exclude</code>/<code>Extract</code>/<code>NonNullable</code></strong> operate on unions
+            via the distribution rule from 02-01. <code>NonNullable</code> is especially handy after a filter or
+            guard. They look trivial now — because you understand the conditional-type machine underneath.
+          </div>
+        </div>
+
+        <h2>3. Function-related utilities</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">fn-utils.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function createUser(name: string, age: number) {
+  return { id: 1, name, age, createdAt: new Date() };
+}
+
+type Args = Parameters&lt;typeof createUser&gt;;     // [name: string, age: number]
+type Result = ReturnType&lt;typeof createUser&gt;;   // { id; name; age; createdAt }
+type FirstArg = Parameters&lt;typeof createUser&gt;[0]; // string
+
+async function loadData() { return { ok: true }; }
+type Data = Awaited&lt;ReturnType&lt;typeof loadData&gt;&gt;; // { ok: boolean }
+
+// InstanceType — the instance shape of a class constructor:
+class Service { run() {} }
+type S = InstanceType&lt;typeof Service&gt;; // Service
+
+// These let you derive types FROM implementations — single source of truth.</pre>
+          <div class="annot">
+            <strong>The "derive from implementation" superpower:</strong> rather than writing a type and a
+            function separately (and letting them drift), you write the function and extract types from it with
+            <code>Parameters</code>, <code>ReturnType</code>, and <code>Awaited</code>. This is how you keep types
+            and code in lockstep — a core L7++ habit.
+          </div>
+        </div>
+
+        <h2>4. A reference table</h2>
+        <table>
+          <thead><tr><th>Utility</th><th>Does</th><th>Built from</th></tr></thead>
+          <tbody>
+            <tr><td><code>Partial&lt;T&gt;</code></td><td>All props optional</td><td>mapped + <code>?</code></td></tr>
+            <tr><td><code>Required&lt;T&gt;</code></td><td>All props required</td><td>mapped + <code>-?</code></td></tr>
+            <tr><td><code>Readonly&lt;T&gt;</code></td><td>All props readonly</td><td>mapped + <code>readonly</code></td></tr>
+            <tr><td><code>Pick&lt;T,K&gt;</code></td><td>Keep keys K</td><td>mapped over K</td></tr>
+            <tr><td><code>Omit&lt;T,K&gt;</code></td><td>Drop keys K</td><td><code>Pick</code> + <code>Exclude</code></td></tr>
+            <tr><td><code>Record&lt;K,V&gt;</code></td><td>Map K→V</td><td>mapped over K</td></tr>
+            <tr><td><code>Exclude&lt;T,U&gt;</code></td><td>Remove U from union T</td><td>conditional + distribution</td></tr>
+            <tr><td><code>Extract&lt;T,U&gt;</code></td><td>Keep U from union T</td><td>conditional + distribution</td></tr>
+            <tr><td><code>NonNullable&lt;T&gt;</code></td><td>Remove null/undefined</td><td>conditional</td></tr>
+            <tr><td><code>Parameters&lt;F&gt;</code></td><td>Tuple of arg types</td><td><code>infer</code></td></tr>
+            <tr><td><code>ReturnType&lt;F&gt;</code></td><td>Return type</td><td><code>infer</code></td></tr>
+            <tr><td><code>Awaited&lt;T&gt;</code></td><td>Unwrap Promise(s)</td><td>recursive conditional + <code>infer</code></td></tr>
+            <tr><td><code>InstanceType&lt;C&gt;</code></td><td>Instance of a class</td><td><code>infer</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Compose them</div>
+            <p style="margin:6px 0 0">
+              The real power is composition: <code>Readonly&lt;Pick&lt;User, "id" | "name"&gt;&gt;</code>,
+              <code>Partial&lt;Omit&lt;Post, "id"&gt;&gt;</code>, <code>Record&lt;Status, ReturnType&lt;typeof reducer&gt;&gt;</code>.
+              Chaining utilities expresses precise intent without writing a single new mapped type.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · DTOs from one entity</div>
+            <p style="margin:6px 0 0">
+              Given <code>interface Article { id: number; title: string; body: string; authorId: number; secret: string }</code>,
+              derive: <code>CreateArticle</code> (everything except <code>id</code> and <code>secret</code>, all
+              required), <code>UpdateArticle</code> (same fields but all optional), and <code>PublicArticle</code>
+              (no <code>secret</code>). Use only built-in utilities composed together.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Object utilities: <code>Partial</code>, <code>Required</code>, <code>Readonly</code>, <code>Pick</code>, <code>Omit</code>, <code>Record</code>.</li>
+            <li>Union utilities: <code>Exclude</code>, <code>Extract</code>, <code>NonNullable</code> (built on conditional distribution).</li>
+            <li>Function utilities: <code>Parameters</code>, <code>ReturnType</code>, <code>Awaited</code>, <code>InstanceType</code> (built on <code>infer</code>).</li>
+            <li><b>Derive types from implementations</b> to keep them in sync — a key habit.</li>
+            <li>Compose utilities to express precise DTOs without new mapped types.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-11 · Decorators, Module Augmentation &amp; Ambient Types</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 11</div>
+        <h1>Decorators, Module Augmentation &amp; Ambient Types</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🔌 Extending the world</span>
+        </div>
+        <p class="lead">
+          The final core skills of advanced TypeScript: <strong>standard decorators</strong> (TS 5.0+, now an
+          ECMAScript feature) for declarative metaprogramming, and <strong>module augmentation</strong> +
+          <strong>ambient declarations</strong> for safely extending types you don't own — third-party libraries,
+          globals, and the environment. These are what let you integrate cleanly with any codebase.
+        </p>
+
+        <h2>1. Standard decorators</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">decorators.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A method decorator that logs calls. The 2023 standard signature:
+//   (originalMethod, context) =&gt; replacementMethod
+function logged&lt;This, Args extends unknown[], Return&gt;(
+  target: (this: This, ...args: Args) =&gt; Return,
+  context: ClassMethodDecoratorContext&lt;This&gt;
+) {
+  const name = String(context.name);
+  return function (this: This, ...args: Args): Return {
+    console.log(`→ ${name}(${args.join(", ")})`);
+    const result = target.call(this, ...args);
+    console.log(`← ${name} returned ${result}`);
+    return result;
+  };
+}
+
+class Calculator {
+  @logged
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+new Calculator().add(2, 3);
+// → add(2, 3) / ← add returned 5</pre>
+          <div class="annot">
+            <strong>The modern decorator</strong> receives the thing it decorates plus a typed <code>context</code>
+            object (its name, kind, and helpers) and returns a replacement. Unlike the old experimental
+            decorators, these are the standardized ECMAScript form — no <code>reflect-metadata</code>, no
+            <code>experimentalDecorators</code> flag. Frameworks like NestJS and some ORMs use them heavily for
+            declarative routing, validation, and DI.
+          </div>
+        </div>
+
+        <h2>2. Module augmentation</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">augmentation.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Add a property to an existing third-party module's interface.
+// (This is how you tell TS about a plugin that mutates a library's types.)
+import "some-router";
+
+declare module "some-router" {
+  interface RouteMeta {
+    requiresAuth?: boolean;   // a field we add for our app
+    roles?: string[];
+  }
+}
+
+// Now, everywhere RouteMeta is used, our fields are typed too.
+
+// Augment the GLOBAL scope (e.g. a value you attach to window):
+declare global {
+  interface Window {
+    __APP_VERSION__: string;
+  }
+}
+window.__APP_VERSION__ = "1.0.0"; // ✅ typed
+export {}; // ensures this file is a module</pre>
+          <div class="annot">
+            <strong>Module augmentation uses interface declaration merging</strong> (from lesson 01-04) to
+            <em>extend</em> types you don't own — without forking the library. This is how you add
+            <code>requiresAuth</code> to a router's route metadata, register a Redux store's type, or teach
+            TypeScript about <code>import.meta.env</code> variables. Indispensable for real integration work.
+          </div>
+        </div>
+
+        <h2>3. Ambient declarations &amp; typed env</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">ambient.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Declare things that exist at runtime but TS doesn't know about.
+
+// A non-code import (handled by a bundler like Vite):
+declare module "*.svg" {
+  const src: string;
+  export default src;
+}
+
+// Type your environment variables strictly (huge for safety):
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly DATABASE_URL: string;
+    readonly NODE_ENV: "development" | "production" | "test";
+  }
+}
+// Now process.env.NODE_ENV is the union, and typos are caught:
+const env = process.env.NODE_ENV; // "development" | "production" | "test"</pre>
+          <div class="annot">
+            <strong>Ambient declarations describe the runtime to the compiler.</strong> Typing
+            <code>process.env</code> (or Vite's <code>import.meta.env</code>) means a misspelled env var is a
+            compile error, and values carry their real union types. Declaring <code>*.svg</code> modules lets you
+            import assets with types. This is foundational setup in every production app you'll build from Part 3
+            on.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Augmentation must target a module</div>
+            <p style="margin:6px 0 0">
+              <code>declare global</code> and <code>declare module</code> only work inside a file that is itself a
+              module (has an <code>import</code> or <code>export</code>). If TypeScript treats your file as a
+              global script, add <code>export {}</code> to make it a module — otherwise the augmentation silently
+              does nothing.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A timing decorator + typed env</div>
+            <p style="margin:6px 0 0">
+              1) Write a <code>@timed</code> method decorator that logs how long a method took. 2) Add an ambient
+              declaration giving <code>process.env</code> a strictly-typed <code>PORT: string</code> and
+              <code>LOG_LEVEL: "debug" | "info" | "error"</code>, then read them and confirm a typo on the key is
+              a compile error.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Standard decorators</b> (TS 5.0+, ECMAScript) take <code>(target, context)</code> and return a replacement — declarative metaprogramming with no special flags.</li>
+            <li><b>Module augmentation</b> (<code>declare module</code>) extends third-party types via declaration merging — no forking.</li>
+            <li><b>Ambient declarations</b> (<code>declare global/namespace/module "*.x"</code>) describe runtime things to the compiler.</li>
+            <li>Strictly typing <code>process.env</code>/<code>import.meta.env</code> turns env typos into compile errors.</li>
+            <li>Augmentations require the file to be a module — add <code>export {}</code> if needed.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
