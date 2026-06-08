@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-04 · State with useState</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 4</div>
+        <h1>State with <code>useState</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React · pivotal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🔁 Reactivity</span>
+        </div>
+        <p class="lead">
+          <strong>State</strong> is data a component owns that can change over time — and changing it re-renders
+          the UI. The <code>useState</code> hook is how function components hold state. This is the beating heart
+          of interactivity in React. We'll cover the syntax, the all-important update rules, and the immutability
+          patterns you already learned in Part 0 — now with a purpose.
+        </p>
+
+        <h2>1. The useState hook</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Counter.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState } from "react";
+
+function Counter() {
+  // useState returns a TUPLE: [currentValue, setterFunction]  (lesson 01-03!)
+  const [count, setCount] = useState(0); // 0 is the initial value; count: number
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Count: {count}&lt;/p&gt;
+      &lt;button onClick={() =&gt; setCount(count + 1)}&gt;+1&lt;/button&gt;
+      &lt;button onClick={() =&gt; setCount(0)}&gt;Reset&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+// Clicking calls setCount → React re-renders Counter → the new count shows.</pre>
+          <div class="annot">
+            <strong><code>useState</code> returns a tuple</strong> (recall lesson 01-03) — the current value and a
+            setter. Calling the setter does two things: it updates the stored value, and it tells React to
+            <em>re-render</em> this component with the new value. TypeScript infers the type from the initial value
+            (<code>count</code> is <code>number</code>). This is "UI = f(state)" made concrete.
+          </div>
+        </div>
+
+        <h2>2. The golden rules of state</h2>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Never mutate state directly</div>
+            <p style="margin:6px 0 0">
+              <code>count = 5</code> or <code>todos.push(x)</code> do <b>nothing</b> — React won't re-render, and
+              it breaks. You must call the <b>setter</b> with a <b>new</b> value/object/array. This is why you
+              learned immutability in Part 0: it's mandatory in React. Update state, don't mutate it.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">updater-function.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const [count, setCount] = useState(0);
+
+// ❌ Risky when updates batch — reads a possibly-stale `count`:
+setCount(count + 1);
+setCount(count + 1); // both see the SAME count → only +1 total
+
+// ✅ Use the UPDATER FUNCTION form when next state depends on previous:
+setCount((prev) =&gt; prev + 1);
+setCount((prev) =&gt; prev + 1); // +2 total, correctly
+
+// React BATCHES multiple setState calls in one event into a single re-render.</pre>
+          <div class="annot">
+            <strong>Use the updater function <code>setCount(prev =&gt; ...)</code></strong> whenever the next value
+            depends on the current one. React may batch several updates, and the direct form can read a stale
+            value. The updater form always receives the latest state. Make this a habit.
+          </div>
+        </div>
+
+        <h2>3. State with objects and arrays (immutably)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">TodoList.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState } from "react";
+
+interface Todo { id: number; title: string; done: boolean; }
+
+function TodoList() {
+  const [todos, setTodos] = useState&lt;Todo[]&gt;([]); // explicit type for empty init
+
+  const add = (title: string) =&gt;
+    setTodos((prev) =&gt; [...prev, { id: Date.now(), title, done: false }]); // 00-10!
+
+  const toggle = (id: number) =&gt;
+    setTodos((prev) =&gt; prev.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t)));
+
+  const remove = (id: number) =&gt;
+    setTodos((prev) =&gt; prev.filter((t) =&gt; t.id !== id));
+
+  return (
+    &lt;ul&gt;
+      {todos.map((t) =&gt; (
+        &lt;li key={t.id} onClick={() =&gt; toggle(t.id)}&gt;
+          {t.done ? "✓" : "○"} {t.title}
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Look familiar?</strong> These are <em>exactly</em> the immutable patterns from lesson 00-10 and
+            Project P01 — add with spread, update with <code>map</code>, remove with <code>filter</code>. React
+            state management is just immutable data transformation. When the initial value can't be inferred (an
+            empty array), provide the type explicitly: <code>useState&lt;Todo[]&gt;([])</code>.
+          </div>
+        </div>
+
+        <h2>4. State is per-component-instance</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Each instance has its own state</div>
+            <p style="margin:6px 0 0">
+              Render <code>&lt;Counter /&gt;</code> three times and you get three independent counters — each call to
+              <code>useState</code> creates state local to that instance (it's a closure, lesson 00-08!). State is
+              isolated and private to each component instance, which is what makes components truly reusable.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A tip calculator</div>
+            <p style="margin:6px 0 0">
+              Build a component with <code>useState</code> for <code>bill</code> (number) and
+              <code>tipPercent</code> (number). Render inputs that update them and display the computed tip and
+              total. Use the updater form where appropriate. Then build a small <code>&lt;Toggle /&gt;</code> with a
+              boolean state and render two of them to see independent instances.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>useState</code></b> returns <code>[value, setter]</code>; calling the setter updates state AND re-renders.</li>
+            <li><b>Never mutate state</b> — always pass a new value/object/array to the setter (immutability from Part 0).</li>
+            <li>Use the <b>updater form</b> <code>setX(prev =&gt; ...)</code> when the next state depends on the previous.</li>
+            <li>Update objects/arrays with spread/<code>map</code>/<code>filter</code> — the same patterns as P01.</li>
+            <li>State is <b>private to each component instance</b>, enabling true reuse.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

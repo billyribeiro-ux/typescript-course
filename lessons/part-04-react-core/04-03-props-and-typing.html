@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-03 · Components, Props &amp; Typing Them</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 3</div>
+        <h1>Components, Props &amp; Typing Them</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React + TS</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🔌 Data in</span>
+        </div>
+        <p class="lead">
+          <strong>Props</strong> are how data flows into a component — the equivalent of function arguments. This
+          is where your TypeScript mastery pays off enormously: typed props give you autocomplete, catch wrong
+          usage at compile time, and document your components. We'll cover typing props, default values,
+          <code>children</code>, and the patterns professionals use.
+        </p>
+
+        <h2>1. Typing props with an interface</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Button.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Define the props shape — this IS the component's public API.
+interface ButtonProps {
+  label: string;
+  variant?: "primary" | "secondary"; // optional (note the ?)
+  disabled?: boolean;
+  onClick: () =&gt; void;                // a function prop (callback)
+}
+
+// Destructure props in the parameter list (the idiomatic style):
+function Button({ label, variant = "primary", disabled = false, onClick }: ButtonProps) {
+  return (
+    &lt;button className={`btn btn-${variant}`} disabled={disabled} onClick={onClick}&gt;
+      {label}
+    &lt;/button&gt;
+  );
+}
+
+// Usage is fully type-checked:
+function App() {
+  return &lt;Button label="Save" variant="primary" onClick={() =&gt; alert("saved")} /&gt;;
+  // &lt;Button /&gt;                  // ❌ missing required label + onClick
+  // &lt;Button label="X" variant="huge" .../&gt; // ❌ "huge" not allowed
+}</pre>
+          <div class="annot">
+            <strong>This is everything from Part 1 applied to React.</strong> An <code>interface</code> (01-04)
+            defines the props; <code>?</code> marks optional ones; a string-literal union (01-03) constrains
+            <code>variant</code>; destructuring with defaults (00-09) reads them. The payoff: using
+            <code>&lt;Button&gt;</code> wrong is a compile error, and your editor autocompletes every prop.
+          </div>
+        </div>
+
+        <h2>2. Props are read-only &amp; flow down</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · One-way data flow</div>
+            <p style="margin:6px 0 0">
+              A component must <b>never modify its props</b> — they belong to the parent. Data flows one way: from
+              parent down to child. If a child needs to communicate <em>up</em>, the parent passes a
+              <em>callback</em> prop (like <code>onClick</code>) that the child calls. This unidirectional flow
+              makes apps predictable and debuggable.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. The <code>children</code> prop</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Card.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import type { ReactNode } from "react";
+
+interface CardProps {
+  title: string;
+  children: ReactNode;   // anything renderable: elements, strings, numbers...
+}
+
+function Card({ title, children }: CardProps) {
+  return (
+    &lt;section className="card"&gt;
+      &lt;h2&gt;{title}&lt;/h2&gt;
+      &lt;div className="card-body"&gt;{children}&lt;/div&gt;
+    &lt;/section&gt;
+  );
+}
+
+// children is whatever you nest between the tags:
+function App() {
+  return (
+    &lt;Card title="Welcome"&gt;
+      &lt;p&gt;This paragraph is the children.&lt;/p&gt;
+      &lt;button&gt;And so is this button.&lt;/button&gt;
+    &lt;/Card&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong><code>children</code> is the special prop for nested content</strong> — what you put between a
+            component's opening and closing tags. Type it as <code>ReactNode</code> (the type for "anything React
+            can render"). This enables powerful composition: wrapper/layout components like <code>Card</code>,
+            <code>Modal</code>, and <code>Layout</code> that don't care what's inside them.
+          </div>
+        </div>
+
+        <h2>4. Extending native element props</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">native-props.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import type { ComponentProps } from "react";
+
+// Accept ALL the normal &lt;button&gt; props (onClick, type, aria-*, ...) PLUS our own.
+interface IconButtonProps extends ComponentProps&lt;"button"&gt; {
+  icon: string;
+}
+
+function IconButton({ icon, children, ...rest }: IconButtonProps) {
+  return (
+    &lt;button {...rest}&gt;          {/* spread the native props through */}
+      &lt;span className="icon"&gt;{icon}&lt;/span&gt;
+      {children}
+    &lt;/button&gt;
+  );
+}
+
+// Now consumers get full native button typing for free:
+&lt;IconButton icon="★" type="submit" onClick={() =&gt; {}} aria-label="Favourite" /&gt;;</pre>
+          <div class="annot">
+            <strong>Pro pattern:</strong> <code>ComponentProps&lt;"button"&gt;</code> gives you every prop a real
+            <code>&lt;button&gt;</code> accepts. Extending it and spreading <code>{...rest}</code> means your custom
+            component is a drop-in replacement that supports <code>type</code>, <code>aria-*</code>, event
+            handlers, etc. — without re-typing them all. This is how design-system components are built (Part 8).
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A typed Alert component</div>
+            <p style="margin:6px 0 0">
+              Build <code>Alert</code> with props: <code>tone: "info" | "success" | "error"</code> (required),
+              <code>onDismiss?: () =&gt; void</code>, and <code>children: ReactNode</code>. Render the children, apply
+              a class based on <code>tone</code>, and show a dismiss button only when <code>onDismiss</code> is
+              provided. Confirm the editor rejects an invalid <code>tone</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Props</b> are typed inputs — define them with an <code>interface</code> and destructure with defaults.</li>
+            <li>Props are <b>read-only</b> and flow one way (down); children communicate up via <b>callback props</b>.</li>
+            <li><b><code>children: ReactNode</code></b> enables wrapper/layout composition.</li>
+            <li>Extend <b><code>ComponentProps&lt;"button"&gt;</code></b> + spread <code>{...rest}</code> to wrap native elements cleanly.</li>
+            <li>Typed props give compile-time safety, autocomplete, and self-documenting components.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

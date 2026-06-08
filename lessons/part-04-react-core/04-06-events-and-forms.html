@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-06 · Handling Events &amp; Forms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 6</div>
+        <h1>Handling Events &amp; Forms</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React + TS</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⌨️ User input</span>
+        </div>
+        <p class="lead">
+          Interactivity means responding to user actions — clicks, typing, submitting. React handles events with
+          typed handler props, and forms with the <strong>controlled component</strong> pattern, where React state
+          is the single source of truth for input values. Getting forms right (and typed) is a daily React task,
+          and the foundation for React Hook Form in Part 6.
+        </p>
+
+        <h2>1. Event handlers</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">events.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function Buttons() {
+  // Inline handler:
+  return (
+    &lt;div&gt;
+      &lt;button onClick={() =&gt; console.log("clicked")}&gt;Inline&lt;/button&gt;
+
+      {/* Named handler — preferred for anything non-trivial: */}
+      &lt;button onClick={handleSave}&gt;Save&lt;/button&gt;
+
+      {/* Pass arguments by wrapping in an arrow: */}
+      &lt;button onClick={() =&gt; handleDelete(42)}&gt;Delete&lt;/button&gt;
+    &lt;/div&gt;
+  );
+
+  function handleSave() { console.log("saved"); }
+  function handleDelete(id: number) { console.log("delete", id); }
+}</pre>
+          <div class="annot">
+            <strong>Pass the function, don't call it.</strong> <code>onClick={handleSave}</code> passes the
+            function (React calls it on click). <code>onClick={handleSave()}</code> would call it immediately during
+            render — a common beginner bug. To pass arguments, wrap in an arrow:
+            <code>onClick={() =&gt; handleDelete(42)}</code>.
+          </div>
+        </div>
+
+        <h2>2. Typing events</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">typed-events.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import type { ChangeEvent, FormEvent, MouseEvent } from "react";
+
+function handleChange(e: ChangeEvent&lt;HTMLInputElement&gt;) {
+  console.log(e.target.value);   // value is typed as string
+}
+
+function handleSubmit(e: FormEvent&lt;HTMLFormElement&gt;) {
+  e.preventDefault();            // stop the browser's full-page reload
+  // ...read form state and submit...
+}
+
+function handleClick(e: MouseEvent&lt;HTMLButtonElement&gt;) {
+  console.log(e.currentTarget.disabled);
+}
+
+// Often you don't need to annotate — inline handlers infer the event type:
+&lt;input onChange={(e) =&gt; console.log(e.target.value)} /&gt;; // e is inferred!</pre>
+          <div class="annot">
+            <strong>React's event types are generic over the element:</strong>
+            <code>ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>FormEvent&lt;HTMLFormElement&gt;</code>. You only need to
+            annotate when defining a handler <em>separately</em> — inline handlers infer the event type
+            automatically. <code>e.preventDefault()</code> on submit stops the default page reload, which is
+            essential for SPAs.
+          </div>
+        </div>
+
+        <h2>3. Controlled form inputs</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">ControlledForm.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState } from "react";
+
+function SignupForm() {
+  const [email, setEmail] = useState("");
+  const [agreed, setAgreed] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) =&gt; {
+    e.preventDefault();
+    console.log({ email, agreed });   // React state IS the form data
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;input
+        type="email"
+        value={email}                              // value comes FROM state
+        onChange={(e) =&gt; setEmail(e.target.value)}  // changes go TO state
+        placeholder="you@example.com"
+      /&gt;
+      &lt;label&gt;
+        &lt;input type="checkbox" checked={agreed}
+               onChange={(e) =&gt; setAgreed(e.target.checked)} /&gt;
+        I agree
+      &lt;/label&gt;
+      &lt;button type="submit" disabled={!email || !agreed}&gt;Sign up&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>The controlled-component pattern</strong> is the heart of React forms: the input's
+            <code>value</code> is driven by state, and <code>onChange</code> writes every keystroke back to state.
+            State is the single source of truth — the input can't get out of sync. This makes validation, disabling
+            the submit button, and resetting trivial (note <code>disabled={!email || !agreed}</code>).
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · One handler for many fields</div>
+            <p style="margin:6px 0 0">
+              For larger forms, hold all fields in one state object and use a single change handler keyed by the
+              input's <code>name</code>: <code>setForm(f =&gt; ({ ...f, [e.target.name]: e.target.value }))</code>.
+              But beyond a few fields, reach for <b>React Hook Form + Zod</b> (Part 6) — it handles validation,
+              performance, and errors for you. Here you're learning the fundamentals it's built on.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A controlled search box</div>
+            <p style="margin:6px 0 0">
+              Build a search input as a controlled component. Below it, render a filtered list of items whose names
+              contain the query (case-insensitive). Add a "Clear" button that resets the state. Everything driven
+              by one piece of <code>useState</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Pass handlers, don't call them: <code>onClick={fn}</code>, and wrap in an arrow to pass args.</li>
+            <li>React event types are generic: <code>ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>FormEvent&lt;HTMLFormElement&gt;</code>; inline handlers infer them.</li>
+            <li><code>e.preventDefault()</code> stops the default form reload in SPAs.</li>
+            <li><b>Controlled components</b>: <code>value</code> from state + <code>onChange</code> to state = single source of truth.</li>
+            <li>For real forms at scale, graduate to React Hook Form + Zod (Part 6).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

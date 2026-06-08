@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-05 · Lists, Keys &amp; Conditional Rendering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 5</div>
+        <h1>Lists, Keys &amp; Conditional Rendering</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">📋 Dynamic UI</span>
+        </div>
+        <p class="lead">
+          Real UIs render lists of data and show different things based on conditions. In React, both are done
+          with plain JavaScript expressions inside JSX — <code>.map()</code> for lists (with the crucial
+          <code>key</code> prop) and ternaries / <code>&amp;&amp;</code> for conditionals. Your Part 0 array-method
+          fluency makes this effortless.
+        </p>
+
+        <h2>1. Rendering lists with <code>.map()</code></h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">ProductList.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">interface Product { id: number; name: string; price: number; }
+
+function ProductList({ products }: { products: Product[] }) {
+  return (
+    &lt;ul&gt;
+      {products.map((product) =&gt; (
+        &lt;li key={product.id}&gt;        {/* key is REQUIRED on list items */}
+          {product.name} — ${product.price}
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}
+// This is exactly the array.map() from lesson 00-10 — now mapping data
+// to JSX elements instead of to other values. Same skill, new target.</pre>
+          <div class="annot">
+            <strong>Rendering a list IS <code>array.map()</code></strong> (lesson 00-10), transforming each data
+            item into a JSX element. The whole reason map was emphasised so heavily in Part 0 is this moment. The
+            result is an array of elements, which React renders in order.
+          </div>
+        </div>
+
+        <h2>2. The <code>key</code> prop — why it matters</h2>
+        <div class="callout concept">
+          <span class="ic">🔑</span>
+          <div class="body">
+            <div class="tt">Concept · Keys give items a stable identity</div>
+            <p style="margin:6px 0 0">
+              React uses <code>key</code> to track which item is which across re-renders, so when the list changes
+              (add/remove/reorder) it can update efficiently and preserve each item's state. The key must be a
+              <b>stable, unique ID</b> from your data — typically <code>item.id</code>.
+            </p>
+          </div>
+        </div>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Don't use the array index as key</div>
+            <p style="margin:6px 0 0">
+              <code>key={index}</code> looks tempting but causes subtle bugs when items are added, removed, or
+              reordered — React mismatches items and their state (e.g. text typed in the wrong input). Use a stable
+              ID from the data. Only fall back to index for a static list that never changes order.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Conditional rendering</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">conditionals.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function Dashboard({ user, notifications }: { user: User | null; notifications: number }) {
+  return (
+    &lt;div&gt;
+      {/* Ternary: choose between two things (lesson 00-07) */}
+      {user ? &lt;p&gt;Welcome, {user.name}&lt;/p&gt; : &lt;p&gt;Please log in&lt;/p&gt;}
+
+      {/* && : render something only if a condition is true */}
+      {notifications &gt; 0 &amp;&amp; &lt;span className="badge"&gt;{notifications}&lt;/span&gt;}
+
+      {/* Early return for a whole-component condition: */}
+      {/* if (!user) return &lt;LoginScreen /&gt;; — at the top of the component */}
+    &lt;/div&gt;
+  );
+}
+interface User { name: string }</pre>
+          <div class="annot">
+            <strong>Two workhorses:</strong> the <em>ternary</em> <code>cond ? a : b</code> picks between two
+            outputs; <code>cond &amp;&amp; element</code> renders <code>element</code> only when <code>cond</code> is
+            truthy (because <code>false</code> renders nothing — lesson 04-02). For whole-component branching, an
+            <em>early return</em> at the top is cleanest.
+          </div>
+        </div>
+
+        <h2>4. The <code>&amp;&amp;</code> number gotcha</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">and-gotcha.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ If count is 0, this renders the NUMBER 0, not nothing!
+{items.length &amp;&amp; &lt;List items={items} /&gt;}   // shows "0" when empty
+
+// ✅ Make the left side a real boolean:
+{items.length &gt; 0 &amp;&amp; &lt;List items={items} /&gt;}
+{!!items.length &amp;&amp; &lt;List items={items} /&gt;}
+{items.length ? &lt;List items={items} /&gt; : null}</pre>
+          <div class="annot">
+            <strong>A classic trap:</strong> <code>0 &amp;&amp; x</code> evaluates to <code>0</code>, and React
+            <em>renders</em> <code>0</code> (numbers are renderable). Always make the left operand a genuine boolean
+            (<code>length &gt; 0</code>). This bug appears in real codebases constantly — now you'll spot it
+            instantly.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A filtered list</div>
+            <p style="margin:6px 0 0">
+              Given an array of tasks with a <code>done</code> boolean, render them with <code>.map()</code> and
+              proper <code>key</code>s. Add a "show completed only" toggle (<code>useState</code>) and use
+              <code>.filter()</code> before mapping. Show an empty-state message with <code>&amp;&amp;</code> when the
+              filtered list is empty (mind the number gotcha!).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Render lists by mapping data to JSX with <b><code>.map()</code></b> — the Part 0 skill, new target.</li>
+            <li>Every list item needs a <b>stable, unique <code>key</code></b> (use <code>item.id</code>, never the index).</li>
+            <li>Conditionals: <b>ternary</b> for either/or, <b><code>&amp;&amp;</code></b> for show-if, <b>early return</b> for whole-component branches.</li>
+            <li>Beware <code>0 &amp;&amp; ...</code> — coerce to a real boolean (<code>length &gt; 0</code>).</li>
+            <li>Combine <code>filter</code> + <code>map</code> to render derived/filtered views of your data.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

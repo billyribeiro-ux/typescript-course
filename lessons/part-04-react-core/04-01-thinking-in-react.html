@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-01 · Thinking in React &amp; the Component Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 1</div>
+        <h1>Thinking in React &amp; the Component Model</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🧠 The mental model</span>
+        </div>
+        <p class="lead">
+          You've mastered TypeScript and tooling. Now we build user interfaces with <strong>React</strong> — the
+          library behind most of the modern web. Before any syntax, you need React's core mental model, because
+          it's a genuine shift from the DOM manipulation you saw in Part 0. Get this model right and everything
+          else clicks; get it wrong and you'll fight the framework forever.
+        </p>
+
+        <h2>1. The big idea: UI as a function of state</h2>
+        <p>
+          In Part 0 you changed the page <em>imperatively</em>: "find this element, set its text". React is
+          <strong>declarative</strong>: you write a function that returns <em>what the UI should look like</em> for
+          the current data, and React figures out the DOM changes. The mental formula:
+        </p>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · UI = f(state)</div>
+            <p style="margin:6px 0 0">
+              Your interface is a <b>function of state</b>. Given the same data, a component always renders the
+              same output. When the data changes, React re-runs your function and efficiently updates only the DOM
+              that actually changed. You describe the <em>destination</em>; React handles the <em>journey</em>.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Components: the building blocks</h2>
+        <p>
+          A <strong>component</strong> is a function that returns UI (written in JSX, next lesson). Components are
+          composable — you build complex screens by nesting small, focused components, just like composing
+          functions. This is the same "break big problems into small ones" principle from lesson 00-01, applied to
+          interfaces.
+        </p>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Welcome.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A component is just a function that returns UI.
+function Welcome() {
+  return &lt;h1&gt;Hello, React!&lt;/h1&gt;;
+}
+
+// Components compose — build big UIs from small pieces:
+function Avatar() {
+  return &lt;img src="/me.png" alt="Me" width={48} /&gt;;
+}
+
+function Header() {
+  return (
+    &lt;header&gt;
+      &lt;Avatar /&gt;        {/* use a component like an HTML tag */}
+      &lt;Welcome /&gt;
+    &lt;/header&gt;
+  );
+}
+
+// Rule: component names MUST start with a capital letter.
+// &lt;Avatar /&gt; is a component; &lt;avatar /&gt; would be treated as an HTML tag.</pre>
+          <div class="annot">
+            <strong>Components are functions that return UI.</strong> You use them like custom HTML tags
+            (<code>&lt;Avatar /&gt;</code>). The capital-letter rule is how React (and the compiler) tells your
+            components apart from built-in HTML elements. This composition — small components assembled into bigger
+            ones — is the entire architecture of a React app.
+          </div>
+        </div>
+
+        <h2>3. The two inputs: props and state</h2>
+        <p>
+          Components have exactly two kinds of data, and the distinction is fundamental:
+        </p>
+        <table>
+          <thead><tr><th></th><th>Props</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td>What</td><td>Data passed IN from a parent</td><td>Data a component OWNS and can change</td></tr>
+            <tr><td>Mutable?</td><td>Read-only (never modify props)</td><td>Changed via a setter (triggers re-render)</td></tr>
+            <tr><td>Analogy</td><td>Function arguments</td><td>A variable that persists between renders</td></tr>
+          </tbody>
+        </table>
+        <div class="annot" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--text-soft);margin:-2px 0 18px">
+          We cover props in lesson 04-03 and state in 04-04. For now: <b>props flow down</b> from parent to child
+          (one-way data flow), and <b>state lives inside</b> a component. When state changes, React re-renders that
+          component and its children.
+        </div>
+
+        <h2>4. Why React, concretely</h2>
+        <ul>
+          <li><strong>Declarative:</strong> describe the result, not the steps — far fewer bugs than manual DOM updates.</li>
+          <li><strong>Component reuse:</strong> write a <code>Button</code> once, use it everywhere, consistently.</li>
+          <li><strong>The Virtual DOM:</strong> React computes the minimal set of real DOM changes, so updates are fast (more in Part 5).</li>
+          <li><strong>Ecosystem:</strong> routing, data fetching, forms, animation — a mature library for everything (Part 6).</li>
+          <li><strong>Jobs:</strong> React is the dominant UI library at Meta, and used widely across the industry.</li>
+        </ul>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · React 19 + the React Compiler</div>
+            <p style="margin:6px 0 0">
+              This course teaches <b>React 19</b> with the new <b>React Compiler</b>, which automatically optimises
+              your components (no more manual <code>useMemo</code>/<code>useCallback</code> in most cases — lesson
+              04-10). You're learning React as it is in 2026, not legacy patterns from old tutorials.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Decompose a UI</div>
+            <p style="margin:6px 0 0">
+              Look at any app you use (say, a Twitter/X feed). On paper, draw boxes around the components you'd
+              create: <code>App</code> → <code>Feed</code> → <code>Tweet</code> → <code>Avatar</code>,
+              <code>TweetActions</code>, etc. For each, note what <em>props</em> it would receive and what
+              <em>state</em> it might own. This decomposition skill is half of React.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>React is <b>declarative</b>: <b>UI = f(state)</b>. You describe the result; React updates the DOM.</li>
+            <li><b>Components</b> are functions returning UI, composed like custom HTML tags (capitalised names).</li>
+            <li><b>Props</b> flow down (read-only inputs); <b>state</b> is owned and mutable (triggers re-render).</li>
+            <li>React's strengths: declarativeness, reuse, the Virtual DOM, a vast ecosystem, and jobs.</li>
+            <li>We teach <b>React 19 + the React Compiler</b> — the modern 2026 way.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

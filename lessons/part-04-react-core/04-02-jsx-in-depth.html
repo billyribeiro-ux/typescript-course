@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-02 · JSX In Depth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 2</div>
+        <h1>JSX In Depth</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">📝 The syntax</span>
+        </div>
+        <p class="lead">
+          <strong>JSX</strong> is the HTML-like syntax you write inside components. It looks like HTML but it's
+          actually JavaScript in disguise — every JSX tag compiles to a function call that creates a UI element.
+          Understanding that JSX <em>is JavaScript</em> is the key to using it fluently, including embedding
+          expressions, the small but important differences from HTML, and how the compiler treats it.
+        </p>
+
+        <h2>1. JSX is JavaScript</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">jsx-is-js.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// This JSX...
+const element = &lt;h1 className="title"&gt;Hello&lt;/h1&gt;;
+
+// ...compiles to roughly this function call:
+// const element = jsx("h1", { className: "title", children: "Hello" });
+
+// Because JSX is just expressions, it follows JS rules:
+// - a component must return ONE root element (or a Fragment)
+// - use parentheses for multi-line JSX for readability
+function Card() {
+  return (
+    &lt;div className="card"&gt;
+      &lt;h2&gt;Title&lt;/h2&gt;
+      &lt;p&gt;Body&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>JSX is not a template language — it's syntax sugar for function calls.</strong> Each tag becomes
+            a <code>jsx(type, props)</code> call returning a plain object (a "React element") that describes UI.
+            Because it's JavaScript, you get full type-checking on it, and you can use it anywhere an expression is
+            allowed.
+          </div>
+        </div>
+
+        <h2>2. Embedding expressions with <code>{}</code></h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">expressions.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function Greeting() {
+  const name = "Ada";
+  const hour = new Date().getHours();
+  const items = ["a", "b", "c"];
+
+  return (
+    &lt;div&gt;
+      {/* Any JS EXPRESSION goes inside curly braces: */}
+      &lt;h1&gt;Hello, {name.toUpperCase()}!&lt;/h1&gt;
+      &lt;p&gt;The time is {hour}:00&lt;/p&gt;
+      &lt;p&gt;{hour &lt; 12 ? "Good morning" : "Good afternoon"}&lt;/p&gt;
+      &lt;p&gt;You have {items.length} items&lt;/p&gt;
+      {/* attributes take expressions too: */}
+      &lt;img src={`/avatars/${name}.png`} alt={name} /&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Curly braces embed any JavaScript <em>expression</em></strong> (something that produces a
+            value) — variables, math, function calls, ternaries, template literals. Note: <em>statements</em>
+            (<code>if</code>, <code>for</code>) don't go inside JSX; use expressions (ternary, <code>&amp;&amp;</code>,
+            <code>.map()</code>) instead — which we cover in lesson 04-05.
+          </div>
+        </div>
+
+        <h2>3. JSX differences from HTML</h2>
+        <table>
+          <thead><tr><th>HTML</th><th>JSX</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td><code>class</code></td><td><code>className</code></td><td><code>class</code> is a JS keyword</td></tr>
+            <tr><td><code>for</code></td><td><code>htmlFor</code></td><td><code>for</code> is a JS keyword</td></tr>
+            <tr><td><code>onclick</code></td><td><code>onClick</code></td><td>camelCase events</td></tr>
+            <tr><td><code>style="..."</code></td><td><code>style={{ color: "red" }}</code></td><td>style is an object</td></tr>
+            <tr><td>tags can be unclosed</td><td>all tags must close</td><td><code>&lt;br /&gt;</code>, <code>&lt;img /&gt;</code></td></tr>
+          </tbody>
+        </table>
+
+        <h2>4. Fragments &amp; comments</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">fragments.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A component must return ONE root. To return siblings without an extra
+// wrapper &lt;div&gt;, use a Fragment — the empty &lt;&gt;...&lt;/&gt; tag:
+function Pair() {
+  return (
+    &lt;&gt;
+      &lt;li&gt;First&lt;/li&gt;
+      &lt;li&gt;Second&lt;/li&gt;
+    &lt;/&gt;
+  );
+}
+// Renders two &lt;li&gt; with NO wrapper element — keeps your HTML clean.
+
+// Inline styles are objects (note double braces: {{ }}):
+function Badge() {
+  return &lt;span style={{ color: "white", background: "#2563eb", padding: 4 }}&gt;New&lt;/span&gt;;
+}
+// {/* This is how you write a comment inside JSX */}</pre>
+          <div class="annot">
+            <strong>Fragments (<code>&lt;&gt;...&lt;/&gt;</code>)</strong> let you return multiple elements without
+            polluting the DOM with wrapper <code>div</code>s — important for valid HTML (e.g. <code>&lt;li&gt;</code>
+            inside a <code>&lt;ul&gt;</code>). Inline <code>style</code> takes a JS object with camelCased properties
+            (the outer braces are JSX, the inner braces are the object).
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · You can't render objects or booleans</div>
+            <p style="margin:6px 0 0">
+              <code>{someObject}</code> throws ("Objects are not valid as a React child"). React renders strings,
+              numbers, and elements — not raw objects. And <code>false</code>/<code>null</code>/<code>undefined</code>
+              render nothing (handy for conditionals, lesson 04-05). To show an object, format it first
+              (<code>{JSON.stringify(obj)}</code> or access a property).
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build a profile card</div>
+            <p style="margin:6px 0 0">
+              Write a <code>Profile</code> component with <code>const user = { name, role, avatarUrl }</code> and
+              render a card showing the avatar (via <code>src={user.avatarUrl}</code>), the name in an
+              <code>&lt;h2&gt;</code>, and the role. Use a Fragment if you return siblings, and an inline
+              <code>style</code> for one element. Watch the editor type-check your JSX.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>JSX is JavaScript</b> — each tag compiles to a function call returning a React element object.</li>
+            <li>Embed any <b>expression</b> with <code>{}</code>; statements (if/for) don't belong inside JSX.</li>
+            <li>JSX differs from HTML: <code>className</code>, <code>htmlFor</code>, camelCase events, object <code>style</code>, all tags close.</li>
+            <li><b>Fragments</b> (<code>&lt;&gt;&lt;/&gt;</code>) return siblings without an extra wrapper element.</li>
+            <li>React renders strings/numbers/elements; <code>false</code>/<code>null</code> render nothing; raw objects error.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

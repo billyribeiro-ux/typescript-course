@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-07 · Side Effects with useEffect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 7</div>
+        <h1>Side Effects with <code>useEffect</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React · nuanced</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🔌 Syncing with the outside</span>
+        </div>
+        <p class="lead">
+          Components are pure functions of state — but real apps must talk to the outside world: timers,
+          subscriptions, the DOM, and (historically) data fetching. <code>useEffect</code> is the escape hatch for
+          these <strong>side effects</strong>. It's also the most <em>misused</em> hook in React, so we'll teach it
+          carefully: when to use it, the dependency array, cleanup, and — importantly — when <em>not</em> to use
+          it.
+        </p>
+
+        <h2>1. The shape of an effect</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">effect-basics.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useEffect } from "react";
+
+function Title({ count }: { count: number }) {
+  useEffect(() =&gt; {
+    // This runs AFTER render, as a side effect:
+    document.title = `Count: ${count}`;
+  }, [count]); // ← the DEPENDENCY ARRAY: re-run only when `count` changes
+
+  return &lt;p&gt;Check the tab title.&lt;/p&gt;;
+}
+
+// The dependency array controls WHEN the effect runs:
+//   [count]  → after renders where count changed
+//   []       → once, after the first render (on "mount")
+//   (omitted) → after EVERY render (rarely what you want)</pre>
+          <div class="annot">
+            <strong>The dependency array is everything.</strong> React re-runs the effect only when a listed
+            dependency changes. <code>[]</code> means "run once on mount". Omitting it means "run after every
+            render" (usually a bug). The ESLint <code>exhaustive-deps</code> rule (lesson 03-04) checks that you
+            list every value the effect uses — trust it.
+          </div>
+        </div>
+
+        <h2>2. Cleanup — the return function</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">cleanup.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function Clock() {
+  const [time, setTime] = useState(() =&gt; new Date());
+
+  useEffect(() =&gt; {
+    const id = setInterval(() =&gt; setTime(new Date()), 1000); // subscribe
+
+    // The returned function is CLEANUP — runs before re-run and on unmount:
+    return () =&gt; clearInterval(id);   // unsubscribe → no memory leak
+  }, []); // set up once
+
+  return &lt;p&gt;{time.toLocaleTimeString()}&lt;/p&gt;;
+}</pre>
+          <div class="annot">
+            <strong>If an effect sets something up, it must tear it down.</strong> The function you return from the
+            effect is the cleanup — React runs it before the next effect run and when the component unmounts.
+            Timers, event listeners, and subscriptions all need cleanup or they leak. Set up / tear down is the
+            mental model: the effect describes a <em>synchronization</em>, not a one-time action.
+          </div>
+        </div>
+
+        <h2>3. Data fetching (and the modern caveat)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">fetch-in-effect.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function UserCard({ id }: { id: number }) {
+  const [user, setUser] = useState&lt;User | null&gt;(null);
+
+  useEffect(() =&gt; {
+    let cancelled = false;                 // guard against race conditions
+    fetch(`/api/users/${id}`)
+      .then((r) =&gt; r.json())
+      .then((data) =&gt; { if (!cancelled) setUser(data); });
+    return () =&gt; { cancelled = true; };     // ignore stale responses
+  }, [id]);
+
+  if (!user) return &lt;p&gt;Loading...&lt;/p&gt;;
+  return &lt;p&gt;{user.name}&lt;/p&gt;;
+}
+interface User { name: string }</pre>
+          <div class="annot">
+            <strong>You <em>can</em> fetch in an effect, but in 2026 you usually shouldn't.</strong> The
+            <code>cancelled</code> flag prevents a slow earlier request from overwriting a newer one (a real race
+            bug). But manual fetching means handling loading, errors, caching, and races yourself — which is exactly
+            what <b>TanStack Query</b> (Part 6) does for you. Learn this to understand the problem; use the library
+            to solve it.
+          </div>
+        </div>
+
+        <h2>4. When NOT to use useEffect</h2>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · The most over-used hook</div>
+            <p style="margin:6px 0 0">
+              You do <b>not</b> need an effect to: transform data for rendering (just compute it during render),
+              respond to a user event (do it in the handler), or reset state when a prop changes (use a
+              <code>key</code> instead). Effects are for <em>synchronizing with external systems</em> — the DOM,
+              network, timers, subscriptions. If no external system is involved, you probably don't need an effect.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">no-effect-needed.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ Unnecessary effect + extra state:
+const [fullName, setFullName] = useState("");
+useEffect(() =&gt; { setFullName(`${first} ${last}`); }, [first, last]);
+
+// ✅ Just compute it during render — it's derived data:
+const fullName = `${first} ${last}`;</pre>
+          <div class="annot">
+            <strong>Derived values are computed during render, not stored in state + an effect.</strong> This is
+            the #1 React anti-pattern. If a value can be calculated from props/state, calculate it inline. Reserve
+            <code>useEffect</code> for genuine external synchronization.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · Effects are shrinking</div>
+            <p style="margin:6px 0 0">
+              Modern React deliberately reduces effect usage: data fetching → TanStack Query or Server Components
+              (Part 7); form state → React Hook Form; derived state → compute inline. You'll write far fewer
+              effects than old tutorials suggest — and the ones you do write will be cleaner for it.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Effects with cleanup</div>
+            <p style="margin:6px 0 0">
+              1) Build a component that adds a <code>window</code> <code>"resize"</code> listener in an effect and
+              displays the current width, cleaning up on unmount. 2) Then find a piece of "derived state + effect"
+              in your own code (or write one) and refactor it to a plain computed value during render.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>useEffect</code></b> runs side effects after render; the <b>dependency array</b> controls when (<code>[]</code> = once).</li>
+            <li>If an effect sets something up, <b>return a cleanup</b> function (timers, listeners, subscriptions).</li>
+            <li>Fetching in effects needs a race guard; prefer <b>TanStack Query</b> (Part 6) in real apps.</li>
+            <li><b>Don't</b> use effects for derived data, event responses, or prop-driven resets.</li>
+            <li>Effects are for <b>syncing with external systems</b> — and you'll write fewer than you think.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
