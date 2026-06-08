@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-07 · Functions: Parameters, Overloads &amp; this</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 7</div>
+        <h1>Functions: Parameters, Overloads &amp; <code>this</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🔧 Typing behaviour</span>
+        </div>
+        <p class="lead">
+          Functions are where types earn their keep — they document the contract between a piece of logic and
+          everyone who calls it. We'll type parameters and returns precisely, handle optional/default/rest
+          parameters, write function-type aliases, and meet overloads and <code>this</code> typing for the rare
+          cases that need them.
+        </p>
+
+        <h2>1. Typing parameters and returns</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">basics.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Param types are required; return type is usually inferred.
+function multiply(a: number, b: number): number {
+  return a * b;
+}
+
+// Arrow function with a function-type annotation:
+const greet: (name: string) =&gt; string = (name) =&gt; `Hi, ${name}`;
+
+// void = "returns nothing useful":
+function logEvent(name: string): void {
+  console.log(`event: ${name}`);
+}
+
+// A function type alias — reusable, the React event-handler shape:
+type ClickHandler = (event: { x: number; y: number }) =&gt; void;
+const onClick: ClickHandler = (e) =&gt; console.log(e.x, e.y);</pre>
+          <div class="annot">
+            <strong>Annotate inputs; let outputs infer</strong> — unless you want the return type as documented
+            contract (recommended for public/exported functions, so a refactor that changes the return type
+            surfaces as an error at the definition, not far away at the call site).
+          </div>
+        </div>
+
+        <h2>2. Optional, default &amp; rest parameters</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">params.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Optional (?) — may be omitted; type becomes T | undefined:
+function createUser(name: string, age?: number) {
+  return { name, age: age ?? 0 };
+}
+
+// Default value — used when the argument is missing:
+function paginate(page: number, pageSize: number = 20) {
+  return { page, pageSize };
+}
+
+// Rest — gather any number of trailing args into a typed array:
+function sum(...nums: number[]): number {
+  return nums.reduce((t, n) =&gt; t + n, 0);
+}
+sum(1, 2, 3, 4); // 10
+
+// Object parameters (the idiomatic way to pass many options):
+function request(opts: { url: string; method?: "GET" | "POST"; retries?: number }) {
+  const { url, method = "GET", retries = 0 } = opts;
+  return `${method} ${url} (${retries} retries)`;
+}</pre>
+          <div class="annot">
+            <strong>Pro pattern:</strong> once a function needs more than ~3 parameters, switch to a single
+            <em>options object</em>. It's self-documenting at the call site, makes parameters order-independent,
+            and lets you add new options without breaking callers — the standard in modern libraries.
+          </div>
+        </div>
+
+        <h2>3. Function overloads</h2>
+        <p>
+          <strong>Overloads</strong> let one function present multiple precise call signatures. Use them
+          sparingly — often a union or generic is cleaner — but they're invaluable when the return type depends
+          on the argument shape in ways a union can't express.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">overloads.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Overload signatures (what callers see):
+function parse(input: string): string[];
+function parse(input: number): number[];
+// Implementation signature (hidden from callers, must handle all):
+function parse(input: string | number): string[] | number[] {
+  if (typeof input === "string") return input.split("");
+  return String(input).split("").map(Number);
+}
+
+const a = parse("abc"); // typed as string[]
+const b = parse(123);   // typed as number[]</pre>
+          <div class="annot">
+            <strong>How overloads work:</strong> you list the public signatures, then one implementation that
+            satisfies them all. Callers only see the public ones, so <code>parse("abc")</code> is precisely
+            <code>string[]</code>, not the wider union. Modern TypeScript often prefers generics/conditional
+            types (Part 2) over overloads, but you'll meet overloads in many libraries.
+          </div>
+        </div>
+
+        <h2>4. Typing <code>this</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">this-param.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A fake "this" parameter (erased at runtime) types the calling context:
+interface Counter { count: number; }
+
+function increment(this: Counter, by: number) {
+  this.count += by;
+}
+
+const c: Counter = { count: 0 };
+increment.call(c, 5); // ✅ this is typed as Counter
+console.log(c.count); // 5
+
+// Arrow functions capture `this` lexically and CANNOT have a this param —
+// which is exactly why they're preferred for callbacks in classes/React.</pre>
+          <div class="annot">
+            <strong>You'll rarely type <code>this</code> directly in React work</strong> (arrow functions and
+            function components avoid it), but understanding it explains a class of legacy bugs and why arrow
+            functions became the default for callbacks.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · An options-object API</div>
+            <p style="margin:6px 0 0">
+              Write <code>function formatPrice(amount: number, opts?: { currency?: string; decimals?: number }): string</code>
+              that defaults to <code>"USD"</code> and <code>2</code> decimals and returns e.g.
+              <code>"USD 9.50"</code>. Then call it with and without options and confirm the types flow.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Type parameters always; type returns for exported functions as a documented contract.</li>
+            <li><code>?</code> = optional, <code>= value</code> = default, <code>...rest: T[]</code> = variadic.</li>
+            <li>Prefer an <b>options object</b> once you have several parameters.</li>
+            <li><b>Overloads</b> give multiple precise call signatures over one implementation — use sparingly.</li>
+            <li>Arrow functions capture <code>this</code> lexically — the reason they're the default for callbacks.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

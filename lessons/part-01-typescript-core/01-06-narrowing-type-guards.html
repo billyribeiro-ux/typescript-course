@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-06 · Literal Types, Narrowing &amp; Type Guards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 6</div>
+        <h1>Literal Types, Narrowing &amp; Type Guards</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core · high-value</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🎯 Control-flow analysis</span>
+        </div>
+        <p class="lead">
+          <strong>Narrowing</strong> is how TypeScript follows your code's logic to figure out a more specific
+          type at each point — and it's where the language feels almost magical. Master narrowing and type
+          guards, and unions stop being obstacles and become a precise tool. This is one of the highest-value
+          skills in the language.
+        </p>
+
+        <h2>1. Literal types</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">literals.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A literal type is a single, exact value used AS a type:
+type Yes = "yes";
+let answer: Yes = "yes";   // only "yes" is allowed
+
+// const infers the narrowest (literal) type; let infers the wide type:
+const exact = "hello";     // type is "hello" (literal)
+let loose = "hello";       // type is string (widened)
+
+// as const freezes an entire structure to its literal types:
+const config = { mode: "dark", retries: 3 } as const;
+// config.mode is "dark" (not string); config is deeply readonly</pre>
+          <div class="annot">
+            <strong>Why this matters:</strong> literal types are what make string-literal unions work. The
+            difference between <code>const</code> (narrow) and <code>let</code> (wide) inference is subtle but
+            crucial — and <code>as const</code> is your tool for locking values to their exact literal types.
+          </div>
+        </div>
+
+        <h2>2. Narrowing with control flow</h2>
+        <p>
+          TypeScript performs <strong>control-flow analysis</strong>: as it reads your <code>if</code>s and
+          <code>typeof</code>s, it narrows the type within each branch automatically.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">narrowing.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function describe(value: string | number | null) {
+  if (value === null) {
+    return "nothing";          // here value is null
+  }
+  if (typeof value === "string") {
+    return value.toUpperCase(); // here value is string
+  }
+  return value.toFixed(2);      // here value is number (the only option left)
+}
+
+// Truthiness narrowing removes null/undefined:
+function shout(text?: string) {
+  if (!text) return "(silence)"; // text is string | undefined → narrowed away
+  return text.toUpperCase();     // text is string
+}
+
+// The `in` operator narrows by property presence:
+type A = { kind: "a"; a: number };
+type B = { kind: "b"; b: number };
+function pick(x: A | B) {
+  return "a" in x ? x.a : x.b;   // narrows on which property exists
+}</pre>
+          <div class="annot">
+            <strong>The tools of narrowing:</strong> <code>typeof</code> (for primitives), <code>===</code> against
+            literals and <code>null</code>, truthiness (<code>if (x)</code>), the <code>in</code> operator (for
+            properties), and <code>instanceof</code> (for classes). TypeScript tracks all of them through your
+            code's branches.
+          </div>
+        </div>
+
+        <h2>3. Custom type guards (<code>is</code>)</h2>
+        <p>
+          When built-in narrowing isn't enough, you write your own <strong>type guard</strong>: a function whose
+          return type is a special <code>arg is Type</code> predicate. It teaches the compiler how to narrow.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">type-guards.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Cat = { type: "cat"; meow: () =&gt; void };
+type Dog = { type: "dog"; bark: () =&gt; void };
+type Pet = Cat | Dog;
+
+// A user-defined type guard — note the return type "pet is Cat":
+function isCat(pet: Pet): pet is Cat {
+  return pet.type === "cat";
+}
+
+function speak(pet: Pet) {
+  if (isCat(pet)) {
+    pet.meow();   // ✅ narrowed to Cat by our guard
+  } else {
+    pet.bark();   // ✅ narrowed to Dog
+  }
+}
+
+// Guarding unknown data (e.g. from JSON) is a common, vital use:
+function isStringArray(x: unknown): x is string[] {
+  return Array.isArray(x) &amp;&amp; x.every((i) =&gt; typeof i === "string");
+}</pre>
+          <div class="annot">
+            <strong>This is exactly the <code>isPriority</code> guard in Project P01.</strong> Type guards are how
+            you safely cross the boundary from untyped data (JSON, form input, <code>unknown</code>) into your
+            typed world. They turn runtime checks into compile-time knowledge.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · Inferred type predicates (TS 5.5+)</div>
+            <p style="margin:6px 0 0">
+              Since TypeScript 5.5, the compiler can often <em>infer</em> a type predicate for you. A function
+              like <code>const isDefined = (x) =&gt; x !== undefined</code> used in <code>.filter()</code> now
+              narrows automatically — no explicit <code>x is T</code> needed in many cases. Less boilerplate,
+              same safety.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. The <code>never</code> trick for exhaustiveness</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">exhaustive.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Status = "idle" | "loading" | "done";
+
+function label(status: Status): string {
+  switch (status) {
+    case "idle": return "Ready";
+    case "loading": return "Working...";
+    case "done": return "Complete";
+    default:
+      // If a new Status is added later and not handled,
+      // `status` won't be `never` here and this line errors —
+      // a compile-time reminder to handle the new case!
+      const _exhaustive: never = status;
+      return _exhaustive;
+  }
+}</pre>
+          <div class="annot">
+            <strong>The exhaustiveness check</strong> is a professional staple: assign the value to a
+            <code>never</code> in the <code>default</code> branch. If every case is handled, the value is
+            <code>never</code> and it compiles; if you forget one, the compiler stops you. This makes your unions
+            future-proof.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Guard untrusted JSON</div>
+            <p style="margin:6px 0 0">
+              Write a type guard <code>isUser(x: unknown): x is { id: number; name: string }</code> that checks
+              <code>x</code> is a non-null object with a numeric <code>id</code> and string <code>name</code>.
+              Use it to safely process the result of <code>JSON.parse(...)</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Literal types</b> are exact values used as types; <code>const</code> infers narrow, <code>let</code> wide, <code>as const</code> freezes.</li>
+            <li><b>Narrowing</b> uses <code>typeof</code>, <code>===</code>, truthiness, <code>in</code>, and <code>instanceof</code> to refine types per branch.</li>
+            <li><b>Type guards</b> (<code>x is T</code>) teach the compiler to narrow — your bridge from <code>unknown</code> to typed.</li>
+            <li>TS 5.5+ can <b>infer predicates</b> automatically in many cases.</li>
+            <li>The <code>never</code> <b>exhaustiveness check</b> guarantees you handle every union case, forever.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

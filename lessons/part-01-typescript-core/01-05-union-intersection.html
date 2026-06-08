@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-05 · Union &amp; Intersection Types</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 5</div>
+        <h1>Union &amp; Intersection Types</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">∪ ∩ Combining types</span>
+        </div>
+        <p class="lead">
+          Unions and intersections are how you build complex types from simple ones. A <strong>union</strong>
+          (<code>A | B</code>) means "either A or B". An <strong>intersection</strong> (<code>A &amp; B</code>)
+          means "both A and B at once". They are the algebra of types — and unions in particular are the single
+          most important modeling tool in all of TypeScript.
+        </p>
+
+        <h2>1. Union types — "one of these"</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">unions.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type ID = string | number;          // either a string or a number
+let userId: ID = 42;
+userId = "abc-123";                 // both fine
+
+// A union of literals is a precise, closed set of values:
+type Size = "sm" | "md" | "lg";
+function setSize(size: Size) { /* ... */ }
+setSize("md");                      // ✅
+// setSize("medium");               // ❌ not assignable
+
+// On a union, you can only access members common to ALL branches:
+function format(value: string | number) {
+  // value.toUpperCase(); // ❌ number has no toUpperCase
+  return value.toString(); // ✅ both string and number have toString
+}</pre>
+          <div class="annot">
+            <strong>The safety rule:</strong> on a union value, TypeScript only lets you use what's valid for
+            <em>every</em> possibility. To access branch-specific members, you must first <em>narrow</em> the
+            union (next lesson). This is what makes unions safe rather than scary.
+          </div>
+        </div>
+
+        <h2>2. Intersection types — "all of these"</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">intersections.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type WithId = { id: string };
+type WithTimestamps = { createdAt: string; updatedAt: string };
+
+// An entity has an id AND timestamps:
+type Entity = WithId &amp; WithTimestamps;
+const post: Entity = {
+  id: "p1",
+  createdAt: "2026-01-01",
+  updatedAt: "2026-01-02",
+};
+
+// Common pattern: compose reusable "mixin" types.
+type Serializable = { toJSON(): string };
+type Loggable = { log(): void };
+type Service = Serializable &amp; Loggable; // must implement BOTH</pre>
+          <div class="annot">
+            <strong>Intersections build up</strong> bigger object types from small, reusable pieces — a clean
+            way to share common fields (ids, timestamps, audit info) across many entities without repetition.
+          </div>
+        </div>
+
+        <div class="callout concept">
+          <span class="ic">🧠</span>
+          <div class="body">
+            <div class="tt">Concept · The counter-intuitive part</div>
+            <p style="margin:6px 0 0">
+              For <em>objects</em>, intersection <code>&amp;</code> produces a type with <em>more</em> fields (more
+              specific), while union <code>|</code> produces a type you can do <em>less</em> with (you must
+              handle every case). "And" narrows what's valid; "or" widens it. Sit with that — it clicks with
+              practice.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Discriminated unions (the crown jewel)</h2>
+        <p>
+          Add a shared literal "tag" field to each member of a union and you get a <strong>discriminated
+          union</strong> — the most powerful everyday pattern in TypeScript. It lets the compiler know exactly
+          which shape you have once you check the tag. We met it in 01-01; here's the mechanism.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">discriminated.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "rect"; width: number; height: number };
+
+function area(shape: Shape): number {
+  // Checking the "kind" tag narrows the type in each branch:
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;   // shape is the circle variant here
+    case "rect":
+      return shape.width * shape.height;    // shape is the rect variant here
+  }
+}
+
+console.log(area({ kind: "circle", radius: 2 }));      // ~12.57
+console.log(area({ kind: "rect", width: 3, height: 4 })); // 12</pre>
+          <div class="annot">
+            <strong>This is the pattern behind everything robust</strong> — API responses, UI state machines,
+            Redux actions, parser results. The shared <code>kind</code> (or <code>type</code>/<code>status</code>)
+            field is the "discriminant"; checking it unlocks the branch-specific fields safely. We push this to
+            exhaustive, bullet-proof extremes in Part 2.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · An API result type</div>
+            <p style="margin:6px 0 0">
+              Model <code>type Result&lt;T&gt; = { ok: true; value: T } | { ok: false; error: string }</code>.
+              Write <code>function unwrap&lt;T&gt;(r: Result&lt;T&gt;): T</code> that returns the value when
+              <code>ok</code> is true and throws the error otherwise. Notice how checking <code>r.ok</code> lets
+              you safely access <code>r.value</code> or <code>r.error</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Union</b> <code>A | B</code> = "either"; you may only use members common to all branches until you narrow.</li>
+            <li><b>Intersection</b> <code>A &amp; B</code> = "both"; great for composing object shapes from reusable parts.</li>
+            <li>For objects: <code>&amp;</code> adds fields (more specific), <code>|</code> demands handling every case.</li>
+            <li><b>Discriminated unions</b> (a shared literal tag) are the #1 pattern for safe, expressive modeling.</li>
+            <li>Checking the discriminant narrows the type so branch-specific fields become accessible.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

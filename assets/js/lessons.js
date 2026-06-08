@@ -45,18 +45,18 @@ window.COURSE = {
       icon: "🔷",
       subtitle: "The language, the compiler, and types that catch bugs.",
       lessons: [
-        { id: "01-01", title: "Why TypeScript? The Type-Safety Mindset", file: "lessons/part-01-typescript-core/01-01-why-typescript.html", status: "soon" },
-        { id: "01-02", title: "Installing TS, tsc & tsconfig.json", file: "lessons/part-01-typescript-core/01-02-tsc-and-tsconfig.html", status: "soon" },
-        { id: "01-03", title: "Primitives, Arrays, Tuples & Enums", file: "lessons/part-01-typescript-core/01-03-primitives-arrays-tuples.html", status: "soon" },
-        { id: "01-04", title: "Object Types: interface vs type", file: "lessons/part-01-typescript-core/01-04-interface-vs-type.html", status: "soon" },
-        { id: "01-05", title: "Union & Intersection Types", file: "lessons/part-01-typescript-core/01-05-union-intersection.html", status: "soon" },
-        { id: "01-06", title: "Literal Types, Narrowing & Type Guards", file: "lessons/part-01-typescript-core/01-06-narrowing-type-guards.html", status: "soon" },
-        { id: "01-07", title: "Functions: Parameters, Overloads & this", file: "lessons/part-01-typescript-core/01-07-functions.html", status: "soon" },
-        { id: "01-08", title: "Generics From First Principles", file: "lessons/part-01-typescript-core/01-08-generics.html", status: "soon" },
-        { id: "01-09", title: "Classes & OOP in TypeScript", file: "lessons/part-01-typescript-core/01-09-classes-oop.html", status: "soon" },
-        { id: "01-10", title: "Modules, Namespaces & Declaration Files", file: "lessons/part-01-typescript-core/01-10-modules-declarations.html", status: "soon" },
-        { id: "01-11", title: "unknown, any, never & Type Assertions", file: "lessons/part-01-typescript-core/01-11-unknown-any-never.html", status: "soon" },
-        { id: "01-12", title: "Project P01: The Type-Safe CLI Task Manager", file: "lessons/part-01-typescript-core/01-12-project-cli-task-manager.html", status: "soon" }
+        { id: "01-01", title: "Why TypeScript? The Type-Safety Mindset", file: "lessons/part-01-typescript-core/01-01-why-typescript.html", status: "available" },
+        { id: "01-02", title: "Installing TS, tsc & tsconfig.json", file: "lessons/part-01-typescript-core/01-02-tsc-and-tsconfig.html", status: "available" },
+        { id: "01-03", title: "Primitives, Arrays, Tuples & Enums", file: "lessons/part-01-typescript-core/01-03-primitives-arrays-tuples.html", status: "available" },
+        { id: "01-04", title: "Object Types: interface vs type", file: "lessons/part-01-typescript-core/01-04-interface-vs-type.html", status: "available" },
+        { id: "01-05", title: "Union & Intersection Types", file: "lessons/part-01-typescript-core/01-05-union-intersection.html", status: "available" },
+        { id: "01-06", title: "Literal Types, Narrowing & Type Guards", file: "lessons/part-01-typescript-core/01-06-narrowing-type-guards.html", status: "available" },
+        { id: "01-07", title: "Functions: Parameters, Overloads & this", file: "lessons/part-01-typescript-core/01-07-functions.html", status: "available" },
+        { id: "01-08", title: "Generics From First Principles", file: "lessons/part-01-typescript-core/01-08-generics.html", status: "available" },
+        { id: "01-09", title: "Classes & OOP in TypeScript", file: "lessons/part-01-typescript-core/01-09-classes-oop.html", status: "available" },
+        { id: "01-10", title: "Modules, Namespaces & Declaration Files", file: "lessons/part-01-typescript-core/01-10-modules-declarations.html", status: "available" },
+        { id: "01-11", title: "unknown, any, never & Type Assertions", file: "lessons/part-01-typescript-core/01-11-unknown-any-never.html", status: "available" },
+        { id: "01-12", title: "Project P01: The Type-Safe CLI Task Manager", file: "lessons/part-01-typescript-core/01-12-project-cli-task-manager.html", status: "available" }
       ]
     },
     {

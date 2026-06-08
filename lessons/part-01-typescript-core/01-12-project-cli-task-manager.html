@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-12 · Project P01 — The Type-Safe CLI Task Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-12";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 12 · 🚀 PROJECT</div>
+        <h1>Project P01 — The Type-Safe CLI Task Manager</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏗️ Build</span>
+          <span class="chip">⏱️ ~60 min</span>
+          <span class="chip">✅ 35 tests</span>
+        </div>
+        <p class="lead">
+          Everything from Part 1 comes together here. We transform the plain-JS task store from Lesson 00-12
+          into a real, robust, <strong>strictly-typed and fully-tested</strong> command-line application. The
+          complete project lives in <code>projects/p01-ts-cli-task-manager/</code> — build it alongside this
+          walkthrough, file by file.
+        </p>
+
+        <div class="callout concept">
+          <span class="ic">🏛️</span>
+          <div class="body">
+            <div class="tt">Architecture · pure core, thin edges</div>
+            <p style="margin:6px 0 0">
+              The guiding principle: <b>keep logic pure, push side-effects to the edges.</b>
+              <code>types.ts</code> models the domain; <code>tasks.ts</code> and <code>cli.ts</code> are pure
+              functions (no I/O) and hold all the logic; <code>store.ts</code> does file I/O;
+              <code>index.ts</code> is the only place that touches disk and the console. Pure logic is trivially
+              testable — which is why <b>all 35 tests run without ever touching the filesystem or console.</b>
+            </p>
+          </div>
+        </div>
+
+        <h2>1. The domain model — <code>types.ts</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/types.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export type Priority = "low" | "medium" | "high";
+
+export interface Task {
+  readonly id: number;
+  readonly title: string;
+  readonly done: boolean;
+  readonly priority: Priority;
+  readonly createdAt: string;
+}
+
+export interface NewTaskInput {
+  readonly title: string;
+  readonly priority?: Priority;
+}</pre>
+          <div class="annot">
+            <strong>Applying the lessons:</strong> a <em>string-literal union</em> for <code>Priority</code>
+            (01-03), <code>interface</code> for entities (01-04), and <code>readonly</code> fields (01-04) to
+            signal our immutable update style. The model is the contract everything else is checked against.
+          </div>
+        </div>
+
+        <h2>2. The pure core — <code>tasks.ts</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/tasks.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import type { NewTaskInput, Priority, Task } from "./types.js";
+
+const PRIORITIES: readonly Priority[] = ["low", "medium", "high"];
+
+// A type guard (01-06) to validate untrusted strings:
+export function isPriority(value: unknown): value is Priority {
+  return typeof value === "string" &amp;&amp; (PRIORITIES as readonly string[]).includes(value);
+}
+
+// Immutable add (Part 0 patterns, now typed):
+export function addTask(tasks: readonly Task[], input: NewTaskInput): Task[] {
+  const title = input.title.trim();
+  if (title.length === 0) throw new Error("Task title must not be empty.");
+  const task: Task = {
+    id: tasks.reduce((max, t) =&gt; Math.max(max, t.id), 0) + 1,
+    title,
+    done: false,
+    priority: input.priority ?? "medium",
+    createdAt: new Date().toISOString(),
+  };
+  return [...tasks, task];
+}
+
+export function toggleTask(tasks: readonly Task[], id: number): Task[] {
+  return tasks.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t));
+}</pre>
+          <div class="annot">
+            <strong>Note the signatures:</strong> every function takes <code>readonly Task[]</code> (01-03) and
+            returns a new <code>Task[]</code> — the compiler now <em>guarantees</em> we never mutate the input.
+            The full file adds <code>removeTask</code>, <code>renameTask</code>, <code>setPriority</code>,
+            <code>filterByStatus</code>, <code>summarize</code>, and <code>sortByPriority</code>.
+          </div>
+        </div>
+
+        <h2>3. Crossing the boundary — <code>store.ts</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/store.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { readFile, writeFile, mkdir } from "node:fs/promises";
+import type { Task } from "./types.js";
+import { isPriority } from "./tasks.js";
+
+// JSON.parse returns `unknown` (01-11) — validate before trusting it:
+export function parseTasks(data: unknown): Task[] {
+  if (!Array.isArray(data)) return [];
+  const result: Task[] = [];
+  for (const item of data) {
+    if (item &amp;&amp; typeof item === "object"
+        &amp;&amp; typeof (item as any).id === "number"
+        &amp;&amp; isPriority((item as any).priority) /* ...full checks... */) {
+      result.push(item as Task);
+    }
+  }
+  return result;
+}
+
+export async function loadTasks(filePath: string): Promise&lt;Task[]&gt; {
+  try {
+    return parseTasks(JSON.parse(await readFile(filePath, "utf8")));
+  } catch (err) {
+    if (err instanceof Error &amp;&amp; "code" in err &amp;&amp; err.code === "ENOENT") return [];
+    throw err;
+  }
+}</pre>
+          <div class="annot">
+            <strong>This is 01-11 in action:</strong> data from disk is <code>unknown</code>, so we validate it
+            with our type guard before letting it into the typed world. Malformed records are silently dropped
+            rather than crashing the app. Robustness by design.
+          </div>
+        </div>
+
+        <h2>4. The command layer — <code>cli.ts</code></h2>
+        <p>
+          <code>runCommand</code> is deliberately pure: given the current tasks and the parsed arguments, it
+          returns the next tasks plus the text to print. No I/O means the entire CLI is testable in memory.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/cli.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export interface CommandResult {
+  readonly tasks: Task[];
+  readonly output: string;
+  readonly changed: boolean;
+}
+
+export function runCommand(tasks: readonly Task[], argv: readonly string[]): CommandResult {
+  const [command, ...args] = argv;
+  switch (command) {
+    case "add": {
+      const { priority, rest } = takePriorityFlag(args);
+      const title = rest.join(" ").trim();
+      if (!title) throw new Error('Provide a title, e.g. tasks add "Buy milk".');
+      const next = addTask(tasks, priority === undefined ? { title } : { title, priority });
+      return { tasks: next, output: `Added ${formatTask(next.at(-1)!)}`, changed: true };
+    }
+    case "done": { /* toggle by id, with validation */ }
+    // ...list, rename, priority, rm, summary, help...
+    default:
+      throw new Error(`Unknown command "${command}". Run "tasks help".`);
+  }
+}</pre>
+          <div class="annot">
+            <strong>Spot the patterns:</strong> array destructuring with rest (Part 0), the
+            <code>priority === undefined ? ... : ...</code> dance to satisfy
+            <code>exactOptionalPropertyTypes</code> (01-02), and a <code>switch</code> that throws on unknown
+            commands. Pure in, pure out.
+          </div>
+        </div>
+
+        <h2>5. The thin edge — <code>index.ts</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/index.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { loadTasks, saveTasks } from "./store.js";
+import { runCommand } from "./cli.js";
+
+const DATA_FILE = process.env.TASKS_FILE ?? join(homedir(), ".tasks", "tasks.json");
+
+async function main(): Promise&lt;void&gt; {
+  const tasks = await loadTasks(DATA_FILE);
+  try {
+    const result = runCommand(tasks, process.argv.slice(2));
+    console.log(result.output);
+    if (result.changed) await saveTasks(DATA_FILE, result.tasks);
+  } catch (err) {
+    console.error("✖ " + (err instanceof Error ? err.message : String(err)));
+    process.exitCode = 1;
+  }
+}
+void main();</pre>
+          <div class="annot">
+            <strong>All the I/O lives here, and nowhere else.</strong> Load → run pure command → print → save if
+            changed. Errors are caught and turned into a clean message + a non-zero exit code (so scripts and CI
+            can detect failure). This separation is what makes the rest of the app so easy to test.
+          </div>
+        </div>
+
+        <h2>6. Tests &amp; running it (hard evidence)</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">cd projects/p01-ts-cli-task-manager</span>
+<span class="cmd">pnpm install</span>
+<span class="cmd">pnpm typecheck</span>   <span class="out"># strict tsc --noEmit → clean</span>
+<span class="cmd">pnpm test</span>        <span class="out"># Vitest</span>
+<span class="out">✓ src/store.test.ts (4 tests)</span>
+<span class="out">✓ src/tasks.test.ts (16 tests)</span>
+<span class="out">✓ src/cli.test.ts (15 tests)</span>
+<span class="out">Test Files  3 passed (3)   Tests  35 passed (35)</span>
+<span class="cmd">pnpm build &amp;&amp; node dist/index.js add "Finish Part 1" --priority high</span>
+<span class="out">Added [ ] #1 🔴 Finish Part 1</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">🧪</span>
+          <div class="body">
+            <div class="tt">How the tests are structured</div>
+            <p style="margin:6px 0 0">
+              <code>tasks.test.ts</code> verifies each pure operation (immutability, edge cases, throwing on
+              empty titles). <code>cli.test.ts</code> drives <code>runCommand</code> with argument arrays and
+              asserts on the returned tasks + output. <code>store.test.ts</code> round-trips through a temp file.
+              Open them in the project — they're a model for how to test pure logic.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Extend the app, test-first</div>
+            <p style="margin:6px 0 0">
+              Add a <code>clear</code> command that removes all completed tasks. First write a failing test in
+              <code>cli.test.ts</code> describing the behaviour, then implement it in <code>runCommand</code>
+              using <code>filterByStatus</code>. Watch the test go green. You've just done test-driven
+              development in strict TypeScript.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>You shipped a real, strict, <b>35-test</b> TypeScript CLI — applying every Part 1 concept.</li>
+            <li><b>Pure core, thin edges</b>: logic in pure functions, I/O isolated in <code>store.ts</code>/<code>index.ts</code>.</li>
+            <li>Untrusted data enters as <code>unknown</code> and is validated by a type guard before use.</li>
+            <li>Immutable, <code>readonly</code> signatures let the compiler guarantee no accidental mutation.</li>
+            <li>🎉 <b>Part 1 complete.</b> Next: Part 2 — advanced, type-level TypeScript that goes far beyond the basics.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

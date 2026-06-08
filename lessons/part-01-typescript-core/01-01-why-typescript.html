@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-01 · Why TypeScript? The Type-Safety Mindset</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 1</div>
+        <h1>Why TypeScript? The Type-Safety Mindset</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">🔷 The big shift</span>
+        </div>
+        <p class="lead">
+          You've written real JavaScript. Now we add the superpower that separates hobby code from
+          production systems: <strong>static types</strong>. TypeScript lets you describe the shape of your
+          data and have a compiler verify — before your program ever runs — that every piece fits. This
+          lesson is about the <em>why</em> and the mindset; the next twenty are the <em>how</em>.
+        </p>
+
+        <h2>1. The bug that types eliminate</h2>
+        <p>
+          Recall from Part 0 that JavaScript is dynamically typed: a variable can secretly become any type.
+          That flexibility is the source of an entire category of runtime crashes. Watch:
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">the-problem.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// In plain JavaScript this looks fine and crashes at runtime:
+function getDiscount(user) {
+  return user.subscription.plan === "pro" ? 0.2 : 0;
+}
+
+// Somewhere far away, someone calls it with the wrong shape:
+getDiscount({ name: "Ada" });
+// 💥 TypeError: Cannot read properties of undefined (reading 'plan')
+//    ...discovered by a USER, in production, at 2am.
+
+// TypeScript catches this the instant you type it:
+type User = { subscription: { plan: "free" | "pro" } };
+function getDiscountTyped(user: User) {
+  return user.subscription.plan === "pro" ? 0.2 : 0;
+}
+// getDiscountTyped({ name: "Ada" });
+//   ^ Error: Argument is missing 'subscription'. Fixed before you even save.</pre>
+          <div class="annot">
+            <strong>The shift:</strong> JavaScript finds bugs when code <em>runs</em> (often in front of a
+            user). TypeScript finds them while you <em>write</em>. Moving bug discovery left — from runtime to
+            your keyboard — is the single biggest reliability upgrade in modern web engineering.
+          </div>
+        </div>
+
+        <h2>2. What TypeScript actually is</h2>
+        <p>
+          TypeScript is a <strong>superset</strong> of JavaScript: every valid JS file is valid TS. It adds
+          an optional <em>type layer</em> — annotations and a checker — that is completely <strong>erased</strong>
+          before the code runs. The browser and Node never see types; they run plain JavaScript that the
+          TypeScript compiler produced.
+        </p>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Types are a compile-time contract</div>
+            <p style="margin:6px 0 0">
+              Types exist <em>only</em> during development and compilation. They are erased in the final
+              JavaScript — zero runtime cost, zero runtime behaviour. They are a conversation between you and
+              the compiler about what your code <em>means</em>, enforced before shipping.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Types as living documentation &amp; tooling</h2>
+        <p>
+          Beyond catching bugs, types power the editor experience you'll come to depend on: precise
+          autocomplete, instant "go to definition", safe refactors across thousands of files, and inline
+          docs. A well-typed codebase <em>explains itself</em>.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">inference.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// You don't have to annotate everything — TypeScript INFERS types.
+let title = "Hello";          // inferred as string
+// title = 42;                // Error: number is not assignable to string
+
+const nums = [1, 2, 3];       // inferred as number[]
+const doubled = nums.map((n) => n * 2); // n is known to be number; doubled is number[]
+
+// Hover anything in your editor to see its inferred type.
+// Inference means you get safety with very little typing overhead.
+const user = { name: "Ada", age: 36 }; // { name: string; age: number }
+user.age.toFixed(2);          // ✅ autocompletes number methods
+// user.name.toFixed(2);      // ❌ Error: strings have no toFixed</pre>
+          <div class="annot">
+            <strong>Inference is the key to ergonomics:</strong> TypeScript figures out most types on its own.
+            You annotate the <em>boundaries</em> (function inputs, data shapes) and let inference flow through
+            the rest. Great TypeScript is mostly inferred, not hand-written.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · The state of TypeScript</div>
+            <p style="margin:6px 0 0">
+              TypeScript is the default for serious web work — React, Vue, Node frameworks, and the entire
+              tooling ecosystem assume it. <b>TypeScript 5.9</b> is the stable line, and <b>TypeScript 7</b>
+              (the native Go compiler, "tsgo") brings ~10× faster checking. You're learning the lingua franca
+              of professional JavaScript.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. The mindset: model your domain</h2>
+        <p>
+          Here's the principal-engineer reframe that this entire course will reinforce: <strong>types are how
+          you model the problem you're solving.</strong> Before writing logic, you describe the data — what a
+          <code>User</code> is, what states an order can be in, what a function promises to return. Done well,
+          whole classes of bugs become <em>impossible to express</em>. We call this "making illegal states
+          unrepresentable", and it's the heart of advanced TypeScript (Part 2).
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">model-first.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Weak model: every field optional — bugs everywhere.
+type LooseRequest = { loading?: boolean; data?: string; error?: string };
+// Nothing stops loading:true AND data:"x" AND error:"y" all at once — nonsense.
+
+// Strong model: a "discriminated union" — only valid states can exist.
+type Request =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: string }
+  | { status: "error"; message: string };
+
+function render(req: Request): string {
+  switch (req.status) {
+    case "idle": return "Ready";
+    case "loading": return "Loading...";
+    case "success": return req.data;     // data exists ONLY here
+    case "error": return req.message;    // message exists ONLY here
+  }
+}
+// Impossible states are now unrepresentable. We master this in Part 2.</pre>
+          <div class="annot">
+            <strong>This is the whole game.</strong> The right type makes wrong code fail to compile. You'll
+            build up to designing types this expressive — and far beyond — over the coming parts. For now, just
+            absorb the philosophy: <em>model first, then implement</em>.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Spot the model smell</div>
+            <p style="margin:6px 0 0">
+              Take the <code>LooseRequest</code> type above. Write down three nonsensical combinations of its
+              fields that the type permits but that should never happen. Then appreciate that the
+              <code>Request</code> union makes every one of them a compile error. You're already thinking in
+              types.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>TypeScript moves bug discovery from <b>runtime</b> (your users) to <b>compile time</b> (your editor).</li>
+            <li>It's a <b>superset</b> of JS; types are <b>erased</b> before running — zero runtime cost.</li>
+            <li><b>Inference</b> gives you safety cheaply: annotate boundaries, let types flow.</li>
+            <li>Types are <b>documentation + tooling</b>: autocomplete, safe refactors, go-to-definition.</li>
+            <li>The mindset: <b>model your domain first</b> so illegal states become unrepresentable.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

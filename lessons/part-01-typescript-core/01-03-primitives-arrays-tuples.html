@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-03 · Primitives, Arrays, Tuples &amp; Enums</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 3</div>
+        <h1>Primitives, Arrays, Tuples &amp; Enums</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🔤 The type vocabulary</span>
+        </div>
+        <p class="lead">
+          Every type you'll ever build is composed from a small set of primitives and collection types. This
+          lesson is your vocabulary lesson: how to annotate primitives, type arrays and read-only arrays,
+          model fixed-length <strong>tuples</strong>, and when (and when not) to use <strong>enums</strong> —
+          including the modern alternative professionals now prefer.
+        </p>
+
+        <h2>1. Annotating primitives</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">primitives.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Explicit annotations (the type after the colon):
+const name: string = "Ada";
+const age: number = 36;
+const active: boolean = true;
+const nothing: null = null;
+const missing: undefined = undefined;
+const big: bigint = 100n;
+
+// But prefer INFERENCE — let TS derive the type from the value:
+const city = "Lisbon";   // inferred: string (no annotation needed)
+let count = 0;           // inferred: number
+
+// Annotate when there's no value to infer from (e.g. function params):
+function greet(person: string): string {
+  return `Hi, ${person}`;
+}</pre>
+          <div class="annot">
+            <strong>Rule of thumb:</strong> don't annotate what TypeScript can infer. Annotate function
+            parameters, return types you want to lock down, and variables declared without an initial value.
+            Over-annotating is noise; the compiler is smarter than you think.
+          </div>
+        </div>
+
+        <h2>2. Arrays and readonly arrays</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">arrays.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const scores: number[] = [90, 85, 100];      // array of numbers
+const names: Array&lt;string&gt; = ["Ada", "Lin"];  // identical, generic syntax
+
+// readonly arrays can't be mutated — great for function inputs:
+function total(values: readonly number[]): number {
+  // values.push(1);  // ❌ Error: push doesn't exist on readonly arrays
+  return values.reduce((sum, n) => sum + n, 0);
+}
+
+// Arrays of objects — the everyday shape:
+type Todo = { id: number; title: string; done: boolean };
+const todos: Todo[] = [
+  { id: 1, title: "Learn types", done: false },
+];</pre>
+          <div class="annot">
+            <strong><code>readonly T[]</code> is underused and powerful.</strong> Marking a function's array
+            parameter <code>readonly</code> documents "I won't mutate your data" and lets the compiler enforce
+            it — exactly the immutable discipline from Part 0, now guaranteed by types.
+          </div>
+        </div>
+
+        <h2>3. Tuples: fixed-length, positional types</h2>
+        <p>
+          A <strong>tuple</strong> is an array with a fixed length where each position has its own type. They
+          shine for pairs, coordinates, and — famously — React's <code>useState</code> return value.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tuples.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A tuple: exactly [string, number]
+const person: [name: string, age: number] = ["Ada", 36];
+const personName = person[0]; // string
+const personAge = person[1];  // number
+
+// Returning a tuple — the useState pattern you'll see constantly in React:
+function useToggle(initial: boolean): [boolean, () =&gt; void] {
+  let value = initial;
+  const toggle = () =&gt; { value = !value; };
+  return [value, toggle];
+}
+const [isOpen, toggleOpen] = useToggle(false);
+
+// Named tuple labels (name:, age:) are just for readability in tooltips.</pre>
+          <div class="annot">
+            <strong>Why React uses tuples:</strong> <code>const [count, setCount] = useState(0)</code> returns a
+            <em>tuple</em> — position 0 is the value, position 1 is the setter. Tuples let you destructure with
+            any names you like, which is why hooks feel so ergonomic.
+          </div>
+        </div>
+
+        <h2>4. Enums — and the modern alternative</h2>
+        <p>
+          An <strong>enum</strong> names a set of related constants. TypeScript has a built-in <code>enum</code>,
+          but it has real downsides (it generates runtime code and has surprising behaviours). The modern,
+          widely-preferred approach is a <strong>union of string literals</strong>, often with
+          <code>as const</code>.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">enums.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Classic enum (generates runtime code):
+enum Direction { Up, Down, Left, Right }
+const move: Direction = Direction.Up;
+
+// ✅ Preferred in 2026: a string-literal union (zero runtime cost):
+type DirectionT = "up" | "down" | "left" | "right";
+const move2: DirectionT = "up";
+// const bad: DirectionT = "diagonal"; // ❌ not assignable
+
+// The "const object + union" pattern — the best of both worlds:
+const Status = {
+  Idle: "idle",
+  Loading: "loading",
+  Done: "done",
+} as const;
+type Status = (typeof Status)[keyof typeof Status]; // "idle" | "loading" | "done"
+
+const s: Status = Status.Loading; // "loading"</pre>
+          <div class="annot">
+            <strong>Principal-level guidance:</strong> reach for <em>string-literal unions</em> by default — they
+            are zero-cost, tree-shakeable, serialise cleanly to JSON, and play perfectly with narrowing. The
+            <code>as const</code> object pattern gives you named constants <em>and</em> a precise union type. We
+            decode <code>as const</code>, <code>typeof</code>, and <code>keyof</code> fully in Part 2.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Avoid numeric enums for data</div>
+            <p style="margin:6px 0 0">
+              Numeric enums (<code>enum E { A, B }</code>) accept <em>any</em> number at assignment in some
+              positions and store opaque integers in your data — a debugging nightmare when you see
+              <code>status: 2</code> in a database. String-literal unions store readable values. Prefer them.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Model a traffic light</div>
+            <p style="margin:6px 0 0">
+              Create a string-literal union <code>Light = "red" | "amber" | "green"</code> and a function
+              <code>next(light: Light): Light</code> that returns the next light in the cycle. Make the function
+              return type <code>Light</code> so the compiler guarantees you never return an invalid colour.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Annotate primitives only when there's nothing to infer from; trust inference otherwise.</li>
+            <li><code>T[]</code> or <code>Array&lt;T&gt;</code> for arrays; use <code>readonly T[]</code> for inputs you won't mutate.</li>
+            <li><b>Tuples</b> are fixed-length positional types — the basis of <code>useState</code>'s <code>[value, setter]</code>.</li>
+            <li>Prefer <b>string-literal unions</b> over <code>enum</code> — zero-cost and JSON-friendly.</li>
+            <li>The <code>as const</code> object + union pattern gives named constants <em>and</em> a precise type.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

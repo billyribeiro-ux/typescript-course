@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-04 · Object Types: interface vs type</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 4</div>
+        <h1>Object Types: <code>interface</code> vs <code>type</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🏗️ Modeling data</span>
+        </div>
+        <p class="lead">
+          Objects are how you model the entities in your app — users, products, requests. TypeScript gives you
+          two tools to name object shapes: <code>interface</code> and <code>type</code>. They overlap heavily,
+          but the differences matter. We'll cover optional and readonly properties, index signatures,
+          extension, and a clear professional rule for which to use when.
+        </p>
+
+        <h2>1. Two ways to name a shape</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">shapes.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// interface — declares an object shape
+interface User {
+  id: number;
+  name: string;
+  email?: string;          // optional (may be absent)
+  readonly createdAt: string; // can't be reassigned after creation
+}
+
+// type alias — names ANY type, including objects
+type UserT = {
+  id: number;
+  name: string;
+};
+
+const u: User = { id: 1, name: "Ada", createdAt: "2026-01-01" };
+// u.createdAt = "x";       // ❌ Error: readonly
+const e: string | undefined = u.email; // optional → string | undefined</pre>
+          <div class="annot">
+            <strong><code>?</code> makes a property optional</strong> (its type becomes <code>T | undefined</code>),
+            and <strong><code>readonly</code></strong> forbids reassignment. These two modifiers express a huge
+            amount of intent about your data.
+          </div>
+        </div>
+
+        <h2>2. The key difference: type does more</h2>
+        <p>
+          <code>interface</code> can only describe object/function shapes. <code>type</code> can alias
+          <em>anything</em> — unions, intersections, primitives, tuples, mapped and conditional types. That
+          breadth is why advanced TypeScript lives almost entirely in <code>type</code>.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">type-power.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Only `type` can do these:
+type ID = string | number;             // union
+type Pair = [number, number];          // tuple
+type Handler = (event: string) =&gt; void; // function type
+type Nullable&lt;T&gt; = T | null;            // generic alias
+
+// Composition:
+type Animal = { name: string };
+type Dog = Animal &amp; { breed: string }; // intersection: Animal AND extra fields
+const rex: Dog = { name: "Rex", breed: "Lab" };
+
+// `interface` extends with the `extends` keyword instead:
+interface AnimalI { name: string; }
+interface DogI extends AnimalI { breed: string; }</pre>
+          <div class="annot">
+            <strong>Intersection (<code>&amp;</code>)</strong> merges object types — <code>Dog</code> needs every
+            field of both. This is <code>type</code>'s answer to <code>interface extends</code>. Because
+            <code>type</code> handles unions, functions, and generics too, it's the more general tool.
+          </div>
+        </div>
+
+        <h2>3. interface's superpower: declaration merging</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">merging.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Two interfaces with the same name MERGE into one:
+interface Window {
+  myAppVersion: string;
+}
+interface Window {
+  myAppFlags: Record&lt;string, boolean&gt;;
+}
+// Now `Window` has BOTH members. This is how you safely augment
+// global/library types — impossible with `type` (duplicate = error).
+
+// `type` with a duplicate name is an error:
+// type Foo = { a: number };
+// type Foo = { b: number }; // ❌ Duplicate identifier 'Foo'</pre>
+          <div class="annot">
+            <strong>Declaration merging</strong> lets libraries (and you) <em>extend existing types</em> — e.g.
+            adding a property to the global <code>Window</code>, or augmenting a third-party module. We use this
+            deliberately in Part 2's "module augmentation" lesson. It's <code>interface</code>'s unique value.
+          </div>
+        </div>
+
+        <h2>4. Index signatures &amp; Record</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">index-signatures.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// When keys are dynamic, describe them with an index signature:
+interface ScoreBoard {
+  [playerName: string]: number;
+}
+const scores: ScoreBoard = { ada: 10, lin: 7 };
+scores.newPlayer = 0; // any string key, number value
+
+// The idiomatic shortcut is the built-in Record&lt;Keys, Value&gt;:
+type Flags = Record&lt;string, boolean&gt;;
+type RolePerms = Record&lt;"admin" | "user", string[]&gt;; // exact keys
+const perms: RolePerms = { admin: ["read", "write"], user: ["read"] };</pre>
+          <div class="annot">
+            <strong><code>Record&lt;K, V&gt;</code></strong> is the cleanest way to type "an object mapping keys of
+            type K to values of type V". With a union of literals as K, it even forces you to provide exactly
+            those keys — very handy for lookups and config.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">🧭</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The rule professionals actually use</div>
+            <p style="margin:6px 0 0">
+              Use <b>interface</b> for object shapes that model entities and public APIs (especially if they
+              might be extended or augmented). Use <b>type</b> for everything else — unions, function types,
+              tuples, mapped/conditional types, and any composition. Consistency matters more than the choice;
+              this rule keeps teams sane.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Model a blog post</div>
+            <p style="margin:6px 0 0">
+              Define an <code>interface Post</code> with <code>id: number</code>, <code>title: string</code>,
+              an optional <code>subtitle</code>, a <code>readonly publishedAt: string</code>, and
+              <code>tags: readonly string[]</code>. Then make a <code>type DraftPost</code> that is a
+              <code>Post</code> without <code>publishedAt</code> (hint: you'll learn <code>Omit</code> formally
+              soon, but try expressing it by hand first).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><code>?</code> marks optional properties; <code>readonly</code> forbids reassignment.</li>
+            <li><code>type</code> aliases <b>anything</b> (unions, functions, tuples, generics); <code>interface</code> is object/function shapes only.</li>
+            <li>Compose with <code>&amp;</code> (intersection) or <code>interface extends</code>.</li>
+            <li><code>interface</code> supports <b>declaration merging</b> — the key to augmenting library/global types.</li>
+            <li>Use <code>Record&lt;K, V&gt;</code> for key→value maps; interface for entities, type for the rest.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-02 · Installing TS, tsc &amp; tsconfig.json</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 2</div>
+        <h1>Installing TS, <code>tsc</code> &amp; <code>tsconfig.json</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core · setup</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">⚙️ The compiler</span>
+        </div>
+        <p class="lead">
+          To use TypeScript you need its compiler, <code>tsc</code>, and a configuration file,
+          <code>tsconfig.json</code>, that tells <code>tsc</code> exactly how strict to be and what to
+          produce. Configuring this well is a genuine professional skill — the right settings catch far more
+          bugs. We'll set up a project the way a principal engineer does on day one.
+        </p>
+
+        <h2>1. A fresh TypeScript project</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">mkdir ts-playground &amp;&amp; cd ts-playground</span>
+<span class="cmd">pnpm init</span>                       <span class="out"># create package.json</span>
+<span class="cmd">pnpm add -D typescript tsx @types/node</span> <span class="out"># compiler + runner + Node types</span>
+<span class="cmd">pnpm tsc --init</span>                 <span class="out"># create a tsconfig.json</span>
+<span class="cmd">pnpm tsc --version</span>
+<span class="out">Version 5.9.x</span></pre>
+        </div>
+        <div class="callout note">
+          <span class="ic">📦</span>
+          <div class="body">
+            <div class="tt">Note · Install TypeScript per-project, not globally</div>
+            <p style="margin:6px 0 0">
+              Always add <code>typescript</code> as a dev dependency of the project (<code>-D</code>). That
+              pins the exact version, so your build is reproducible and teammates use the same compiler.
+              <code>tsx</code> lets you run <code>.ts</code> files directly during development without a build
+              step.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Compile and run</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/main.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function add(a: number, b: number): number {
+  return a + b;
+}
+
+const result: number = add(2, 3);
+console.log(`2 + 3 = ${result}`);
+
+// Try breaking it: add("2", 3) — tsc will refuse to compile.</pre>
+        </div>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm tsc</span>                <span class="out"># type-check + emit JS to the outDir</span>
+<span class="cmd">node dist/main.js</span>       <span class="out"># run the compiled output → 2 + 3 = 5</span>
+<span class="out"># ...or skip the build during dev:</span>
+<span class="cmd">pnpm tsx src/main.ts</span>    <span class="out"># run the .ts directly</span></pre>
+        </div>
+
+        <h2>3. The professional <code>tsconfig.json</code></h2>
+        <p>
+          The default config is too lax. Here is a strict, modern 2026 baseline. Read every line — the comments
+          explain why each option earns its place. This is close to what we use in every project in this course.
+        </p>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tsconfig.json</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "compilerOptions": {
+    "target": "ES2022",            // JS feature level to emit
+    "module": "NodeNext",          // module system (Node ESM)
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],             // built-in APIs available
+    "outDir": "dist",
+    "rootDir": "src",
+
+    "strict": true,                // turns on the whole strict family ↓
+    "noUncheckedIndexedAccess": true, // arr[i] is T | undefined — forces a check
+    "exactOptionalPropertyTypes": true, // distinguishes missing vs undefined
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,  // explicit import type / export type
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,          // skip type-checking node_modules .d.ts (faster)
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,           // emit .d.ts type files
+    "sourceMap": true
+  },
+  "include": ["src"]
+}</pre>
+          <div class="annot">
+            <strong>The headline option is <code>"strict": true</code></strong> — never turn it off. It enables
+            <code>strictNullChecks</code> (the big one), <code>noImplicitAny</code>, and more. The extras like
+            <code>noUncheckedIndexedAccess</code> push you toward genuinely safe code. We use exactly these in
+            Project P01.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · strictNullChecks is the one that matters most</div>
+            <p style="margin:6px 0 0">
+              With strict mode, <code>null</code> and <code>undefined</code> are not assignable to other types
+              unless you explicitly allow them. This single setting eliminates the infamous "cannot read
+              property of undefined" crash as a <em>class</em> of bug. If you ever inherit a loose codebase,
+              turning this on is the highest-value change you can make.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. Watch mode &amp; the editor</h2>
+        <p>
+          You rarely run <code>tsc</code> by hand during development — your editor type-checks continuously, and
+          build tools (Vite, Next.js) handle compilation. But <code>tsc --noEmit</code> is the gold-standard
+          "is the whole project type-correct?" check you'll run in CI.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm tsc --watch</span>     <span class="out"># re-check on every save</span>
+<span class="cmd">pnpm tsc --noEmit</span>    <span class="out"># type-check only, emit nothing (CI gate)</span></pre>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Feel strict mode bite</div>
+            <p style="margin:6px 0 0">
+              In a strict project, write <code>function first(arr: string[]) { return arr[0].toUpperCase(); }</code>.
+              With <code>noUncheckedIndexedAccess</code> on, <code>arr[0]</code> is <code>string | undefined</code>
+              and this won't compile. Fix it safely (hint: check for <code>undefined</code> first, or use
+              <code>arr.at(0)</code> with a guard). Notice how the compiler forced you to handle the empty-array
+              case you'd have otherwise forgotten.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Install <code>typescript</code> <b>per-project</b> as a dev dependency; pin the version.</li>
+            <li><code>tsc</code> type-checks and emits JS; <code>tsx</code> runs <code>.ts</code> directly in dev.</li>
+            <li><code>tsconfig.json</code> controls everything — always set <code>"strict": true</code>.</li>
+            <li>Add <code>noUncheckedIndexedAccess</code> and friends for genuinely safe code.</li>
+            <li><code>tsc --noEmit</code> is your CI "is it type-correct?" gate.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-10 · Modules, Namespaces &amp; Declaration Files</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 10</div>
+        <h1>Modules, Namespaces &amp; Declaration Files</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">📦 Organising code</span>
+        </div>
+        <p class="lead">
+          As projects grow, how you split and connect files becomes architecture. This lesson covers ES modules
+          in TypeScript (with the all-important <code>import type</code>), what <code>.d.ts</code> declaration
+          files are, why namespaces are mostly legacy, and how types travel with your published code.
+        </p>
+
+        <h2>1. ES modules with types</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">user.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// user.ts — export both values and types
+export interface User {
+  id: number;
+  name: string;
+}
+export function createUser(name: string): User {
+  return { id: Date.now(), name };
+}
+export const MAX_NAME_LEN = 50;</pre>
+          <div class="annot"><strong>A module exports values (functions, constants) and types (interfaces, type aliases) side by side.</strong> Anything not exported is private to the file.</div>
+        </div>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Import VALUES normally; import TYPES with `import type`:
+import { createUser, MAX_NAME_LEN } from "./user.js";
+import type { User } from "./user.js";
+
+const u: User = createUser("Ada");
+
+// Inline form also works and is encouraged with verbatimModuleSyntax:
+import { createUser as make, type User as U } from "./user.js";</pre>
+          <div class="annot">
+            <strong><code>import type</code> matters:</strong> it marks an import as types-only, so it's fully
+            erased from the compiled JavaScript. With <code>verbatimModuleSyntax</code> (which we enabled in
+            P01), this is required and keeps your output lean and your imports honest about what's a runtime
+            dependency vs a compile-time one.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · The .js extension in imports</div>
+            <p style="margin:6px 0 0">
+              Under Node's ESM (<code>"module": "NodeNext"</code>), you import with the <code>.js</code> extension
+              <em>even though the file is <code>.ts</code></em> — because you're importing the compiled output.
+              It looks odd at first but is correct. Bundlers like Vite are more relaxed and let you omit
+              extensions.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Declaration files (<code>.d.ts</code>)</h2>
+        <p>
+          A <strong>declaration file</strong> contains only types — no implementation. It's how a compiled
+          JavaScript library ships its type information so consumers get full IntelliSense. When you
+          <code>pnpm add</code> a typed package, you're getting its <code>.d.ts</code> files.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">shapes.d.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A .d.ts only DECLARES — no function bodies, no runtime code.
+export declare function distance(a: Point, b: Point): number;
+export interface Point { x: number; y: number; }
+
+// Ambient declaration for an untyped global or env variable:
+declare global {
+  interface Window {
+    analytics?: { track(event: string): void };
+  }
+}
+export {}; // makes this a module</pre>
+          <div class="annot">
+            <strong>You'll generate <code>.d.ts</code> files automatically</strong> (we set <code>"declaration": true</code>
+            in P01's tsconfig) when publishing a library, so consumers get your types. You'll occasionally write
+            them by hand to type a plain-JS dependency or a global. For packages lacking types, the community
+            ships <code>@types/...</code> packages from DefinitelyTyped.
+          </div>
+        </div>
+
+        <h2>3. Namespaces (legacy — know, don't use)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">namespaces.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Namespaces predate ES modules. You'll see them in old code and some libs.
+namespace Geometry {
+  export function area(r: number) { return Math.PI * r * r; }
+}
+Geometry.area(2);
+
+// ✅ Modern equivalent is just a module file with exports — use that instead.
+// Namespaces don't tree-shake well and don't fit the ESM world.</pre>
+          <div class="annot">
+            <strong>Guidance:</strong> recognise namespaces in legacy/library code, but always reach for ES
+            modules in your own work. Files <em>are</em> your namespaces now.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Split a module</div>
+            <p style="margin:6px 0 0">
+              Take any single-file exercise from earlier and split it into two files: one exporting a type and a
+              function, another importing them. Use <code>import type</code> for the type. Build it with
+              <code>tsc</code> and confirm the emitted JS contains no trace of the type import.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Modules export values and types together; non-exports are file-private.</li>
+            <li>Use <code>import type</code> for type-only imports — required under <code>verbatimModuleSyntax</code>, keeps output lean.</li>
+            <li>Under NodeNext ESM, import with the <code>.js</code> extension (the compiled output).</li>
+            <li><code>.d.ts</code> files carry types for compiled JS; <code>@types/*</code> packages add types to untyped libs.</li>
+            <li>Namespaces are legacy — use ES module files instead.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

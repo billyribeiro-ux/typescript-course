@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-08 · Generics From First Principles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 8</div>
+        <h1>Generics From First Principles</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core · pivotal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🧬 Reusable type logic</span>
+        </div>
+        <p class="lead">
+          Generics are the feature that intimidates beginners and defines experts. The idea is simple:
+          <strong>a generic is a type that takes a type as a parameter</strong> — a function or type with a
+          "hole" that the caller fills in. They let you write code that's both fully reusable <em>and</em> fully
+          type-safe. Every serious library — React, TanStack Query, Zod — is built on them.
+        </p>
+
+        <h2>1. The problem generics solve</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">why-generics.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Without generics, you either lose type info...
+function firstAny(arr: any[]): any {
+  return arr[0]; // returns `any` — all safety gone
+}
+const x = firstAny(["a", "b"]); // x is `any` 😱
+
+// ...or you duplicate the function per type (unmaintainable):
+function firstString(arr: string[]): string { return arr[0]!; }
+function firstNumber(arr: number[]): number { return arr[0]!; }
+
+// Generics give you ONE function that preserves the exact type:
+function first&lt;T&gt;(arr: T[]): T | undefined {
+  return arr[0];
+}
+const a = first(["a", "b"]); // a is string | undefined
+const b = first([1, 2, 3]);  // b is number | undefined
+// T is INFERRED from the argument — you rarely write it explicitly.</pre>
+          <div class="annot">
+            <strong>The mental model:</strong> <code>&lt;T&gt;</code> declares a type variable — a placeholder filled
+            in <em>per call</em>. <code>first(["a"])</code> sets <code>T = string</code>; <code>first([1])</code>
+            sets <code>T = number</code>. One implementation, perfect types for every caller. And note: you didn't
+            specify <code>T</code> — it was inferred.
+          </div>
+        </div>
+
+        <h2>2. Generic constraints with <code>extends</code></h2>
+        <p>
+          Often a generic shouldn't accept <em>any</em> type — only types with certain properties. The
+          <code>extends</code> keyword constrains the type parameter.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">constraints.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// "T must have a length property":
+function longest&lt;T extends { length: number }&gt;(a: T, b: T): T {
+  return a.length &gt;= b.length ? a : b;
+}
+longest("hello", "hi");       // ✅ strings have length → "hello"
+longest([1, 2, 3], [1]);      // ✅ arrays have length
+// longest(10, 20);           // ❌ numbers have no length
+
+// The classic: a fully type-safe property getter.
+function getProp&lt;T, K extends keyof T&gt;(obj: T, key: K): T[K] {
+  return obj[key];
+}
+const user = { name: "Ada", age: 36 };
+const name = getProp(user, "name"); // typed as string
+const age = getProp(user, "age");   // typed as number
+// getProp(user, "email");          // ❌ "email" is not a key of user</pre>
+          <div class="annot">
+            <strong>This is a defining example.</strong> <code>K extends keyof T</code> means "K is one of T's
+            keys", and <code>T[K]</code> is "the type of that key's value". The result: a getter that knows
+            <code>user.name</code> is a string and <code>user.age</code> is a number, and rejects invalid keys.
+            <code>keyof</code> and indexed access (<code>T[K]</code>) are the gateway to Part 2's wizardry.
+          </div>
+        </div>
+
+        <h2>3. Generic types &amp; interfaces</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">generic-types.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A generic data structure:
+interface Box&lt;T&gt; {
+  value: T;
+}
+const stringBox: Box&lt;string&gt; = { value: "hi" };
+
+// A generic API envelope you'll reuse constantly:
+type ApiResponse&lt;T&gt; = {
+  data: T;
+  status: number;
+  timestamp: string;
+};
+type UserResponse = ApiResponse&lt;{ id: number; name: string }&gt;;
+
+// Defaults and multiple parameters:
+type Dictionary&lt;V, K extends string = string&gt; = Record&lt;K, V&gt;;
+type Pair&lt;A, B&gt; = { first: A; second: B };
+const p: Pair&lt;string, number&gt; = { first: "age", second: 36 };</pre>
+          <div class="annot">
+            <strong>Generic types parameterise data shapes</strong> the way generic functions parameterise logic.
+            <code>ApiResponse&lt;T&gt;</code> is one definition that gives you a typed envelope for any payload — write
+            it once, reuse it for every endpoint. Type parameters can have defaults (<code>= string</code>) too.
+          </div>
+        </div>
+
+        <h2>4. A real, reusable utility</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">groupBy.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Group an array of items by a derived key — fully typed.
+function groupBy&lt;T, K extends string | number&gt;(
+  items: readonly T[],
+  getKey: (item: T) =&gt; K
+): Record&lt;K, T[]&gt; {
+  const result = {} as Record&lt;K, T[]&gt;;
+  for (const item of items) {
+    const key = getKey(item);
+    (result[key] ??= []).push(item);
+  }
+  return result;
+}
+
+const people = [
+  { name: "Ada", city: "Lisbon" },
+  { name: "Lin", city: "Lisbon" },
+  { name: "Sam", city: "Madrid" },
+];
+const byCity = groupBy(people, (p) =&gt; p.city);
+// byCity is Record&lt;string, { name: string; city: string }[]&gt;
+console.log(byCity.Lisbon.length); // 2</pre>
+          <div class="annot">
+            <strong>This is the payoff:</strong> one generic function, zero <code>any</code>, perfect inference for
+            any element type and any key function. This is precisely the calibre of utility you'll build into a
+            published library in Project P02 — and it's only the warm-up for Part 2.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Don't over-genericise</div>
+            <p style="margin:6px 0 0">
+              Reach for a generic when a function genuinely works over many types and must preserve them.
+              If a parameter is always a <code>string</code>, just type it <code>string</code>. Premature
+              generics make code harder to read for no benefit. Power, applied with judgement.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Type-safe pluck</div>
+            <p style="margin:6px 0 0">
+              Write <code>function pluck&lt;T, K extends keyof T&gt;(items: T[], key: K): T[K][]</code> that maps an
+              array of objects to an array of one property's values. Verify
+              <code>pluck(people, "name")</code> is typed as <code>string[]</code> and
+              <code>pluck(people, "nope")</code> is a compile error.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A generic <code>&lt;T&gt;</code> is a type parameter — a hole the caller fills, usually by <b>inference</b>.</li>
+            <li>Generics preserve exact types where <code>any</code> would discard them.</li>
+            <li>Constrain with <code>T extends ...</code>; <code>K extends keyof T</code> + <code>T[K]</code> give type-safe key access.</li>
+            <li>Generic <b>types/interfaces</b> parameterise data shapes (e.g. <code>ApiResponse&lt;T&gt;</code>).</li>
+            <li>Use generics when they earn their keep; don't genericise constants.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

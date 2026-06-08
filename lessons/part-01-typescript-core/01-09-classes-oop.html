@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-09 · Classes &amp; OOP in TypeScript</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 9</div>
+        <h1>Classes &amp; OOP in TypeScript</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🏛️ Objects with behaviour</span>
+        </div>
+        <p class="lead">
+          Classes bundle data and the behaviour that operates on it. TypeScript adds access modifiers,
+          <code>abstract</code> classes, and interface implementation to make classes safe and expressive.
+          Modern React is function-first, so you'll use classes less than in other ecosystems — but they're
+          essential for services, domain models, and understanding the wider JS world.
+        </p>
+
+        <h2>1. A typed class</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">class.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">class BankAccount {
+  // Access modifiers: public (default), private, protected, readonly
+  private balance: number;
+  readonly owner: string;
+
+  constructor(owner: string, initial: number = 0) {
+    this.owner = owner;
+    this.balance = initial;
+  }
+
+  deposit(amount: number): void {
+    if (amount &lt;= 0) throw new Error("Amount must be positive");
+    this.balance += amount;
+  }
+
+  getBalance(): number {
+    return this.balance;
+  }
+}
+
+const acc = new BankAccount("Ada", 100);
+acc.deposit(50);
+console.log(acc.getBalance()); // 150
+// acc.balance;  // ❌ private — not accessible outside the class</pre>
+          <div class="annot">
+            <strong>Access modifiers enforce encapsulation:</strong> <code>private</code> hides internals,
+            <code>readonly</code> prevents reassignment, <code>protected</code> allows subclass access.
+            <code>balance</code> can only change through <code>deposit</code> — the class controls its own
+            invariants. This is the core value of OOP.
+          </div>
+        </div>
+
+        <h2>2. Parameter properties &amp; #private</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">shorthand.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Parameter properties: declare + assign fields in the constructor signature.
+class Point {
+  constructor(
+    public readonly x: number,
+    public readonly y: number
+  ) {}
+  distanceTo(other: Point): number {
+    return Math.hypot(this.x - other.x, this.y - other.y);
+  }
+}
+const d = new Point(0, 0).distanceTo(new Point(3, 4)); // 5
+
+// ECMAScript #private fields — TRULY private at runtime (not just compile-time):
+class Vault {
+  #secret = "hidden";
+  reveal(): string { return this.#secret; }
+}
+// new Vault().#secret  // ❌ SyntaxError — genuinely inaccessible</pre>
+          <div class="annot">
+            <strong>Two flavours of private:</strong> TypeScript's <code>private</code> is compile-time only
+            (it's gone at runtime). The newer <code>#field</code> is enforced by the JavaScript engine itself —
+            real, hard privacy. Prefer <code>#</code> when you need runtime guarantees.
+          </div>
+        </div>
+
+        <h2>3. Interfaces, implements &amp; abstract</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">abstract.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// An interface as a contract a class must fulfil:
+interface Shape {
+  area(): number;
+}
+
+// An abstract base class: can't be instantiated, defines shared structure.
+abstract class BaseShape implements Shape {
+  abstract area(): number;            // subclasses MUST implement
+  describe(): string {                // shared behaviour
+    return `This shape has area ${this.area().toFixed(2)}`;
+  }
+}
+
+class Circle extends BaseShape {
+  constructor(private radius: number) { super(); }
+  area(): number { return Math.PI * this.radius ** 2; }
+}
+
+const c = new Circle(2);
+console.log(c.describe()); // "This shape has area 12.57"
+// new BaseShape();        // ❌ cannot instantiate an abstract class</pre>
+          <div class="annot">
+            <strong>The pattern:</strong> an <code>interface</code> declares <em>what</em>, an <code>abstract</code>
+            class provides shared <em>how</em> plus required holes for subclasses. <code>implements</code> makes
+            the compiler verify the contract. This underpins service layers and the design patterns in Part 8.
+          </div>
+        </div>
+
+        <div class="callout note">
+          <span class="ic">⚛️</span>
+          <div class="body">
+            <div class="tt">Note · Classes vs React</div>
+            <p style="margin:6px 0 0">
+              Modern React uses <em>functions</em> and hooks, not class components. You'll still use classes for
+              non-UI concerns — API clients, domain models, error types (<code>class AppError extends Error</code>),
+              and stores. Know them well; reach for them deliberately, not by default.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A typed Stack&lt;T&gt;</div>
+            <p style="margin:6px 0 0">
+              Build a generic <code>class Stack&lt;T&gt;</code> with a <code>#items: T[]</code> private field and
+              methods <code>push(item: T): void</code>, <code>pop(): T | undefined</code>, and a
+              <code>get size(): number</code> getter. Combine generics (01-08) with classes.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Classes bundle data + behaviour; access modifiers (<code>private</code>/<code>readonly</code>/<code>protected</code>) enforce encapsulation.</li>
+            <li><b>Parameter properties</b> declare and assign fields in the constructor signature.</li>
+            <li><code>#field</code> gives <b>true runtime privacy</b>; TS <code>private</code> is compile-time only.</li>
+            <li><code>implements</code> verifies an interface contract; <code>abstract</code> defines shared structure with required holes.</li>
+            <li>React is function-first — use classes for services, models, and error types.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

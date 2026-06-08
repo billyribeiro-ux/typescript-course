@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01-11 · unknown, any, never &amp; Type Assertions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "01-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 1 · TypeScript Core — Lesson 11</div>
+        <h1><code>unknown</code>, <code>any</code>, <code>never</code> &amp; Type Assertions</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">🛡️ The escape hatches</span>
+        </div>
+        <p class="lead">
+          The type system has three special "top and bottom" types — <code>any</code>, <code>unknown</code>, and
+          <code>never</code> — plus assertions that let you override the compiler. Used wisely, these are the
+          difference between safe boundaries and silent holes. A principal engineer knows exactly when each is
+          appropriate and treats <code>any</code> as a code smell.
+        </p>
+
+        <h2>1. <code>any</code> — the safety off-switch</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">any.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">let value: any = "hello";
+value.foo.bar.baz();    // compiles — and CRASHES at runtime. No safety at all.
+value = 42;             // anything goes
+const n: number = value; // silently assigns — `any` infects everything it touches
+
+// `any` disables type-checking for that value AND anything derived from it.
+// It is almost never the right answer. Treat each `any` as a TODO.</pre>
+          <div class="annot">
+            <strong><code>any</code> is contagious and dangerous:</strong> it switches off the compiler for that
+            value and silently spreads. In strict codebases, <code>any</code> is banned by lint rules. When you
+            think you need it, you almost always want <code>unknown</code> instead.
+          </div>
+        </div>
+
+        <h2>2. <code>unknown</code> — the safe top type</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">unknown.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// unknown can hold anything (like any), but you can DO nothing with it
+// until you prove what it is. It's "any with a seatbelt."
+function handle(input: unknown) {
+  // input.toUpperCase();  // ❌ not allowed — we don't know it's a string
+  if (typeof input === "string") {
+    return input.toUpperCase(); // ✅ narrowed to string first
+  }
+  return String(input);
+}
+
+// The right type for data from outside your program:
+function parseJSON(text: string): unknown {
+  return JSON.parse(text); // honestly typed — you must validate before use
+}
+const data = parseJSON('{"id":1}');
+// You'd now use a type guard (01-06) to safely narrow `data`.</pre>
+          <div class="annot">
+            <strong>This is the lesson:</strong> use <code>unknown</code> at every boundary where untyped data
+            enters — <code>JSON.parse</code>, <code>fetch</code> bodies, form inputs, <code>catch</code> errors.
+            It forces you to validate before use, turning a runtime risk into a compile-time requirement. P01's
+            <code>parseTasks</code> does exactly this.
+          </div>
+        </div>
+
+        <h2>3. <code>never</code> — the impossible type</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">never.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// `never` = a value that can never exist. Returned by functions that never finish:
+function fail(message: string): never {
+  throw new Error(message); // never returns normally
+}
+
+// Its superpower is exhaustiveness checking (from 01-06):
+type Method = "GET" | "POST";
+function handle(m: Method) {
+  switch (m) {
+    case "GET": return "reading";
+    case "POST": return "writing";
+    default:
+      const _exhaustive: never = m; // errors if a case is unhandled
+      return _exhaustive;
+  }
+}</pre>
+          <div class="annot">
+            <strong><code>never</code> is the bottom type</strong> — assignable to everything, nothing assignable
+            to it (except <code>never</code>). It marks code paths that can't happen, which is exactly why it
+            powers exhaustiveness checks and surfaces dead code.
+          </div>
+        </div>
+
+        <h2>4. Type assertions (<code>as</code>) — use with care</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">assertions.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// An assertion tells the compiler "trust me, it's this type." It does NO checking.
+const el = document.getElementById("app") as HTMLCanvasElement;
+// If #app isn't actually a canvas, this lies and you crash later.
+
+// `as const` is the GOOD assertion — it narrows to literals, doesn't lie:
+const routes = ["/home", "/about"] as const; // readonly ["/home", "/about"]
+
+// The "non-null assertion" (!): "this is definitely not null/undefined."
+const input = document.querySelector("input")!; // use only when you're certain
+
+// AVOID `as any` and double assertions `as unknown as T` — they punch holes
+// through the type system. Prefer type guards to PROVE types instead.</pre>
+          <div class="annot">
+            <strong>Assertions override the compiler without verifying anything</strong> — they're a promise you
+            make, and the compiler believes you. Reserve them for cases you truly know better than the compiler
+            (DOM types, <code>as const</code>). Prefer <em>type guards</em>, which actually check. Every
+            <code>as</code> is a small trust debt; keep the balance low.
+          </div>
+        </div>
+
+        <table>
+          <thead><tr><th>Type</th><th>Holds</th><th>You can use it…</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td><code>any</code></td><td>anything</td><td>freely (no checks)</td><td>🚫 avoid</td></tr>
+            <tr><td><code>unknown</code></td><td>anything</td><td>only after narrowing</td><td>✅ use at boundaries</td></tr>
+            <tr><td><code>never</code></td><td>nothing</td><td>—</td><td>✅ exhaustiveness</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Safe error handling</div>
+            <p style="margin:6px 0 0">
+              In a <code>try/catch</code>, the caught error is typed <code>unknown</code> in modern TS. Write a
+              helper <code>function toMessage(err: unknown): string</code> that returns
+              <code>err.message</code> when <code>err instanceof Error</code>, otherwise <code>String(err)</code>.
+              You've now handled errors the safe way — exactly what P01's <code>index.ts</code> does.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><code>any</code> disables type-checking and spreads — treat every use as a smell to remove.</li>
+            <li><code>unknown</code> is the safe top type: accept anything, but prove what it is before using it.</li>
+            <li>Use <code>unknown</code> at every untyped boundary (JSON, fetch, form input, caught errors).</li>
+            <li><code>never</code> is the impossible type; it powers exhaustiveness checks and marks unreachable code.</li>
+            <li><b>Assertions</b> (<code>as</code>, <code>!</code>) override without checking — prefer type guards; <code>as const</code> is the safe exception.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
