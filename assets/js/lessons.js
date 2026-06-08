@@ -116,12 +116,12 @@ window.COURSE = {
         { id: "04-05", title: "Lists, Keys & Conditional Rendering", file: "lessons/part-04-react-core/04-05-lists-keys-conditionals.html", status: "available" },
         { id: "04-06", title: "Handling Events & Forms", file: "lessons/part-04-react-core/04-06-events-and-forms.html", status: "available" },
         { id: "04-07", title: "Side Effects with useEffect", file: "lessons/part-04-react-core/04-07-useeffect.html", status: "available" },
-        { id: "04-08", title: "Refs & the DOM with useRef", file: "lessons/part-04-react-core/04-08-useref.html", status: "soon" },
-        { id: "04-09", title: "useReducer & useContext", file: "lessons/part-04-react-core/04-09-usereducer-usecontext.html", status: "soon" },
-        { id: "04-10", title: "Memoization & the React Compiler", file: "lessons/part-04-react-core/04-10-memoization-react-compiler.html", status: "soon" },
-        { id: "04-11", title: "Building Custom Hooks", file: "lessons/part-04-react-core/04-11-custom-hooks.html", status: "soon" },
-        { id: "04-12", title: "React 19 Actions & New Hooks", file: "lessons/part-04-react-core/04-12-react-19-actions.html", status: "soon" },
-        { id: "04-13", title: "Project P03: The Vite Weather Dashboard", file: "lessons/part-04-react-core/04-13-project-weather-dashboard.html", status: "soon" }
+        { id: "04-08", title: "Refs & the DOM with useRef", file: "lessons/part-04-react-core/04-08-useref.html", status: "available" },
+        { id: "04-09", title: "useReducer & useContext", file: "lessons/part-04-react-core/04-09-usereducer-usecontext.html", status: "available" },
+        { id: "04-10", title: "Memoization & the React Compiler", file: "lessons/part-04-react-core/04-10-memoization-react-compiler.html", status: "available" },
+        { id: "04-11", title: "Building Custom Hooks", file: "lessons/part-04-react-core/04-11-custom-hooks.html", status: "available" },
+        { id: "04-12", title: "React 19 Actions & New Hooks", file: "lessons/part-04-react-core/04-12-react-19-actions.html", status: "available" },
+        { id: "04-13", title: "Project P03: The Vite Weather Dashboard", file: "lessons/part-04-react-core/04-13-project-weather-dashboard.html", status: "available" }
       ]
     },
     {

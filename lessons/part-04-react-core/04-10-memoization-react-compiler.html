@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-10 · Memoization &amp; the React Compiler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 10</div>
+        <h1>Memoization &amp; the React Compiler</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React · 2026</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⚡ Performance</span>
+        </div>
+        <p class="lead">
+          Re-rendering is normal and usually cheap, but sometimes it's wasteful. The classic tools —
+          <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code> — let you skip unnecessary
+          work. The huge 2026 news: the <strong>React Compiler</strong> now does this automatically, so you write
+          simple code and get optimised output. We'll teach both: the compiler-first reality, and the manual tools
+          you still need to understand.
+        </p>
+
+        <h2>1. Why re-renders happen</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · A component re-renders when…</div>
+            <p style="margin:6px 0 0">
+              …its state changes, its parent re-renders, or its context changes. Re-rendering means React re-runs
+              the function and reconciles the result with the DOM (Part 5). This is fast by default. Memoization is
+              only about avoiding <em>expensive</em> recomputation or re-rendering — a targeted optimisation, not a
+              default habit.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The classic tools (what they do)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">manual-memo.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { memo, useMemo, useCallback, useState } from "react";
+
+function Dashboard({ items }: { items: number[] }) {
+  const [count, setCount] = useState(0);
+
+  // useMemo: cache an EXPENSIVE computation; recompute only if deps change.
+  const total = useMemo(() =&gt; items.reduce((a, b) =&gt; a + b, 0), [items]);
+
+  // useCallback: cache a FUNCTION identity, so memoized children don't re-render.
+  const handleClick = useCallback(() =&gt; setCount((c) =&gt; c + 1), []);
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Total: {total} · Clicks: {count}&lt;/p&gt;
+      &lt;ExpensiveChild onClick={handleClick} /&gt;
+    &lt;/div&gt;
+  );
+}
+
+// React.memo: skip re-rendering if props are shallow-equal to last time.
+const ExpensiveChild = memo(function ExpensiveChild({ onClick }: { onClick: () =&gt; void }) {
+  return &lt;button onClick={onClick}&gt;Click&lt;/button&gt;;
+});</pre>
+          <div class="annot">
+            <strong>Three related tools:</strong> <code>useMemo</code> caches a <em>value</em>,
+            <code>useCallback</code> caches a <em>function</em>'s identity (so it doesn't look "new" to children),
+            and <code>React.memo</code> skips a child's re-render when its props haven't changed. They work together:
+            <code>memo</code>'d children need stable (<code>useCallback</code>'d) function props to actually skip.
+          </div>
+        </div>
+
+        <h2>3. The React Compiler changes everything</h2>
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · Automatic memoization</div>
+            <p style="margin:6px 0 0">
+              The <b>React Compiler</b> (stable in 2026) analyses your components at build time and inserts the
+              equivalent of <code>useMemo</code>/<code>useCallback</code>/<code>memo</code> <em>for you</em>,
+              precisely where they help. You write plain, readable components — no manual memoization — and get
+              optimised re-rendering automatically. It's enabled via the Babel/Vite plugin.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">compiler-era.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// With the React Compiler enabled, you just write this —
+// no useMemo, no useCallback, no memo. The compiler optimises it.
+function Dashboard({ items }: { items: number[] }) {
+  const [count, setCount] = useState(0);
+  const total = items.reduce((a, b) =&gt; a + b, 0); // auto-memoized if expensive
+  const handleClick = () =&gt; setCount((c) =&gt; c + 1); // stable identity, automatically
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Total: {total} · Clicks: {count}&lt;/p&gt;
+      &lt;button onClick={handleClick}&gt;Click&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+// Cleaner, and usually FASTER than hand-tuned memoization.</pre>
+          <div class="annot">
+            <strong>The guidance for 2026:</strong> enable the React Compiler and write simple components. Reserve
+            manual <code>useMemo</code>/<code>useCallback</code> for the rare cases the compiler can't handle, or
+            codebases that haven't adopted it. Understanding the manual tools is still essential — you'll read them
+            in existing code and need them occasionally — but they're no longer your default.
+          </div>
+        </div>
+
+        <h2>4. The rules that make it work</h2>
+        <ul>
+          <li><strong>Components must be pure:</strong> given the same props/state, render the same output, with no
+          side effects during render. The compiler relies on this.</li>
+          <li><strong>Follow the Rules of Hooks:</strong> call hooks at the top level, unconditionally. The ESLint
+          plugin (03-04) enforces this.</li>
+          <li><strong>Don't mutate props or state:</strong> the immutability you've practised all course is what
+          makes safe memoization possible.</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Measure before optimising</div>
+            <p style="margin:6px 0 0">
+              Build a list with an expensive derived computation (e.g. sorting + filtering 10k items). Use the
+              React DevTools Profiler to see render times. Add <code>useMemo</code> and measure again. Then
+              appreciate that the React Compiler would do this for you — and that you should always
+              <em>measure</em> before reaching for manual memoization.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Re-renders happen on state/parent/context change — cheap by default; memoization targets the expensive cases.</li>
+            <li><code>useMemo</code> caches a value, <code>useCallback</code> a function identity, <code>React.memo</code> a child's render.</li>
+            <li>The <b>React Compiler</b> (2026) inserts these automatically — write simple components, get optimised output.</li>
+            <li>Reserve manual memoization for edge cases; still learn it for reading existing code.</li>
+            <li>Purity, Rules of Hooks, and immutability are what make automatic optimisation safe.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

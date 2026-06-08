@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-11 · Building Custom Hooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 11</div>
+        <h1>Building Custom Hooks</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React · pivotal</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">♻️ Reusable logic</span>
+        </div>
+        <p class="lead">
+          Components reuse <em>UI</em>; <strong>custom hooks</strong> reuse <em>stateful logic</em>. A custom hook
+          is just a function whose name starts with <code>use</code> and that calls other hooks. This is React's
+          most elegant idea for sharing behaviour — a localStorage syncer, a debounced value, a data fetcher —
+          without duplicating code. Mastering custom hooks is what makes your React code DRY and testable.
+        </p>
+
+        <h2>1. Your first custom hook</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useToggle.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useCallback } from "react";
+
+// A custom hook: a function starting with "use" that uses other hooks.
+function useToggle(initial = false): [boolean, () =&gt; void] {
+  const [on, setOn] = useState(initial);
+  const toggle = useCallback(() =&gt; setOn((v) =&gt; !v), []);
+  return [on, toggle]; // return a tuple, like useState
+}
+
+// Reuse it anywhere — each call gets its OWN independent state:
+function Panel() {
+  const [isOpen, toggleOpen] = useToggle();
+  return (
+    &lt;div&gt;
+      &lt;button onClick={toggleOpen}&gt;{isOpen ? "Hide" : "Show"}&lt;/button&gt;
+      {isOpen &amp;&amp; &lt;p&gt;Now you see me.&lt;/p&gt;}
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>A custom hook is just a function that calls hooks.</strong> The <code>use</code> prefix is a
+            convention React's lint rules rely on. Like <code>useState</code>, each component that calls
+            <code>useToggle</code> gets its own isolated state (closures again — lesson 00-08). You've extracted
+            reusable behaviour with zero ceremony.
+          </div>
+        </div>
+
+        <h2>2. A genuinely useful hook: useLocalStorage</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useLocalStorage.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useEffect } from "react";
+
+// Generic over the stored value's type (lesson 01-08!):
+function useLocalStorage&lt;T&gt;(key: string, initial: T) {
+  const [value, setValue] = useState&lt;T&gt;(() =&gt; {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : initial; // lazy init
+  });
+
+  useEffect(() =&gt; {
+    localStorage.setItem(key, JSON.stringify(value)); // sync to storage
+  }, [key, value]);
+
+  return [value, setValue] as const; // tuple, preserving types
+}
+
+// Usage — fully typed, persists across reloads:
+function Settings() {
+  const [theme, setTheme] = useLocalStorage&lt;"light" | "dark"&gt;("theme", "light");
+  return &lt;button onClick={() =&gt; setTheme(theme === "light" ? "dark" : "light")}&gt;
+    {theme}
+  &lt;/button&gt;;
+}</pre>
+          <div class="annot">
+            <strong>This composes everything:</strong> generics (01-08) for the value type, lazy state
+            initialisation (the function form of <code>useState</code> runs once), and an effect (04-07) to sync to
+            <code>localStorage</code>. <code>as const</code> (02-10) keeps the return a tuple. One small hook, reused
+            across an app — and it's exactly the kind of utility you'll write constantly.
+          </div>
+        </div>
+
+        <h2>3. Composing hooks &amp; the rules</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useDebounced.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useEffect } from "react";
+
+// Delay a value's updates — great for search-as-you-type.
+function useDebounced&lt;T&gt;(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() =&gt; {
+    const id = setTimeout(() =&gt; setDebounced(value), delayMs);
+    return () =&gt; clearTimeout(id); // cleanup cancels the pending update
+  }, [value, delayMs]);
+  return debounced;
+}
+
+function Search() {
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounced(query, 300); // hooks compose freely
+  // ...fetch using debouncedQuery, so we don't fire on every keystroke...
+  return &lt;input value={query} onChange={(e) =&gt; setQuery(e.target.value)} /&gt;;
+}</pre>
+          <div class="annot">
+            <strong>Hooks compose:</strong> custom hooks call built-in hooks and each other. The <b>Rules of
+            Hooks</b> apply: only call hooks at the top level of a component or another hook, never inside loops,
+            conditions, or nested functions — so React can track them by call order. The ESLint plugin (03-04)
+            enforces this; trust it.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Custom hooks are unit-testable</div>
+            <p style="margin:6px 0 0">
+              Because a custom hook is just a function, you can test it in isolation with Testing Library's
+              <code>renderHook</code> (Part 5) — no full component needed. Extracting logic into hooks doesn't just
+              DRY your UI; it makes your logic <em>testable</em>, the same principle as the pure cores of P01/P02.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build useCounter and usePrevious</div>
+            <p style="margin:6px 0 0">
+              1) <code>useCounter(initial)</code> returning <code>{ count, increment, decrement, reset }</code>.
+              2) <code>usePrevious(value)</code> that returns the value from the previous render (hint: a ref + an
+              effect, lesson 04-08). Reuse each in a small component to confirm the behaviour.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A <b>custom hook</b> is a <code>use</code>-prefixed function that calls other hooks to reuse stateful logic.</li>
+            <li>Each call gets independent state; return a <b>tuple</b> (like <code>useState</code>) or an object.</li>
+            <li>Hooks <b>compose</b> generics, effects, refs, and other hooks (e.g. <code>useLocalStorage</code>, <code>useDebounced</code>).</li>
+            <li>Obey the <b>Rules of Hooks</b>: top-level only, never conditional — enforced by ESLint.</li>
+            <li>Custom hooks make logic reusable <em>and</em> unit-testable (<code>renderHook</code>).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

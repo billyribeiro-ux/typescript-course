@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-12 · React 19 Actions &amp; New Hooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-12";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 12</div>
+        <h1>React 19 Actions &amp; New Hooks</h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React 19 · 2026</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🆕 The latest APIs</span>
+        </div>
+        <p class="lead">
+          React 19 introduced a family of features called <strong>Actions</strong> that dramatically simplify the
+          most common hard problem in UIs: handling async submissions with pending states, errors, and optimistic
+          updates. Plus the new <code>use()</code> API. These are the modern primitives for forms and mutations —
+          you'll use them throughout the rest of the course.
+        </p>
+
+        <h2>1. useActionState — async submissions, simplified</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useActionState.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useActionState } from "react";
+
+interface State { error?: string; success?: boolean; }
+
+async function subscribe(_prev: State, formData: FormData): Promise&lt;State&gt; {
+  const email = String(formData.get("email"));
+  if (!email.includes("@")) return { error: "Invalid email" };
+  await fetch("/api/subscribe", { method: "POST", body: formData });
+  return { success: true };
+}
+
+function Newsletter() {
+  // [currentState, formAction, isPending] — pending state for FREE:
+  const [state, formAction, isPending] = useActionState(subscribe, {});
+
+  return (
+    &lt;form action={formAction}&gt;
+      &lt;input name="email" type="email" /&gt;
+      &lt;button disabled={isPending}&gt;{isPending ? "Submitting..." : "Subscribe"}&lt;/button&gt;
+      {state.error &amp;&amp; &lt;p className="error"&gt;{state.error}&lt;/p&gt;}
+      {state.success &amp;&amp; &lt;p&gt;Thanks for subscribing!&lt;/p&gt;}
+    &lt;/form&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>This replaces a pile of boilerplate.</strong> Before, you'd hand-manage <code>isLoading</code>,
+            <code>error</code>, and the submit handler with <code>useState</code> + <code>useEffect</code>.
+            <code>useActionState</code> gives you the result state, a <code>formAction</code> to wire to
+            <code>&lt;form action&gt;</code>, and <code>isPending</code> — all handled. The action is a plain async
+            function <code>(prevState, formData) =&gt; newState</code>.
+          </div>
+        </div>
+
+        <h2>2. useFormStatus — pending state for nested buttons</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useFormStatus.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useFormStatus } from "react-dom";
+
+// A reusable submit button that knows the form's pending state —
+// WITHOUT props being drilled down from the form.
+function SubmitButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return &lt;button type="submit" disabled={pending}&gt;
+    {pending ? "Working..." : label}
+  &lt;/button&gt;;
+}
+// Drop &lt;SubmitButton /&gt; inside any &lt;form&gt; and it auto-disables while submitting.</pre>
+          <div class="annot">
+            <strong><code>useFormStatus</code> reads the status of the nearest parent <code>&lt;form&gt;</code></strong> —
+            so a shared <code>SubmitButton</code> component can show a pending state anywhere, with no prop
+            threading. This is how you build reusable form controls in a design system that "just work".
+          </div>
+        </div>
+
+        <h2>3. useOptimistic — instant UI feedback</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useOptimistic.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useOptimistic } from "react";
+
+function MessageList({ messages, sendMessage }: {
+  messages: string[];
+  sendMessage: (text: string) =&gt; Promise&lt;void&gt;;
+}) {
+  // Show the new message IMMEDIATELY, before the server confirms:
+  const [optimistic, addOptimistic] = useOptimistic(
+    messages,
+    (current, newText: string) =&gt; [...current, newText + " (sending...)"]
+  );
+
+  async function action(formData: FormData) {
+    const text = String(formData.get("text"));
+    addOptimistic(text);          // UI updates instantly
+    await sendMessage(text);      // then the real request happens
+  }
+
+  return (
+    &lt;form action={action}&gt;
+      &lt;ul&gt;{optimistic.map((m, i) =&gt; &lt;li key={i}&gt;{m}&lt;/li&gt;)}&lt;/ul&gt;
+      &lt;input name="text" /&gt;
+    &lt;/form&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Optimistic updates make an app feel instant.</strong> <code>useOptimistic</code> shows the
+            expected result immediately while the real request is in flight, then reconciles with the true state
+            when it resolves (reverting on error). This is the polish that distinguishes professional apps — and
+            React 19 makes it a one-liner.
+          </div>
+        </div>
+
+        <h2>4. The use() API</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">use-api.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { use, Suspense } from "react";
+
+// use() unwraps a promise (or context) — read inside a Suspense boundary:
+function UserName({ userPromise }: { userPromise: Promise&lt;{ name: string }&gt; }) {
+  const user = use(userPromise); // suspends until resolved
+  return &lt;p&gt;{user.name}&lt;/p&gt;;
+}
+
+function App({ userPromise }: { userPromise: Promise&lt;{ name: string }&gt; }) {
+  return (
+    &lt;Suspense fallback={&lt;p&gt;Loading...&lt;/p&gt;}&gt;
+      &lt;UserName userPromise={userPromise} /&gt;
+    &lt;/Suspense&gt;
+  );
+}
+// Unlike hooks, use() can be called conditionally. Suspense (Part 5) shows
+// the fallback while the promise is pending.</pre>
+          <div class="annot">
+            <strong><code>use()</code> reads the value of a promise or context</strong>, integrating with Suspense
+            (Part 5) to show a fallback while loading. Unlike other hooks, it can be called conditionally. It's a
+            building block for the data-fetching patterns we explore in Part 5 and the Server Components of Part 7.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · Why this matters</div>
+            <p style="margin:6px 0 0">
+              Actions unify client and server mutations. The same <code>action</code> pattern works with Next.js
+              <b>Server Actions</b> (Part 7), so a form's submit logic can run on the server with full type safety,
+              pending states, and optimistic UI — all using these exact hooks. You're learning the foundation of
+              modern full-stack React.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A todo form with Actions</div>
+            <p style="margin:6px 0 0">
+              Build an add-todo form using <code>useActionState</code> (validate non-empty, simulate an async save
+              with a delay), a shared <code>&lt;SubmitButton /&gt;</code> using <code>useFormStatus</code>, and
+              <code>useOptimistic</code> to show the new todo immediately. You've just built a polished, modern form
+              with almost no boilerplate.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>useActionState</code></b> handles async submissions: result state, a <code>formAction</code>, and <code>isPending</code> for free.</li>
+            <li><b><code>useFormStatus</code></b> lets nested buttons read the parent form's pending state — no prop drilling.</li>
+            <li><b><code>useOptimistic</code></b> shows expected results instantly, reconciling when the request resolves.</li>
+            <li><b><code>use()</code></b> unwraps promises/context and integrates with Suspense; it can be called conditionally.</li>
+            <li>These Actions are the foundation for Next.js Server Actions (Part 7) — modern full-stack React.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

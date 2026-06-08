@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04-09 · useReducer &amp; useContext</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "04-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 4 · React Core — Lesson 9</div>
+        <h1><code>useReducer</code> &amp; <code>useContext</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">⚛️ React + TS</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🗃️ Structured state</span>
+        </div>
+        <p class="lead">
+          Two hooks for more complex apps. <strong>useReducer</strong> manages state with the discriminated-union
+          action pattern you mastered in lesson 02-07 — ideal when state transitions get intricate.
+          <strong>useContext</strong> shares data across the component tree without "prop drilling". Together they
+          form React's built-in answer to app-wide state, and the conceptual basis for Redux (Part 6).
+        </p>
+
+        <h2>1. useReducer: state transitions as data</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useReducer.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useReducer } from "react";
+
+interface State { count: number; step: number; }
+
+// A discriminated union of actions (lesson 02-07!):
+type Action =
+  | { type: "increment" }
+  | { type: "decrement" }
+  | { type: "setStep"; step: number }
+  | { type: "reset" };
+
+// A pure reducer: (state, action) =&gt; newState. Easy to test in isolation.
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "increment": return { ...state, count: state.count + state.step };
+    case "decrement": return { ...state, count: state.count - state.step };
+    case "setStep":   return { ...state, step: action.step };
+    case "reset":     return { count: 0, step: 1 };
+  }
+}
+
+function Counter() {
+  const [state, dispatch] = useReducer(reducer, { count: 0, step: 1 });
+  return (
+    &lt;div&gt;
+      &lt;p&gt;{state.count} (step {state.step})&lt;/p&gt;
+      &lt;button onClick={() =&gt; dispatch({ type: "increment" })}&gt;+&lt;/button&gt;
+      &lt;button onClick={() =&gt; dispatch({ type: "decrement" })}&gt;-&lt;/button&gt;
+      &lt;button onClick={() =&gt; dispatch({ type: "reset" })}&gt;Reset&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>This is lesson 02-07 made interactive.</strong> The reducer is a <em>pure function</em> taking
+            the current state and a typed action, returning new state — exactly like the discriminated-union
+            reducers you wrote. You <code>dispatch</code> actions; React runs the reducer and re-renders. Because
+            the reducer is pure, it's trivially unit-testable (just like P01's logic).
+          </div>
+        </div>
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">useState or useReducer?</div>
+            <p style="margin:6px 0 0">
+              Use <b>useState</b> for simple, independent values. Reach for <b>useReducer</b> when state has
+              multiple sub-values that change together, when the next state depends on complex logic, or when you
+              want transitions described as named actions (great for testing and debugging). The reducer also
+              centralises all the ways state can change in one readable place.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The prop-drilling problem</h2>
+        <p>
+          When deeply-nested components need the same data (the current user, the theme), passing it through every
+          intermediate component as props — "prop drilling" — becomes tedious and noisy. <strong>Context</strong>
+          lets a provider share a value with any descendant directly.
+        </p>
+
+        <h2>3. useContext</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">ThemeContext.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { createContext, useContext, useState, type ReactNode } from "react";
+
+interface ThemeContextValue { theme: "light" | "dark"; toggle: () =&gt; void; }
+
+// 1. Create the context (undefined default forces use within a provider):
+const ThemeContext = createContext&lt;ThemeContextValue | undefined&gt;(undefined);
+
+// 2. A provider component owns the state and shares it:
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState&lt;"light" | "dark"&gt;("light");
+  const toggle = () =&gt; setTheme((t) =&gt; (t === "light" ? "dark" : "light"));
+  return &lt;ThemeContext value={{ theme, toggle }}&gt;{children}&lt;/ThemeContext&gt;;
+}
+
+// 3. A typed custom hook to consume it safely:
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  return ctx;
+}
+
+// 4. Any descendant uses it — no prop drilling:
+function ThemeButton() {
+  const { theme, toggle } = useTheme();
+  return &lt;button onClick={toggle}&gt;Theme: {theme}&lt;/button&gt;;
+}</pre>
+          <div class="annot">
+            <strong>The professional pattern in four steps:</strong> create the context (typed, undefined default),
+            wrap your tree in a provider that owns the state, and expose a <em>custom hook</em>
+            (<code>useTheme</code>) that throws if used outside the provider — so consumers get a guaranteed
+            non-null value with full types. In React 19 you render <code>&lt;ThemeContext&gt;</code> directly as the
+            provider (no <code>.Provider</code>).
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Context is not a state manager</div>
+            <p style="margin:6px 0 0">
+              Context is a <em>transport</em> mechanism, not optimised state management. Every consumer re-renders
+              when the context value changes. It's perfect for low-frequency global data (theme, current user,
+              locale). For high-frequency or large app state, use a dedicated tool — <b>Zustand</b> or <b>Redux
+              Toolkit</b> (Part 6). Combining <code>useReducer</code> + context is a fine middle ground.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A cart with reducer + context</div>
+            <p style="margin:6px 0 0">
+              Build a shopping-cart reducer with actions <code>add</code>, <code>remove</code>,
+              <code>changeQty</code>, <code>clear</code> (use immutable updates). Expose it through a
+              <code>CartProvider</code> + <code>useCart</code> hook. Render a product list that dispatches
+              <code>add</code> and a cart badge that reads the count — with no prop drilling.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>useReducer</code></b> manages state via a pure <code>(state, action) =&gt; state</code> reducer with discriminated-union actions (02-07).</li>
+            <li>Prefer it over <code>useState</code> for complex, multi-field, or transition-heavy state; it's easy to test.</li>
+            <li><b><code>useContext</code></b> shares data across the tree, eliminating prop drilling.</li>
+            <li>Wrap context in a <b>typed custom hook</b> that throws outside its provider for safety.</li>
+            <li>Context is transport, not optimised state — for big/fast state use Zustand/Redux (Part 6).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
