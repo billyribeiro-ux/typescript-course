@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Ultimate TypeScript + React Engineering Course · 2026 Edition</title>
+  <meta name="description" content="From your first line of code to Principal Engineer (L7++). A complete, hands-on, offline TypeScript + React university curriculum." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/css/course.css" />
+  <script>window.COURSE_ROOT = "./";</script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <a class="brand" href="./index.html">
+      <span class="logo">TS</span>
+      <span>TS + React Mastery <small>2026 Edition</small></span>
+    </a>
+    <div class="breadcrumb"></div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <section class="home-hero">
+    <span class="kicker">🎓 Zero → Principal Engineer · L7++</span>
+    <h1>Become a <span class="grad">distinguished TypeScript &amp; React engineer</span> — from your very first line of code.</h1>
+    <p>
+      A complete, hands-on, university-grade curriculum. No prior coding required. You'll build
+      real projects in every section and finish able to architect and ship anything you can imagine —
+      taught in plain English, to a principal-engineer depth, with the latest 2026 tools.
+    </p>
+    <div class="home-cta">
+      <a class="btn primary" id="startBtn" href="./lessons/part-00-foundations/00-01-how-the-web-works.html">Start the course →</a>
+      <a class="btn ghost" href="#syllabus">Browse the syllabus</a>
+    </div>
+  </section>
+
+  <main class="home-wrap">
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="callout note" style="max-width:none">
+      <span class="ic">💡</span>
+      <div class="body">
+        <div class="tt">How to use this course</div>
+        <p style="margin:6px 0 0">
+          Every lesson is a self-contained page with live, editable code editors (powered by a
+          locally-bundled Monaco — the same editor as VS Code). It works <b>fully offline</b>: just open
+          the files. Read top-to-bottom, copy the code, run the projects, and use the
+          <b>Next / Previous</b> buttons to move through the curriculum. For live type-checking inside the
+          editors, serve the folder over <span class="kbd">localhost</span> (see the README) — opening via
+          <span class="kbd">file://</span> still gives you full syntax highlighting and copy/paste.
+        </p>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="syllabus">The Curriculum</h2>
+    <p class="section-sub">Ten parts, 100+ lessons, nine real-world projects, one capstone SaaS. Built to be followed line by line.</p>
+    <div class="part-grid" id="partGrid"></div>
+
+    <h2 class="section-title" style="margin-top:56px">The Project Portfolio</h2>
+    <p class="section-sub">You don't just learn — you build. Here's what you'll have shipped by the end.</p>
+    <div class="part-grid" id="projectGrid"></div>
+
+    <h2 class="section-title" style="margin-top:56px">The 2026 Toolchain You'll Master</h2>
+    <p class="section-sub">Every tool is current as of June 2026 — taught with its latest syntax and features.</p>
+    <div class="part-grid" id="stackGrid"></div>
+  </main>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+
+  <script src="./assets/js/lessons.js"></script>
+  <script src="./assets/js/course.js"></script>
+  <script>
+    (function () {
+      var C = window.COURSE;
+      var flat = window.COURSE_FLAT;
+      var totalLessons = flat.length;
+      var available = flat.filter(function (l) { return l.status === "available"; }).length;
+
+      // Stats
+      var stats = [
+        { num: C.parts.length, lbl: "Parts" },
+        { num: totalLessons + "+", lbl: "Lessons" },
+        { num: "9", lbl: "Real Projects" },
+        { num: "1", lbl: "Capstone SaaS" }
+      ];
+      document.getElementById("statGrid").innerHTML = stats.map(function (s) {
+        return '<div class="stat-card"><div class="num">' + s.num + '</div><div class="lbl">' + s.lbl + '</div></div>';
+      }).join("");
+
+      // Part cards
+      document.getElementById("partGrid").innerHTML = C.parts.map(function (p) {
+        var avail = p.lessons.filter(function (l) { return l.status === "available"; });
+        var first = avail[0] || p.lessons[0];
+        var locked = avail.length === 0;
+        var href = first ? ("./" + first.file) : "#";
+        return '<div class="part-card' + (locked ? " locked" : "") + '">' +
+            '<div class="pc-top"><div class="pc-badge">' + p.icon + '</div>' +
+              '<div><h3>Part ' + p.num + ' · ' + escapeHtml(p.title) + '</h3>' +
+              '<div class="pc-sub">' + p.lessons.length + ' lessons</div></div></div>' +
+            '<p>' + escapeHtml(p.subtitle) + '</p>' +
+            '<a class="pc-link" href="' + href + '">' + (locked ? "Coming soon" : "Open Part " + p.num) + '</a>' +
+          '</div>';
+      }).join("");
+
+      // Projects
+      var projects = [
+        ["📇", "P01 · CLI Task Manager", "A fully type-safe command-line app in pure TypeScript with Vitest tests."],
+        ["🧪", "P02 · Schema Validator Library", "A published-style mini-Zod — advanced type-level programming."],
+        ["🌦️", "P03 · Weather Dashboard", "Vite + React 19, TanStack Query, React Hook Form + Zod, Tailwind v4."],
+        ["🗂️", "P04 · Kanban Board", "Zustand, drag-and-drop, Motion animations, TanStack Table."],
+        ["📊", "P05 · Enterprise Admin", "Redux Toolkit + RTK Query, auth, roles, data grids."],
+        ["💬", "P06 · Real-Time Chat", "React 19 Suspense, optimistic UI, websockets."],
+        ["🚀", "P07 · Next.js SaaS Starter", "Server Components, Server Actions, Drizzle, tRPC, auth, billing."],
+        ["🎨", "P08 · Design System", "shadcn/ui + CVA component library in a monorepo package."],
+        ["🎓", "Capstone · ProjectHub", "A production full-stack SaaS, built end-to-end. Your graduation."]
+      ];
+      document.getElementById("projectGrid").innerHTML = projects.map(function (p) {
+        return '<div class="part-card"><div class="pc-top"><div class="pc-badge">' + p[0] + '</div>' +
+          '<div><h3>' + escapeHtml(p[1]) + '</h3></div></div><p>' + escapeHtml(p[2]) + '</p></div>';
+      }).join("");
+
+      // Stack
+      var stack = [
+        ["🔷", "TypeScript 5.9 → 7", "Including the native Go-based 'tsgo' compiler, decorators, using, satisfies."],
+        ["⚛️", "React 19 + Compiler", "Actions, useActionState, useOptimistic, use(), automatic memoization."],
+        ["⚡", "Vite 7 & Vitest 3", "Lightning dev server, instant HMR, blazing unit tests."],
+        ["🌐", "Next.js 15", "App Router, Server Components, Server Actions, PPR streaming."],
+        ["🔄", "TanStack Query/Router/Table", "Type-safe routing, server-state caching, headless data grids."],
+        ["🐻", "Zustand · Jotai · Redux Toolkit", "Every flavour of state management, and when to use each."],
+        ["📝", "React Hook Form + Zod", "Bullet-proof, fully-typed forms and validation."],
+        ["🎨", "Tailwind v4 · shadcn/ui · CVA", "Modern styling and a real design system."],
+        ["🎬", "Motion", "Production-grade animations and gestures."],
+        ["🗄️", "Drizzle ORM + tRPC v11", "End-to-end type safety from the database to the button."],
+        ["🎭", "Playwright", "Reliable end-to-end browser testing."],
+        ["📦", "pnpm + Turborepo", "Fast installs and scalable monorepos."]
+      ];
+      document.getElementById("stackGrid").innerHTML = stack.map(function (p) {
+        return '<div class="part-card"><div class="pc-top"><div class="pc-badge">' + p[0] + '</div>' +
+          '<div><h3>' + escapeHtml(p[1]) + '</h3></div></div><p>' + escapeHtml(p[2]) + '</p></div>';
+      }).join("");
+
+      // Point "Start" at the first available lesson.
+      var firstAvail = flat.find(function (l) { return l.status === "available"; });
+      if (firstAvail) document.getElementById("startBtn").href = "./" + firstAvail.file;
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

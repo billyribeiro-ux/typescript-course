@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-01 · How Computers &amp; the Web Really Work</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html">
+      <span class="logo">TS</span>
+      <span>TS + React Mastery <small>2026</small></span>
+    </a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 1</div>
+        <h1>How Computers &amp; the Web Really Work</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner · no code yet</span>
+          <span class="chip">⏱️ ~20 min read</span>
+          <span class="chip">🧠 Mental models</span>
+        </div>
+
+        <p class="lead">
+          Before you write a single line of code, you need the map of the territory. A principal
+          engineer isn't just someone who types fast — it's someone who has a precise mental model of
+          what actually happens when software runs. In this lesson we build that model from the ground
+          up: what a computer does, what a program is, and exactly what happens between you clicking a
+          link and a web page appearing. Everything you learn later sits on top of this foundation.
+        </p>
+
+        <h2>1. What a computer actually does</h2>
+        <p>
+          Strip away the screens and the apps and a computer is a machine that does one thing,
+          billions of times per second: <strong>it follows a list of simple instructions, in order,
+          on data stored in memory.</strong> That's it. Every app, game, website, and AI model is
+          ultimately a very long, very clever list of tiny instructions like "add these two numbers,"
+          "compare them," "if this is bigger, jump to instruction 5,042."
+        </p>
+        <p>There are four pieces you'll hear about constantly. Here's what each one really is:</p>
+        <table>
+          <thead><tr><th>Part</th><th>Plain-English job</th><th>Analogy</th></tr></thead>
+          <tbody>
+            <tr><td><b>CPU</b></td><td>The worker that executes instructions, one after another, extremely fast.</td><td>A chef following a recipe.</td></tr>
+            <tr><td><b>RAM (memory)</b></td><td>Fast, temporary workspace holding the data and program currently in use. Cleared when power is off.</td><td>The kitchen counter — roomy but wiped clean each night.</td></tr>
+            <tr><td><b>Disk (SSD)</b></td><td>Slow, permanent storage. Your files live here even when the computer is off.</td><td>The pantry and fridge.</td></tr>
+            <tr><td><b>I/O</b></td><td>Everything the computer talks to: keyboard, screen, network, mouse.</td><td>The doors and windows of the kitchen.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Code is just data that describes work</div>
+            <p style="margin:6px 0 0">
+              The "program" you'll write is text. Something (a compiler or an interpreter) turns that
+              text into the simple instructions the CPU understands. When we learn TypeScript, we're
+              learning a precise, human-friendly language for describing work that ultimately becomes
+              those tiny CPU instructions.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. From human language to machine language</h2>
+        <p>
+          CPUs only understand <em>machine code</em> — raw numbers. Writing that by hand would be
+          torture, so we invented <strong>programming languages</strong>: readable text with rules.
+          Two strategies turn that text into running software:
+        </p>
+        <ul>
+          <li><strong>Compiled</strong> languages translate the whole program ahead of time into machine code (e.g. C, Rust, Go).</li>
+          <li><strong>Interpreted</strong> languages are read and executed on the fly by another program called an interpreter (e.g. JavaScript, Python).</li>
+        </ul>
+        <p>
+          <strong>JavaScript</strong> — the language that runs in every web browser — is interpreted (and
+          then cleverly just-in-time compiled) by an <em>engine</em>. <strong>TypeScript</strong>, which
+          you'll spend this course mastering, is JavaScript with a safety layer of <em>types</em> bolted
+          on. Before it runs, TypeScript is <em>compiled</em> down to plain JavaScript. We'll unpack all
+          of this properly in Part 1 — for now, just hold the shape of it.
+        </p>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">What's new in 2026</div>
+            <p style="margin:6px 0 0">
+              The TypeScript compiler itself was historically written in TypeScript. In 2026 the team
+              shipped a <b>native compiler written in Go ("tsgo", TypeScript 7)</b> that type-checks
+              roughly <b>10× faster</b>. You don't need this yet, but it's a sign of how alive this
+              ecosystem is — and we devote a whole lesson to it in Part 3.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. The web: clients, servers, and requests</h2>
+        <p>
+          The web is a giant conversation between two kinds of computers. A <strong>client</strong>
+          (your browser) asks for things. A <strong>server</strong> (a computer somewhere in a data
+          centre) answers. They speak a protocol called <strong>HTTP</strong> — a shared set of rules
+          for asking and answering. When you type an address and hit enter, here's the journey:
+        </p>
+
+        <svg class="diagram" viewBox="0 0 760 220" role="img" aria-label="Diagram of a browser request to a server and the response" style="display:block;margin:24px auto;max-width:100%">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"></path>
+            </marker>
+            <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+          <rect x="20" y="70" width="180" height="90" rx="12" fill="#eff4ff" stroke="#2563eb" stroke-width="2"></rect>
+          <text x="110" y="108" text-anchor="middle" font-family="Inter" font-weight="800" font-size="16" fill="#1d4ed8">💻 Client</text>
+          <text x="110" y="132" text-anchor="middle" font-family="Inter" font-size="12.5" fill="#4a5160">Your browser</text>
+
+          <rect x="560" y="70" width="180" height="90" rx="12" fill="#f3eeff" stroke="#7c3aed" stroke-width="2"></rect>
+          <text x="650" y="108" text-anchor="middle" font-family="Inter" font-weight="800" font-size="16" fill="#6d28d9">🖥️ Server</text>
+          <text x="650" y="132" text-anchor="middle" font-family="Inter" font-size="12.5" fill="#4a5160">In a data centre</text>
+
+          <line x1="205" y1="98" x2="555" y2="98" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow)"></line>
+          <text x="380" y="88" text-anchor="middle" font-family="JetBrains Mono" font-size="12.5" fill="#1d4ed8">1 · GET /index.html  (request)</text>
+
+          <line x1="555" y1="140" x2="205" y2="140" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow2)"></line>
+          <text x="380" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="12.5" fill="#6d28d9">2 · 200 OK + HTML/CSS/JS  (response)</text>
+        </svg>
+
+        <ol>
+          <li><strong>DNS lookup.</strong> The human-friendly name (like <code>example.com</code>) is translated into a numeric <em>IP address</em> — the actual location of the server. DNS is the web's phone book.</li>
+          <li><strong>Connection.</strong> Your browser opens a secure connection to that address (the padlock = <code>HTTPS</code>, encrypted).</li>
+          <li><strong>Request.</strong> The browser sends an HTTP request: "GET me the page at this path."</li>
+          <li><strong>Response.</strong> The server replies with a status code (<code>200</code> = OK, <code>404</code> = not found) and the content: usually HTML, plus links to CSS and JavaScript.</li>
+          <li><strong>Render.</strong> The browser reads the HTML, downloads the CSS and JS it references, and paints pixels on your screen.</li>
+        </ol>
+
+        <div class="callout note">
+          <span class="ic">📨</span>
+          <div class="body">
+            <div class="tt">Note · This round-trip is the heartbeat of everything</div>
+            <p style="margin:6px 0 0">
+              Later, when you build React apps that fetch data, deploy to a server, and debug a slow
+              page, you'll be reasoning about exactly these five steps. Keep this picture in your head.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. The three languages of the web</h2>
+        <p>
+          A web page is built from three layers, each with a single job. A useful metaphor is a human
+          body:
+        </p>
+        <table>
+          <thead><tr><th>Language</th><th>Job</th><th>Body metaphor</th></tr></thead>
+          <tbody>
+            <tr><td><b>HTML</b></td><td>Structure &amp; content — headings, paragraphs, buttons.</td><td>The skeleton.</td></tr>
+            <tr><td><b>CSS</b></td><td>Presentation — colours, spacing, layout, fonts.</td><td>The skin &amp; clothes.</td></tr>
+            <tr><td><b>JavaScript</b></td><td>Behaviour — what happens when you click, type, or scroll.</td><td>The muscles &amp; brain.</td></tr>
+          </tbody>
+        </table>
+        <p>
+          You will become fluent in all three, but JavaScript (and its safer sibling TypeScript) is
+          where the real engineering lives — and where React, the library powering most modern apps,
+          operates. Let's see all three together. Here is a complete, tiny web page. Read every line;
+          the annotation underneath explains it.
+        </p>
+
+        <div class="editor" data-lang="html">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">hello.html</span>
+            <span class="lang-tag">html</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;title&gt;My First Page&lt;/title&gt;
+    &lt;style&gt;
+      /* CSS: how it looks */
+      body { font-family: sans-serif; text-align: center; padding: 40px; }
+      h1   { color: #2563eb; }
+      button { font-size: 18px; padding: 10px 20px; cursor: pointer; }
+    &lt;/style&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;!-- HTML: the structure and content --&gt;
+    &lt;h1&gt;Hello, web!&lt;/h1&gt;
+    &lt;p id="count"&gt;You have clicked 0 times.&lt;/p&gt;
+    &lt;button id="btn"&gt;Click me&lt;/button&gt;
+
+    &lt;script&gt;
+      // JavaScript: the behaviour
+      let clicks = 0;
+      const button = document.getElementById("btn");
+      const label  = document.getElementById("count");
+      button.addEventListener("click", () =&gt; {
+        clicks = clicks + 1;
+        label.textContent = "You have clicked " + clicks + " times.";
+      });
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> the <code>&lt;style&gt;</code> block is CSS (presentation).
+            The <code>&lt;h1&gt;</code>, <code>&lt;p&gt;</code>, and <code>&lt;button&gt;</code> are HTML
+            (structure). The <code>&lt;script&gt;</code> is JavaScript (behaviour): it remembers a number,
+            finds the button on the page, and every time you click, increases the number and updates the
+            text. Don't worry about syntax yet — just notice the <em>three layers cooperating</em>.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">🧪</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Try it yourself</div>
+            <p style="margin:6px 0 0">
+              That code block above is a <b>real, editable editor</b> — the same engine that powers VS
+              Code, running locally in your browser. Click into it and change <code>"Hello, web!"</code>
+              to your name. Use the <b>Copy</b> button to grab the whole file, paste it into a text
+              editor, save it as <code>hello.html</code>, and double-click it. You just shipped a web
+              page. (We'll set up a proper environment in the next lesson.)
+            </p>
+          </div>
+        </div>
+
+        <h2>5. Where React fits (the 30-second preview)</h2>
+        <p>
+          Writing <code>document.getElementById</code> and manually updating text gets painful fast —
+          imagine doing it for a dashboard with thousands of moving parts. <strong>React</strong> is a
+          library that lets you <em>describe</em> what the screen should look like for a given state of
+          your data, and it figures out the minimal changes to the page for you. You write "the label
+          should say <em>You have clicked N times</em>," and React handles the rest whenever
+          <em>N</em> changes. We'll arrive there in Part 4 — and by then you'll have the TypeScript
+          foundation to use it like a senior engineer.
+        </p>
+
+        <h2>6. The mindset of an engineer</h2>
+        <p>
+          One last thing, and it matters more than any syntax. The difference between a beginner and a
+          principal engineer is rarely raw knowledge — it's <strong>how they think when something
+          breaks</strong>. Three habits to start cultivating from lesson one:
+        </p>
+        <ul>
+          <li><strong>Build a model, then test it.</strong> Form a belief about what the code does, then verify it. Surprises are where learning happens.</li>
+          <li><strong>Read the error.</strong> Error messages are not noise — they are the computer telling you precisely what it expected. We will read thousands together.</li>
+          <li><strong>Break big problems into tiny ones.</strong> Every large system is just small, understandable pieces wired together — exactly like those CPU instructions.</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Cement the mental model</div>
+            <p style="margin:6px 0 0">
+              Without looking back, write down (on paper or in a notes app) the five steps that happen
+              between hitting Enter on a URL and seeing the page. Then explain, in one sentence each,
+              the job of HTML, CSS, and JavaScript. If you can do this from memory, you're ready for the
+              next lesson.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A computer follows simple instructions on data in memory, very fast. Code is human-readable text that becomes those instructions.</li>
+            <li>The web is clients (browsers) making HTTP <em>requests</em> and servers sending <em>responses</em> — remember the five-step round-trip.</li>
+            <li>Web pages are three cooperating layers: <b>HTML</b> (structure), <b>CSS</b> (style), <b>JavaScript</b> (behaviour).</li>
+            <li>TypeScript is JavaScript plus a type-safety layer that's compiled to JavaScript before it runs.</li>
+            <li>Engineering is a mindset: build a model, read the errors, break problems down.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev disabled" data-nav-prev>
+            <span class="dir">◀ Previous</span>
+            <span class="ttl">Start of course</span>
+          </a>
+          <a class="next" data-nav-next>
+            <span class="dir">Next ▶</span>
+            <span class="ttl">Loading…</span>
+          </a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

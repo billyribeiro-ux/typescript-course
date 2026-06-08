@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{LESSON_ID}} · {{TITLE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "{{LESSON_ID}}";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html">
+      <span class="logo">TS</span>
+      <span>TS + React Mastery <small>2026</small></span>
+    </a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">{{EYEBROW}}</div>
+        <h1>{{TITLE}}</h1>
+        <div class="lesson-meta">
+          <span class="chip">⏱️ ~20 min</span>
+        </div>
+        <p class="lead">{{LEAD}}</p>
+
+        <!-- ============ LESSON BODY GOES HERE ============
+
+        Callouts:
+          <div class="callout concept|tip|gotcha|warn|note|new|exercise">
+            <span class="ic">🧩</span>
+            <div class="body"><div class="tt">Title</div><p>…</p></div>
+          </div>
+
+        Code editor (escape < > & in the .code-source; write </script> as <\/script>):
+          <div class="editor" data-lang="typescript">
+            <div class="editor-bar">
+              <div class="dots"><i></i><i></i><i></i></div>
+              <span class="fname">example.ts</span>
+              <span class="lang-tag">typescript</span>
+              <span class="spacer"></span>
+              <button data-reset title="Restore original">↺ Reset</button>
+              <button data-copy><span class="lbl">Copy</span></button>
+            </div>
+            <div class="monaco-host"></div>
+            <pre class="code-source">const greeting: string = "hi";</pre>
+            <div class="annot"><strong>What's happening:</strong> …</div>
+          </div>
+
+        Terminal block:
+          <div class="terminal">
+            <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">bash</span></div>
+            <pre><span class="cmd">pnpm install</span>
+        <span class="out">done in 1.2s</span></pre>
+          </div>
+
+        Takeaways:
+          <div class="takeaways"><h3>🎓 Key takeaways</h3><ul><li>…</li></ul></div>
+        ============================================== -->
+
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
