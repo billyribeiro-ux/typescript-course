@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-01 · Conditional Types &amp; infer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 1</div>
+        <h1>Conditional Types &amp; <code>infer</code></h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~38 min</span>
+          <span class="chip">🔬 Type-level programming</span>
+        </div>
+        <p class="lead">
+          Welcome to type-level programming — where types stop being static labels and become a
+          <em>computation</em> the compiler runs. Conditional types are the <code>if/else</code> of this
+          language-within-a-language, and <code>infer</code> is its pattern-matching <code>const</code>. Master
+          these two and you can express almost anything about the shape of data. This is the foundation the
+          entire rest of Part 2 builds on.
+        </p>
+
+        <h2>1. The conditional type</h2>
+        <p>
+          A conditional type has the form <code>T extends U ? X : Y</code> — "if T is assignable to U, the type
+          is X, otherwise Y". It's a ternary that operates on types.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">conditional.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type IsString&lt;T&gt; = T extends string ? true : false;
+
+type A = IsString&lt;"hello"&gt;; // true
+type B = IsString&lt;42&gt;;      // false
+
+// Conditional types shine when the parameter is generic — they compute per use:
+type ToArray&lt;T&gt; = T extends unknown[] ? T : T[];
+type C = ToArray&lt;number&gt;;   // number[]
+type D = ToArray&lt;string[]&gt;; // string[] (already an array, left as-is)
+
+// They power "smart" return types. This is the real-world payoff:
+type ApiPath&lt;T&gt; = T extends "user" ? { id: number; name: string }
+               : T extends "post" ? { id: number; title: string }
+               : never;
+type User = ApiPath&lt;"user"&gt;; // { id: number; name: string }</pre>
+          <div class="annot">
+            <strong>The mental shift:</strong> <code>extends</code> here doesn't mean inheritance — it means
+            "assignable to". <code>T extends U</code> asks "is every value of T also a value of U?" The whole
+            expression resolves to one branch <em>once T is known</em>. Chaining them (as in <code>ApiPath</code>)
+            builds a type-level lookup.
+          </div>
+        </div>
+
+        <h2>2. <code>infer</code> — pattern-matching inside a type</h2>
+        <p>
+          <code>infer</code> introduces a <em>type variable</em> inside the <code>extends</code> clause and lets
+          the compiler solve for it. It's how you "pull a type out of" another type — the single most powerful
+          tool in your type-level toolkit.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">infer.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// "If T is an array of some element E, give me E":
+type ElementOf&lt;T&gt; = T extends (infer E)[] ? E : never;
+type E1 = ElementOf&lt;string[]&gt;;        // string
+type E2 = ElementOf&lt;number[][]&gt;;      // number[]
+
+// Unwrap a Promise — exactly how the built-in Awaited works:
+type Unwrap&lt;T&gt; = T extends Promise&lt;infer V&gt; ? V : T;
+type R = Unwrap&lt;Promise&lt;{ id: number }&gt;&gt;; // { id: number }
+
+// Extract a function's return type (this IS the built-in ReturnType):
+type MyReturnType&lt;F&gt; = F extends (...args: any[]) =&gt; infer R ? R : never;
+function makeUser() { return { id: 1, name: "Ada" }; }
+type MadeUser = MyReturnType&lt;typeof makeUser&gt;; // { id: number; name: string }
+
+// Extract the FIRST parameter's type:
+type FirstParam&lt;F&gt; = F extends (first: infer P, ...rest: any[]) =&gt; any ? P : never;
+type P = FirstParam&lt;(name: string, age: number) =&gt; void&gt;; // string</pre>
+          <div class="annot">
+            <strong>This is the payoff from P02.</strong> Recall <code>Infer&lt;S&gt; = S extends Schema&lt;infer T&gt; ? T : never</code>
+            — that's exactly this pattern, pulling the validated type out of a schema. <code>infer</code> says "I
+            don't know what's here, but capture it and call it E/V/R". The compiler matches the structure and
+            fills it in.
+          </div>
+        </div>
+
+        <h2>3. Distribution over unions (the subtle, crucial rule)</h2>
+        <p>
+          When a conditional type's checked type is a <em>naked</em> generic parameter and you pass a union, the
+          conditional <strong>distributes</strong> — it applies to each member separately and unions the results.
+          This is powerful, occasionally surprising, and you must understand it.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">distribution.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type ToArray&lt;T&gt; = T extends unknown ? T[] : never;
+
+// Distributes over the union: applies to string, then number, separately:
+type Distributed = ToArray&lt;string | number&gt;; // string[] | number[]
+//   NOT (string | number)[] !
+
+// To STOP distribution, wrap both sides in a tuple ("[T] extends [U]"):
+type ToArrayNoDist&lt;T&gt; = [T] extends [unknown] ? T[] : never;
+type NotDistributed = ToArrayNoDist&lt;string | number&gt;; // (string | number)[]
+
+// The built-in Exclude/Extract rely on distribution:
+type MyExclude&lt;T, U&gt; = T extends U ? never : T;
+type WithoutB = MyExclude&lt;"a" | "b" | "c", "b"&gt;; // "a" | "c"</pre>
+          <div class="annot">
+            <strong>The rule:</strong> a "naked" type parameter (<code>T extends ...</code>, not <code>[T] extends
+            [...]</code>) distributes across unions. <code>Exclude</code> exploits this to filter union members.
+            When you <em>don't</em> want distribution, wrap in single-element tuples. Knowing exactly when
+            distribution kicks in separates intermediate from expert.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · boolean is `true | false`</div>
+            <p style="margin:6px 0 0">
+              Because <code>boolean</code> is internally the union <code>true | false</code>, a distributing
+              conditional over <code>boolean</code> runs twice. <code>T extends true ? "y" : "n"</code> applied to
+              <code>boolean</code> yields <code>"y" | "n"</code>, not a single branch. Watch for this in
+              predicates.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. A real utility: function-aware types</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">real-utility.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Recursively unwrap nested Promises (Promise&lt;Promise&lt;T&gt;&gt; → T):
+type DeepAwaited&lt;T&gt; = T extends Promise&lt;infer V&gt; ? DeepAwaited&lt;V&gt; : T;
+type X = DeepAwaited&lt;Promise&lt;Promise&lt;number&gt;&gt;&gt;; // number
+
+// Build a type for "the resolved data of an async function":
+type AsyncReturn&lt;F&gt; =
+  F extends (...args: any[]) =&gt; Promise&lt;infer R&gt; ? R : never;
+
+async function fetchUser(id: number) {
+  return { id, name: "Ada" };
+}
+type FetchedUser = AsyncReturn&lt;typeof fetchUser&gt;; // { id: number; name: string }
+// This is how data-fetching libraries infer your response types for free.</pre>
+          <div class="annot">
+            <strong>Why this matters for React:</strong> TanStack Query, tRPC, and server-action frameworks use
+            exactly these conditional-<code>infer</code> patterns to give you fully-typed data from a single
+            function definition — no manual type annotations. You're learning the machinery behind the magic.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build your own utilities</div>
+            <p style="margin:6px 0 0">
+              1) Write <code>type Last&lt;T extends any[]&gt;</code> that infers the last element type of a tuple
+              (hint: <code>T extends [...any[], infer L]</code>). 2) Write <code>type Flatten&lt;T&gt;</code> that
+              turns <code>T[]</code> into <code>T</code> but leaves non-arrays untouched. 3) Write
+              <code>type PromiseValue&lt;T&gt;</code> equivalent to the built-in <code>Awaited</code>. Verify each in
+              the editor by hovering the result.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Conditional types</b> <code>T extends U ? X : Y</code> are the <code>if/else</code> of type-level programming (<code>extends</code> = "assignable to").</li>
+            <li><b><code>infer</code></b> captures a type from within a structure — the basis of <code>ReturnType</code>, <code>Awaited</code>, and P02's <code>Infer&lt;S&gt;</code>.</li>
+            <li>Naked type params <b>distribute</b> over unions; wrap in <code>[T]</code> to prevent it.</li>
+            <li><code>Exclude</code>/<code>Extract</code> are built on distribution; <code>boolean</code> distributes as <code>true | false</code>.</li>
+            <li>These patterns power the type inference in every modern data library — learn them deeply.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -67,9 +67,9 @@ window.COURSE = {
       icon: "🧠",
       subtitle: "Type-level programming: conditional, mapped & template types.",
       lessons: [
-        { id: "02-01", title: "Conditional Types & infer", file: "lessons/part-02-advanced-typescript/02-01-conditional-types.html", status: "soon" },
-        { id: "02-02", title: "Mapped Types & Key Remapping", file: "lessons/part-02-advanced-typescript/02-02-mapped-types.html", status: "soon" },
-        { id: "02-03", title: "Template Literal Types", file: "lessons/part-02-advanced-typescript/02-03-template-literal-types.html", status: "soon" },
+        { id: "02-01", title: "Conditional Types & infer", file: "lessons/part-02-advanced-typescript/02-01-conditional-types.html", status: "available" },
+        { id: "02-02", title: "Mapped Types & Key Remapping", file: "lessons/part-02-advanced-typescript/02-02-mapped-types.html", status: "available" },
+        { id: "02-03", title: "Template Literal Types", file: "lessons/part-02-advanced-typescript/02-03-template-literal-types.html", status: "available" },
         { id: "02-04", title: "The Utility Type Catalog", file: "lessons/part-02-advanced-typescript/02-04-utility-types.html", status: "soon" },
         { id: "02-05", title: "Building Your Own Utility Types", file: "lessons/part-02-advanced-typescript/02-05-custom-utility-types.html", status: "soon" },
         { id: "02-06", title: "Recursive Types & Type-Level Programming", file: "lessons/part-02-advanced-typescript/02-06-recursive-types.html", status: "soon" },

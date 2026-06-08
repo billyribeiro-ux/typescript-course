@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02-02 · Mapped Types &amp; Key Remapping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "02-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 2 · Advanced TypeScript — Lesson 2</div>
+        <h1>Mapped Types &amp; Key Remapping</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧠 Advanced</span>
+          <span class="chip">⏱️ ~38 min</span>
+          <span class="chip">🗺️ Transforming shapes</span>
+        </div>
+        <p class="lead">
+          If conditional types are the <code>if</code> of type-level programming, <strong>mapped types</strong>
+          are the <code>for</code> loop — they iterate over the keys of a type and build a new type. Add
+          <strong>key remapping</strong> (the <code>as</code> clause) and you can rename, filter, and reshape
+          keys at will. This is how <code>Partial</code>, <code>Readonly</code>, and P02's optional-key splitting
+          actually work.
+        </p>
+
+        <h2>1. The mapped type loop</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">mapped.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type User = { id: number; name: string; age: number };
+
+// "For each key K in User, keep it, but make its value type the same":
+type Clone&lt;T&gt; = { [K in keyof T]: T[K] };
+type C = Clone&lt;User&gt;; // identical to User
+
+// Transform every value to boolean (e.g. a "which fields changed?" map):
+type Flags&lt;T&gt; = { [K in keyof T]: boolean };
+type UserFlags = Flags&lt;User&gt;; // { id: boolean; name: boolean; age: boolean }
+
+// keyof gets the union of keys; T[K] is the value type at key K.
+type UserKeys = keyof User;     // "id" | "name" | "age"
+type AgeType = User["age"];     // number</pre>
+          <div class="annot">
+            <strong>Read <code>{ [K in keyof T]: ... }</code> as a loop:</strong> "for each key <code>K</code> in
+            the union <code>keyof T</code>, produce a property whose value type is the right-hand side." Inside,
+            <code>T[K]</code> is the original value type. Everything else in this lesson is variations on this one
+            construct.
+          </div>
+        </div>
+
+        <h2>2. Modifiers: adding and removing <code>?</code> and <code>readonly</code></h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">modifiers.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type User = { id: number; name: string };
+
+// Add modifiers — these ARE the built-in Partial and Readonly:
+type MyPartial&lt;T&gt;  = { [K in keyof T]?: T[K] };           // all optional
+type MyReadonly&lt;T&gt; = { readonly [K in keyof T]: T[K] };   // all readonly
+
+// REMOVE modifiers with the "-" prefix (the built-in Required):
+type MyRequired&lt;T&gt; = { [K in keyof T]-?: T[K] };          // strip optionality
+type Mutable&lt;T&gt;    = { -readonly [K in keyof T]: T[K] };  // strip readonly
+
+type P = MyPartial&lt;User&gt;;   // { id?: number; name?: string }
+type M = Mutable&lt;{ readonly id: number }&gt;; // { id: number }</pre>
+          <div class="annot">
+            <strong>The <code>+</code>/<code>-</code> modifier prefixes</strong> add or remove <code>?</code> and
+            <code>readonly</code> during the mapping. <code>-?</code> makes optional properties required;
+            <code>-readonly</code> makes them mutable. The standard library's <code>Partial</code>,
+            <code>Required</code>, and <code>Readonly</code> are literally these one-liners. You now understand
+            them from the inside.
+          </div>
+        </div>
+
+        <h2>3. Key remapping with <code>as</code></h2>
+        <p>
+          The <code>as</code> clause lets you <em>rename or filter</em> keys as you map. Combined with template
+          literal types (next lesson) and <code>never</code> (to drop keys), this is breathtakingly expressive.
+        </p>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">remapping.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">type User = { id: number; name: string; age: number };
+
+// Rename keys: generate getter method names with a template literal.
+type Getters&lt;T&gt; = {
+  [K in keyof T as `get${Capitalize&lt;string &amp; K&gt;}`]: () =&gt; T[K];
+};
+type UserGetters = Getters&lt;User&gt;;
+// { getId: () =&gt; number; getName: () =&gt; string; getAge: () =&gt; number }
+
+// FILTER keys: map a key to `never` to drop it. Keep only string-valued props:
+type StringProps&lt;T&gt; = {
+  [K in keyof T as T[K] extends string ? K : never]: T[K];
+};
+type S = StringProps&lt;User&gt;; // { name: string }  (id and age dropped)</pre>
+          <div class="annot">
+            <strong>This is the exact technique P02 uses.</strong> Remember <code>InferObject</code> splitting
+            required vs optional keys? It maps the keys, using <code>as ... ? K : never</code> to route each key
+            into the "required" group or the "optional" group. Mapping a key to <code>never</code> removes it
+            entirely — your tool for filtering object types.
+          </div>
+        </div>
+
+        <h2>4. Real-world mapped utilities</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">utilities.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Deep readonly — recurse into nested objects (uses recursion, lesson 02-06):
+type DeepReadonly&lt;T&gt; = {
+  readonly [K in keyof T]: T[K] extends object ? DeepReadonly&lt;T[K]&gt; : T[K];
+};
+type Config = DeepReadonly&lt;{ server: { port: number }; debug: boolean }&gt;;
+// every level is readonly
+
+// Pick only the function-valued properties of a type:
+type Methods&lt;T&gt; = {
+  [K in keyof T as T[K] extends (...args: any[]) =&gt; any ? K : never]: T[K];
+};
+
+// Make specific keys optional (a genuinely useful custom utility):
+type PartialBy&lt;T, K extends keyof T&gt; = Omit&lt;T, K&gt; &amp; Partial&lt;Pick&lt;T, K&gt;&gt;;
+type Draft = PartialBy&lt;{ id: number; title: string; body: string }, "id"&gt;;
+// { title: string; body: string; id?: number }</pre>
+          <div class="annot">
+            <strong>These are production-grade utilities.</strong> <code>PartialBy</code> in particular — "make
+            just these keys optional" — is something you'll reach for constantly (e.g. a create-form type where
+            the server assigns the <code>id</code>). Notice how mapped types compose with <code>Omit</code>,
+            <code>Pick</code>, and <code>Partial</code> (the utility catalog, lesson 02-04).
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">Pattern · The "stamp" over a literal union</div>
+            <p style="margin:6px 0 0">
+              You can map over <em>any</em> union of keys, not just <code>keyof T</code>:
+              <code>type Routes = { [K in "home" | "about"]: `/${K}` }</code> →
+              <code>{ home: "/home"; about: "/about" }</code>. Mapping over string-literal unions is how
+              type-safe routers and event systems generate their types.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build RequiredBy and Setters</div>
+            <p style="margin:6px 0 0">
+              1) Write <code>RequiredBy&lt;T, K&gt;</code> (the mirror of <code>PartialBy</code>) that makes only the
+              keys in <code>K</code> required. 2) Write <code>Setters&lt;T&gt;</code> that produces
+              <code>{ setId: (v: number) =&gt; void; setName: (v: string) =&gt; void; ... }</code> using key remapping +
+              <code>Capitalize</code>. Confirm the inferred shapes by hovering.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Mapped types</b> <code>{ [K in keyof T]: ... }</code> iterate keys to build a new type — the type-level <code>for</code> loop.</li>
+            <li>Modifiers <code>?</code>/<code>readonly</code> can be added or removed with <code>+</code>/<code>-</code> — the basis of <code>Partial</code>/<code>Required</code>/<code>Readonly</code>.</li>
+            <li><b>Key remapping</b> (<code>as</code>) renames keys (with template literals) or filters them (map to <code>never</code> to drop).</li>
+            <li>This is exactly how P02 splits required vs optional object keys.</li>
+            <li>Compose with <code>Pick</code>/<code>Omit</code>/<code>Partial</code> to build utilities like <code>PartialBy</code>.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
