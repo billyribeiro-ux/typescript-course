@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-03 · The Command Line From Zero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 3</div>
+        <h1>The Command Line From Zero</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~20 min</span>
+          <span class="chip">⌨️ Terminal fluency</span>
+        </div>
+        <p class="lead">
+          The command line (a.k.a. the terminal or shell) feels intimidating at first and then becomes
+          the single fastest way to control your computer. Every professional engineer is fluent in it.
+          In this lesson you'll learn the handful of commands that cover 95% of daily work — navigating
+          folders, creating files, and running programs — and the mental model that ties them together.
+        </p>
+
+        <h2>1. What the terminal actually is</h2>
+        <p>
+          The terminal is a text-based way to talk to your computer. Instead of clicking icons, you
+          <em>type a command</em> and press Enter; a program called a <strong>shell</strong> reads it,
+          runs it, and prints the result. The most common shells are <strong>zsh</strong> and
+          <strong>bash</strong> (macOS/Linux) and <strong>PowerShell</strong> (Windows). The commands
+          below are nearly identical across all of them.
+        </p>
+        <div class="callout concept">
+          <span class="ic">🧭</span>
+          <div class="body">
+            <div class="tt">Concept · The "current directory"</div>
+            <p style="margin:6px 0 0">
+              At every moment, your terminal is "standing inside" one folder — the <b>current working
+              directory</b>. Most commands act relative to where you're standing. Knowing where you are is
+              the whole game.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The core commands</h2>
+        <table>
+          <thead><tr><th>Command</th><th>Does</th></tr></thead>
+          <tbody>
+            <tr><td><code>pwd</code></td><td>Print working directory — "where am I?"</td></tr>
+            <tr><td><code>ls</code></td><td>List the files/folders here. (<code>ls -la</code> shows hidden + details.)</td></tr>
+            <tr><td><code>cd folder</code></td><td>Change directory — walk <em>into</em> a folder.</td></tr>
+            <tr><td><code>cd ..</code></td><td>Go up one level to the parent folder.</td></tr>
+            <tr><td><code>mkdir name</code></td><td>Make a new directory (folder).</td></tr>
+            <tr><td><code>touch file.txt</code></td><td>Create an empty file (macOS/Linux).</td></tr>
+            <tr><td><code>cat file</code></td><td>Print a file's contents.</td></tr>
+            <tr><td><code>rm file</code></td><td>Remove a file. <b>Careful — no recycle bin!</b></td></tr>
+            <tr><td><code>clear</code></td><td>Clear the screen.</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. A guided walk-through</h2>
+        <p>Follow along in your own terminal. Read the comments to understand each step:</p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal session</span></div>
+          <pre><span class="cmd">pwd</span>
+<span class="out">/Users/you</span>
+<span class="cmd">mkdir practice</span>           <span class="out"># make a folder</span>
+<span class="cmd">cd practice</span>              <span class="out"># step into it</span>
+<span class="cmd">touch notes.txt app.js</span>   <span class="out"># create two files</span>
+<span class="cmd">ls</span>
+<span class="out">app.js   notes.txt</span>
+<span class="cmd">cd ..</span>                    <span class="out"># go back up</span>
+<span class="cmd">ls practice</span>             <span class="out"># peek inside without entering</span>
+<span class="out">app.js   notes.txt</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The three biggest time-savers</div>
+            <ul style="margin:6px 0 0">
+              <li><b>Tab</b> auto-completes file and folder names. Type <code>cd pr</code> then Tab.</li>
+              <li><b>↑ / ↓</b> arrows scroll through your previous commands.</li>
+              <li><code>cd</code> with no argument jumps straight to your home folder.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>4. Paths: absolute vs relative</h2>
+        <p>
+          A <strong>path</strong> is an address for a file. <strong>Relative</strong> paths start from
+          where you're standing (<code>./app.js</code>, <code>../images/logo.png</code>).
+          <strong>Absolute</strong> paths start from the root of the disk
+          (<code>/Users/you/practice/app.js</code> or <code>C:\Users\you\practice\app.js</code>). Two
+          symbols you'll use constantly:
+        </p>
+        <ul>
+          <li><code>.</code> means "the current folder".</li>
+          <li><code>..</code> means "the parent folder".</li>
+          <li><code>~</code> means "my home folder".</li>
+        </ul>
+
+        <h2>5. Running your tools from here</h2>
+        <p>
+          Everything you'll do in this course is driven from the terminal: running programs with
+          <code>node</code>, installing packages with <code>pnpm install</code>, starting dev servers
+          with <code>pnpm dev</code>, and committing code with <code>git</code>. The terminal is the
+          control room. Get comfortable here and the rest of the course flows.
+        </p>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · rm is forever</div>
+            <p style="margin:6px 0 0">
+              <code>rm</code> and especially <code>rm -rf folder</code> delete <b>permanently</b> — there
+              is no trash bin. Read the path twice before pressing Enter. This is a rite of passage; respect
+              it early.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build a folder tree blind</div>
+            <p style="margin:6px 0 0">
+              Using only the terminal, create this structure: a folder <code>course</code> containing a
+              folder <code>part0</code>, which contains a file <code>lesson3.txt</code>. Then
+              <code>cd</code> into <code>part0</code>, run <code>pwd</code> to confirm where you are, and
+              <code>ls</code> to confirm the file exists. No mouse allowed.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>The terminal is a text interface to your computer; you're always "standing in" one folder.</li>
+            <li>Master <code>pwd</code>, <code>ls</code>, <code>cd</code>, <code>mkdir</code>, <code>touch</code>, <code>cat</code>, <code>rm</code>.</li>
+            <li><code>.</code> = here, <code>..</code> = up, <code>~</code> = home. Tab completes; ↑ recalls.</li>
+            <li>All your tools — node, pnpm, git — are launched from here.</li>
+            <li><code>rm</code> is permanent. Always check the path first.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

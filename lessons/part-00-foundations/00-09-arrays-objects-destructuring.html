@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-09 · Arrays, Objects, Destructuring &amp; Spread</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 9</div>
+        <h1>Arrays, Objects, Destructuring &amp; Spread</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">📦 Structuring data</span>
+        </div>
+        <p class="lead">
+          Real programs juggle collections and structured records, not single values. <strong>Arrays</strong>
+          hold ordered lists; <strong>objects</strong> hold labelled properties. Together with the modern
+          <strong>destructuring</strong> and <strong>spread</strong> syntax, they are the vocabulary of every
+          React component's props and state. This lesson is dense and essential.
+        </p>
+
+        <h2>1. Arrays: ordered lists</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">arrays.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const fruits = ["apple", "banana", "cherry"];
+
+console.log(fruits[0]);       // "apple" — indexes start at 0
+console.log(fruits.length);   // 3
+console.log(fruits.at(-1));   // "cherry" — negative index from the end
+
+fruits.push("date");          // add to the end
+fruits.unshift("apricot");    // add to the front
+const last = fruits.pop();    // remove + return the last
+console.log(fruits.includes("banana")); // true
+console.log(fruits.indexOf("cherry"));  // position, or -1 if absent</pre>
+          <div class="annot">
+            <strong>Mental model:</strong> an array is a numbered shelf. Index <code>0</code> is the first slot.
+            <code>.push/.pop</code> work at the end, <code>.unshift/.shift</code> at the front,
+            <code>.at(-1)</code> reads from the back. We'll meet the transforming methods (map/filter/reduce)
+            in the next lesson — they're the stars of the show.
+          </div>
+        </div>
+
+        <h2>2. Objects: labelled records</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">objects.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const user = {
+  name: "Aria",
+  age: 28,
+  isAdmin: false,
+  address: { city: "Lisbon", country: "PT" }, // objects can nest
+};
+
+console.log(user.name);             // dot access → "Aria"
+console.log(user["age"]);           // bracket access → 28
+console.log(user.address.city);     // "Lisbon"
+
+user.age = 29;                      // update a property
+user.email = "aria@mail.com";       // add a new one
+delete user.isAdmin;                // remove one
+
+console.log(Object.keys(user));     // ["name","age","address","email"]</pre>
+          <div class="annot">
+            <strong>Objects vs arrays:</strong> use an <em>array</em> for a list of similar things (todos,
+            products); use an <em>object</em> for one thing with named attributes (a user, a config). React
+            props and state are objects and arrays all the way down.
+          </div>
+        </div>
+
+        <h2>3. Arrays of objects (the bread and butter)</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">data.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const todos = [
+  { id: 1, title: "Learn TypeScript", done: false },
+  { id: 2, title: "Build a project", done: false },
+  { id: 3, title: "Get hired", done: false },
+];
+
+console.log(todos[0].title);   // "Learn TypeScript"
+console.log(todos.length);     // 3
+
+for (const todo of todos) {
+  console.log(`${todo.done ? "✓" : "○"} ${todo.title}`);
+}</pre>
+          <div class="annot">
+            <strong>This shape — an array of objects — is the single most common data structure you'll handle.</strong>
+            Lists of users, products, messages, rows: all arrays of objects. Rendering them into a UI is most of
+            what React does.
+          </div>
+        </div>
+
+        <h2>4. Destructuring: unpacking values</h2>
+        <p>
+          <strong>Destructuring</strong> pulls properties out of objects (or items out of arrays) into named
+          variables in one line. It's used in virtually every React component to read props.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">destructuring.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const user = { name: "Aria", age: 28, city: "Lisbon" };
+
+// Instead of user.name, user.age...
+const { name, age } = user;
+console.log(name, age);   // Aria 28
+
+// Rename + default while destructuring:
+const { city: location, role = "member" } = user;
+console.log(location, role);  // Lisbon member
+
+// Array destructuring is positional:
+const colors = ["red", "green", "blue"];
+const [first, second] = colors;
+console.log(first, second);   // red green
+
+// Common in React: function greet({ name }) { ... }
+function welcome({ name }) {
+  return `Welcome, ${name}`;
+}
+console.log(welcome(user));   // Welcome, Aria</pre>
+          <div class="annot">
+            <strong>Why it's everywhere:</strong> React components receive a <code>props</code> object and almost
+            always destructure it in the parameter list: <code>function Button({ label, onClick }) { ... }</code>.
+            Recognising this now means React will feel familiar later.
+          </div>
+        </div>
+
+        <h2>5. Spread &amp; rest: copying and gathering</h2>
+        <p>
+          The <code>...</code> syntax does two complementary jobs: <strong>spread</strong> expands a collection,
+          and <strong>rest</strong> gathers leftovers. Spread is the key to <em>immutable updates</em> — making
+          changed copies instead of mutating originals, which is how React state must be updated.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">spread-rest.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// SPREAD — copy and extend
+const base = { name: "Aria", age: 28 };
+const updated = { ...base, age: 29 };      // copy base, override age
+console.log(updated); // { name: "Aria", age: 29 } — base is untouched
+
+const a = [1, 2];
+const b = [3, 4];
+const merged = [...a, ...b];               // [1, 2, 3, 4]
+
+// REST — gather the remaining items
+const [head, ...tail] = [10, 20, 30, 40];
+console.log(head);  // 10
+console.log(tail);  // [20, 30, 40]
+
+function sum(...numbers) {                  // accept any number of args
+  return numbers.reduce((t, n) => t + n, 0);
+}
+console.log(sum(1, 2, 3, 4)); // 10</pre>
+          <div class="annot">
+            <strong>The crucial idea:</strong> <code>{ ...base, age: 29 }</code> creates a <em>new</em> object —
+            it does not change <code>base</code>. This "copy-then-change" pattern is mandatory for updating React
+            state correctly, so internalise it now.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Objects and arrays are references</div>
+            <p style="margin:6px 0 0">
+              When you do <code>const b = a</code> with an object or array, <code>b</code> points to the
+              <em>same</em> data — change one, you change both. To get an independent copy, spread it:
+              <code>const b = { ...a }</code> or <code>const b = [...a]</code>. This trips up everyone once;
+              now it won't trip up you.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Immutable toggle</div>
+            <p style="margin:6px 0 0">
+              Given <code>const todo = { id: 1, title: "Read", done: false }</code>, create a <em>new</em>
+              object <code>toggled</code> that is identical but with <code>done: true</code>, without mutating
+              the original. Confirm <code>todo.done</code> is still <code>false</code>. Hint: spread.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Arrays</b> are ordered (0-indexed) lists; <b>objects</b> are labelled records. <b>Arrays of objects</b> are everywhere.</li>
+            <li><b>Destructuring</b> unpacks values: <code>const { name } = user</code> — the React props pattern.</li>
+            <li><b>Spread</b> <code>...</code> copies/merges; <b>rest</b> gathers leftovers.</li>
+            <li><code>{ ...obj, key: newValue }</code> makes a changed <em>copy</em> — essential for React state.</li>
+            <li>Objects/arrays are <b>references</b>; copy with spread to avoid accidental shared mutation.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

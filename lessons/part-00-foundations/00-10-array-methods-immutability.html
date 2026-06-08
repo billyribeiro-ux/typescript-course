@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-10 · Iteration, Array Methods &amp; Immutability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 10</div>
+        <h1>Iteration, Array Methods &amp; Immutability</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core · high-value</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">⭐ Used in every React app</span>
+        </div>
+        <p class="lead">
+          If there is one lesson in Part 0 to truly absorb, it's this one. The array methods
+          <strong>map</strong>, <strong>filter</strong>, and <strong>reduce</strong> are how professionals
+          transform data — and <code>map</code> is literally how React renders lists. We pair them with the
+          principle of <strong>immutability</strong>: never change data in place, always produce new data.
+        </p>
+
+        <h2>1. map — transform every item</h2>
+        <p>
+          <code>.map()</code> takes a function and returns a <em>new</em> array where each item has been
+          transformed by that function. Same length, new values.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">map.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const prices = [10, 20, 30];
+
+const withTax = prices.map((p) => p * 1.2);
+console.log(withTax);  // [12, 24, 36]
+console.log(prices);   // [10, 20, 30] — original untouched!
+
+// map over objects — the React list pattern:
+const users = [
+  { id: 1, name: "Ada" },
+  { id: 2, name: "Lin" },
+];
+const names = users.map((user) => user.name);
+console.log(names);    // ["Ada", "Lin"]
+
+// In React you'll write almost exactly this:
+// users.map((user) => &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;)</pre>
+          <div class="annot">
+            <strong>Why map is special:</strong> it returns a brand-new array and leaves the original alone. When
+            you render a list in React, you <code>map</code> your data array into an array of UI elements. Learn
+            map deeply and React lists become trivial.
+          </div>
+        </div>
+
+        <h2>2. filter — keep only some items</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">filter.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const todos = [
+  { title: "Email", done: true },
+  { title: "Code", done: false },
+  { title: "Sleep", done: false },
+];
+
+// Keep items where the function returns true:
+const remaining = todos.filter((t) => !t.done);
+console.log(remaining.length);   // 2
+
+const numbers = [1, 2, 3, 4, 5, 6];
+const evens = numbers.filter((n) => n % 2 === 0);
+console.log(evens);   // [2, 4, 6]</pre>
+          <div class="annot">
+            <strong>map vs filter:</strong> <code>map</code> transforms <em>and keeps every item</em> (same
+            length out). <code>filter</code> <em>keeps a subset</em> (same or shorter). They return new arrays —
+            perfect for deriving displayed data from your source of truth.
+          </div>
+        </div>
+
+        <h2>3. reduce — boil a list down to one value</h2>
+        <p>
+          <code>.reduce()</code> is the most powerful (and most feared) method. It walks the array carrying an
+          <strong>accumulator</strong>, combining items into a single result — a sum, a max, an object, anything.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">reduce.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const cart = [
+  { item: "Book", price: 12 },
+  { item: "Pen", price: 3 },
+  { item: "Bag", price: 25 },
+];
+
+// Sum all prices. Start the accumulator (total) at 0.
+const total = cart.reduce((runningTotal, product) => {
+  return runningTotal + product.price;
+}, 0);
+console.log(total);   // 40
+
+// reduce can build any shape — e.g. count by category:
+const letters = ["a", "b", "a", "c", "b", "a"];
+const counts = letters.reduce((acc, letter) => {
+  acc[letter] = (acc[letter] ?? 0) + 1;
+  return acc;
+}, {});
+console.log(counts);  // { a: 3, b: 2, c: 1 }</pre>
+          <div class="annot">
+            <strong>How to read reduce:</strong> the first argument is the accumulator (the result-so-far), the
+            second is the current item, and the <code>0</code> (or <code>{}</code>) at the end is the starting
+            value. Each step returns the new accumulator. Don't fear it — practice it.
+          </div>
+        </div>
+
+        <h2>4. Chaining &amp; more methods</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">chaining.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const products = [
+  { name: "Laptop", price: 1200, inStock: true },
+  { name: "Mouse", price: 25, inStock: true },
+  { name: "Monitor", price: 300, inStock: false },
+];
+
+// Chain: keep in-stock, get their names, in one readable pipeline.
+const availableNames = products
+  .filter((p) => p.inStock)
+  .map((p) => p.name);
+console.log(availableNames);   // ["Laptop", "Mouse"]
+
+// Other essentials:
+console.log(products.find((p) => p.price < 100));  // first match (the mouse)
+console.log(products.some((p) => p.price > 1000));  // true
+console.log(products.every((p) => p.price > 0));    // true
+console.log(products.map(p => p.name).join(", "));  // "Laptop, Mouse, Monitor"</pre>
+          <div class="annot">
+            <strong>Pipelines:</strong> because map/filter return arrays, you can chain them into readable
+            data pipelines. <code>find</code> grabs the first match, <code>some/every</code> ask yes-no
+            questions, <code>join</code> turns an array into a string.
+          </div>
+        </div>
+
+        <h2>5. Immutability: the golden rule</h2>
+        <p>
+          <strong>Immutability</strong> means treating data as read-only: to "change" something, you create a
+          new version instead of editing the original. This avoids a huge category of bugs and is
+          <em>required</em> for React to detect changes and re-render. map/filter/reduce and spread are your
+          immutable toolkit.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">immutable.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const todos = [
+  { id: 1, title: "A", done: false },
+  { id: 2, title: "B", done: false },
+];
+
+// Add an item immutably (new array, original untouched):
+const added = [...todos, { id: 3, title: "C", done: false }];
+
+// Update one item immutably (map, replacing the match with a copy):
+const updated = todos.map((t) =>
+  t.id === 1 ? { ...t, done: true } : t
+);
+
+// Remove an item immutably:
+const removed = todos.filter((t) => t.id !== 2);
+
+console.log(todos.length);   // still 2 — never mutated
+console.log(added.length, updated[0].done, removed.length); // 3 true 1</pre>
+          <div class="annot">
+            <strong>Memorise these three patterns</strong> — add (<code>[...arr, item]</code>), update
+            (<code>map</code> + spread), remove (<code>filter</code>). They are exactly how you'll update lists
+            in React state for the rest of the course. This is one of the highest-leverage things in Part 0.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A reporting pipeline</div>
+            <p style="margin:6px 0 0">
+              Given an array of orders <code>[{ id, total, paid }]</code>, compute the sum of
+              <code>total</code> for orders where <code>paid</code> is <code>true</code>, using
+              <code>filter</code> then <code>reduce</code>. Then produce a new array marking every order
+              <code>paid: true</code> without mutating the original (use <code>map</code> + spread).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>map</b> transforms every item into a new array (React renders lists with map).</li>
+            <li><b>filter</b> keeps a subset; <b>reduce</b> combines a list into a single value.</li>
+            <li>These methods <b>don't mutate</b> — they return new arrays you can chain into pipelines.</li>
+            <li><b>Immutability</b>: add <code>[...arr, x]</code>, update with <code>map</code>+spread, remove with <code>filter</code>.</li>
+            <li>This immutable toolkit is exactly how you'll manage React state.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-08 · Functions, Scope &amp; Closures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 8</div>
+        <h1>Functions, Scope &amp; Closures</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner → Core</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🧱 The building block</span>
+        </div>
+        <p class="lead">
+          Functions are the most important concept in programming. A function is a reusable, named block of
+          logic that takes <strong>inputs</strong> and produces an <strong>output</strong>. Master functions
+          — including arrow functions, scope, and closures — and you've mastered the unit that every program,
+          and all of React, is built from.
+        </p>
+
+        <h2>1. Declaring and calling functions</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">functions.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A function declaration: name, parameters, body.
+function add(a, b) {
+  return a + b;     // 'return' sends a value back to the caller
+}
+
+// "Call" (run) it with arguments:
+const sum = add(3, 4);   // sum is 7
+console.log(sum);
+
+// Functions can do anything and return anything:
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+console.log(greet("Lin")); // Hello, Lin!</pre>
+          <div class="annot">
+            <strong>Vocabulary:</strong> <code>a</code> and <code>b</code> are <em>parameters</em> (the named
+            inputs); <code>3</code> and <code>4</code> are <em>arguments</em> (the actual values). <code>return</code>
+            hands a result back. A function without <code>return</code> gives back <code>undefined</code>.
+          </div>
+        </div>
+
+        <h2>2. Arrow functions (the modern style)</h2>
+        <p>
+          <strong>Arrow functions</strong> are a shorter syntax you'll see everywhere, especially in React.
+          They're ideal for small functions and for passing logic to other functions.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">arrows.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// These three are equivalent:
+function squareA(n) { return n * n; }
+const squareB = (n) => { return n * n; };
+const squareC = (n) => n * n;   // implicit return when there's no braces
+
+console.log(squareC(5)); // 25
+
+// Multiple params need parentheses; zero params use ()
+const multiply = (a, b) => a * b;
+const sayHi = () => "hi";
+
+// Default parameter values:
+const greet = (name = "friend") => `Hello, ${name}`;
+console.log(greet());        // Hello, friend
+console.log(greet("Sam"));   // Hello, Sam</pre>
+          <div class="annot">
+            <strong>Key forms:</strong> <code>(n) =&gt; n * n</code> implicitly returns its expression.
+            <code>(n) =&gt; { ... return x }</code> needs an explicit <code>return</code>. Default values
+            (<code>name = "friend"</code>) make parameters optional.
+          </div>
+        </div>
+
+        <h2>3. Functions are values</h2>
+        <p>
+          Here's the idea that unlocks React: <strong>functions are just values</strong>. You can store them
+          in variables, pass them <em>into</em> other functions, and return them. A function passed to another
+          function is called a <strong>callback</strong>.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">callbacks.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A function that takes another function as input:
+function repeat(times, action) {
+  for (let i = 0; i < times; i++) {
+    action(i);   // call the passed-in function
+  }
+}
+
+repeat(3, (i) => console.log(`Step ${i}`));
+// Step 0 / Step 1 / Step 2
+
+// This pattern powers array methods, event handlers, and React.
+const numbers = [1, 2, 3];
+numbers.forEach((n) => console.log(n * 10)); // 10, 20, 30</pre>
+          <div class="annot">
+            <strong>Why it matters:</strong> when you write a React button as
+            <code>&lt;button onClick={handleClick}&gt;</code>, you're passing a function as a value — exactly
+            this concept. Callbacks are the connective tissue of JavaScript.
+          </div>
+        </div>
+
+        <h2>4. Scope: where variables live</h2>
+        <p>
+          <strong>Scope</strong> is the region where a variable is visible. Variables declared inside a
+          function (or any <code>{ }</code> block with <code>const</code>/<code>let</code>) are <em>local</em> —
+          invisible outside. Inner code can see outer variables, but not vice versa.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">scope.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const appName = "MyApp";   // outer (module) scope
+
+function showName() {
+  const greeting = "Welcome";          // local to showName
+  console.log(`${greeting} to ${appName}`); // can see both
+}
+
+showName();
+// console.log(greeting); // ❌ ReferenceError: greeting is not defined
+
+// Each call gets its own fresh local variables.</pre>
+          <div class="annot">
+            <strong>The rule:</strong> look outward, never inward. <code>showName</code> can read the outer
+            <code>appName</code>, but the outside world can't read its private <code>greeting</code>. This
+            isolation keeps programs from becoming tangled messes.
+          </div>
+        </div>
+
+        <h2>5. Closures (the famous one)</h2>
+        <p>
+          A <strong>closure</strong> is what you get when a function "remembers" the variables from where it
+          was created, even after that outer function has finished. It sounds abstract; the example makes it
+          click — and it's the basis of how React's <code>useState</code> remembers your data.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">closures.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function makeCounter() {
+  let count = 0;                 // private state
+  return () => {                 // this inner function "closes over" count
+    count += 1;
+    return count;
+  };
+}
+
+const next = makeCounter();
+console.log(next()); // 1
+console.log(next()); // 2
+console.log(next()); // 3  — it remembers count between calls!
+
+// A separate counter has its own independent memory:
+const other = makeCounter();
+console.log(other()); // 1</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> <code>makeCounter</code> returns a function that keeps access to
+            its own private <code>count</code>. Each counter has independent memory. This "function + remembered
+            variables" bundle is a closure — one of JavaScript's most powerful ideas, and the secret behind
+            React Hooks.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build a multiplier factory</div>
+            <p style="margin:6px 0 0">
+              Write a function <code>makeMultiplier(factor)</code> that returns a new function which multiplies
+              its argument by <code>factor</code>. Then create <code>const double = makeMultiplier(2)</code> and
+              <code>const triple = makeMultiplier(3)</code>, and verify <code>double(5)</code> is 10 and
+              <code>triple(5)</code> is 15. You just used a closure.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Functions take <b>parameters</b> and <code>return</code> a result; calling supplies <b>arguments</b>.</li>
+            <li><b>Arrow functions</b> (<code>(x) =&gt; x * 2</code>) are the modern, concise style used throughout React.</li>
+            <li>Functions are <b>values</b> — pass them as <b>callbacks</b> to other functions.</li>
+            <li><b>Scope</b>: inner code sees outer variables, not the reverse; locals stay private.</li>
+            <li>A <b>closure</b> lets a function remember the variables it was created with — the foundation of React Hooks.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

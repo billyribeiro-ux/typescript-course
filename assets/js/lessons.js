@@ -24,17 +24,17 @@ window.COURSE = {
       subtitle: "No coding assumed. The web, the terminal, Git & JavaScript.",
       lessons: [
         { id: "00-01", title: "How Computers & the Web Really Work", file: "lessons/part-00-foundations/00-01-how-the-web-works.html", status: "available" },
-        { id: "00-02", title: "Setting Up Your Professional Dev Environment", file: "lessons/part-00-foundations/00-02-dev-environment.html", status: "soon" },
-        { id: "00-03", title: "The Command Line From Zero", file: "lessons/part-00-foundations/00-03-the-command-line.html", status: "soon" },
-        { id: "00-04", title: "Git & GitHub: Version Control Foundations", file: "lessons/part-00-foundations/00-04-git-and-github.html", status: "soon" },
-        { id: "00-05", title: "How JavaScript Runs: Engines, Node & Browser", file: "lessons/part-00-foundations/00-05-how-javascript-runs.html", status: "soon" },
-        { id: "00-06", title: "Values, Variables & Types in JavaScript", file: "lessons/part-00-foundations/00-06-values-variables-types.html", status: "soon" },
-        { id: "00-07", title: "Operators, Conditionals & Control Flow", file: "lessons/part-00-foundations/00-07-control-flow.html", status: "soon" },
-        { id: "00-08", title: "Functions, Scope & Closures", file: "lessons/part-00-foundations/00-08-functions-scope-closures.html", status: "soon" },
-        { id: "00-09", title: "Arrays, Objects, Destructuring & Spread", file: "lessons/part-00-foundations/00-09-arrays-objects-destructuring.html", status: "soon" },
-        { id: "00-10", title: "Iteration, Array Methods & Immutability", file: "lessons/part-00-foundations/00-10-array-methods-immutability.html", status: "soon" },
-        { id: "00-11", title: "Async JavaScript: Promises & async/await", file: "lessons/part-00-foundations/00-11-async-javascript.html", status: "soon" },
-        { id: "00-12", title: "Modules, the DOM & fetch — Project P01 Kickoff", file: "lessons/part-00-foundations/00-12-modules-dom-fetch.html", status: "soon" }
+        { id: "00-02", title: "Setting Up Your Professional Dev Environment", file: "lessons/part-00-foundations/00-02-dev-environment.html", status: "available" },
+        { id: "00-03", title: "The Command Line From Zero", file: "lessons/part-00-foundations/00-03-the-command-line.html", status: "available" },
+        { id: "00-04", title: "Git & GitHub: Version Control Foundations", file: "lessons/part-00-foundations/00-04-git-and-github.html", status: "available" },
+        { id: "00-05", title: "How JavaScript Runs: Engines, Node & Browser", file: "lessons/part-00-foundations/00-05-how-javascript-runs.html", status: "available" },
+        { id: "00-06", title: "Values, Variables & Types in JavaScript", file: "lessons/part-00-foundations/00-06-values-variables-types.html", status: "available" },
+        { id: "00-07", title: "Operators, Conditionals & Control Flow", file: "lessons/part-00-foundations/00-07-control-flow.html", status: "available" },
+        { id: "00-08", title: "Functions, Scope & Closures", file: "lessons/part-00-foundations/00-08-functions-scope-closures.html", status: "available" },
+        { id: "00-09", title: "Arrays, Objects, Destructuring & Spread", file: "lessons/part-00-foundations/00-09-arrays-objects-destructuring.html", status: "available" },
+        { id: "00-10", title: "Iteration, Array Methods & Immutability", file: "lessons/part-00-foundations/00-10-array-methods-immutability.html", status: "available" },
+        { id: "00-11", title: "Async JavaScript: Promises & async/await", file: "lessons/part-00-foundations/00-11-async-javascript.html", status: "available" },
+        { id: "00-12", title: "Modules, the DOM & fetch — Project P01 Kickoff", file: "lessons/part-00-foundations/00-12-modules-dom-fetch.html", status: "available" }
       ]
     },
     {

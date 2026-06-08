@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-12 · Modules, the DOM &amp; fetch — Project P01 Kickoff</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-12";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 12</div>
+        <h1>Modules, the DOM &amp; fetch — Project P01 Kickoff</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core + Project</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🚀 P01 begins</span>
+        </div>
+        <p class="lead">
+          You now know enough JavaScript to build something real. In this final foundations lesson we cover
+          three professional essentials — <strong>modules</strong> (splitting code across files), a working
+          knowledge of the <strong>DOM</strong> (controlling a web page), and using <code>fetch</code> — and
+          then kick off <strong>Project P01</strong>, the task manager we'll rebuild in TypeScript in Part 1.
+        </p>
+
+        <h2>1. Modules: code across files</h2>
+        <p>
+          Real projects span many files. <strong>ES Modules</strong> let each file <code>export</code> what it
+          offers and <code>import</code> what it needs. This keeps code organised, reusable, and testable.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">math.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// math.js — a module that exports two helpers
+export function add(a, b) {
+  return a + b;
+}
+
+export const PI = 3.14159;
+
+// A "default" export — the file's main thing
+export default function multiply(a, b) {
+  return a * b;
+}</pre>
+        </div>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">main.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// main.js — import named + default exports
+import multiply, { add, PI } from "./math.js";
+
+console.log(add(2, 3));      // 5
+console.log(multiply(4, 5)); // 20
+console.log(PI);             // 3.14159</pre>
+          <div class="annot">
+            <strong>Two kinds of export:</strong> <em>named</em> exports (<code>export function add</code>) are
+            imported in braces by name; a single <em>default</em> export is imported without braces under any
+            name you choose. React components are typically default exports — you'll see this constantly.
+          </div>
+        </div>
+
+        <h2>2. The DOM: controlling the page</h2>
+        <p>
+          The <strong>DOM</strong> (Document Object Model) is the browser's live, in-memory representation of
+          your HTML as a tree of objects. JavaScript reads and changes the DOM to make pages interactive.
+          You'll rarely touch the DOM directly once you have React — but understanding it makes React click.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">dom.js (runs in a browser)</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Find an element
+const title = document.querySelector("h1");
+title.textContent = "Updated by JavaScript!";
+
+// Create and add a new element
+const item = document.createElement("li");
+item.textContent = "A new list item";
+document.querySelector("ul").append(item);
+
+// React to events
+const button = document.querySelector("#save");
+button.addEventListener("click", () => {
+  console.log("Saved!");
+});</pre>
+          <div class="annot">
+            <strong>The pattern:</strong> <em>select</em> an element (<code>querySelector</code>),
+            <em>change</em> it (<code>textContent</code>, <code>append</code>), and <em>respond</em> to user
+            actions (<code>addEventListener</code>). React automates all of this — you describe the result and
+            it updates the DOM for you — but this is the machinery underneath.
+          </div>
+        </div>
+
+        <div class="callout note">
+          <span class="ic">🔁</span>
+          <div class="body">
+            <div class="tt">Note · Why React exists, in one sentence</div>
+            <p style="margin:6px 0 0">
+              Manually selecting and updating dozens of DOM elements as data changes is tedious and bug-prone.
+              React lets you write "given this data, the UI looks like <em>this</em>" and handles every DOM
+              update for you. Everything you just learned is the problem React solves.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Project P01 — Kickoff: a task manager</h2>
+        <p>
+          Time to build. <strong>P01</strong> is a command-line task manager. In this lesson we write its first
+          version in plain JavaScript using everything from Part 0 — objects, arrays, functions, immutability,
+          and modules. In <strong>Part 1</strong>, we'll rebuild it in TypeScript with full type safety and
+          tests. Same app, leveled up — so you feel exactly what TypeScript adds.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tasks.js — P01 v0 (plain JS)</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A tiny, immutable task store. No classes yet — just functions + data.
+let nextId = 1;
+
+function createTask(tasks, title) {
+  const task = { id: nextId++, title, done: false };
+  return [...tasks, task];           // immutable add
+}
+
+function toggleTask(tasks, id) {
+  return tasks.map((t) =>            // immutable update
+    t.id === id ? { ...t, done: !t.done } : t
+  );
+}
+
+function removeTask(tasks, id) {
+  return tasks.filter((t) => t.id !== id); // immutable remove
+}
+
+function summary(tasks) {
+  const done = tasks.filter((t) => t.done).length;
+  return `${done}/${tasks.length} done`;
+}
+
+// Drive it:
+let tasks = [];
+tasks = createTask(tasks, "Finish Part 0");
+tasks = createTask(tasks, "Start Part 1");
+tasks = toggleTask(tasks, 1);
+console.log(tasks);
+console.log(summary(tasks)); // "1/2 done"</pre>
+          <div class="annot">
+            <strong>Look familiar?</strong> Every function here uses the immutable patterns from Lesson 10. The
+            app's "state" is an array of task objects, and each operation returns a <em>new</em> array. This is
+            <em>exactly</em> the model React uses for state — you're already thinking like a React developer.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">🛠️</span>
+          <div class="body">
+            <div class="tt">Do it for real</div>
+            <p style="margin:6px 0 0">
+              Create a folder <code>p01-task-manager</code>, save the code above as <code>tasks.js</code>, and run
+              <code>node tasks.js</code>. Commit it to a new Git repo (Lesson 4). You'll carry this project into
+              Part 1 and transform it into a robust, typed, tested CLI app.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Extend P01</div>
+            <p style="margin:6px 0 0">
+              Add an immutable <code>renameTask(tasks, id, newTitle)</code> function and a
+              <code>filterByStatus(tasks, done)</code> that returns only done or only pending tasks. Use
+              <code>map</code> and <code>filter</code>. Keep everything immutable — never mutate the input array.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Modules</b> split code across files with <code>export</code> / <code>import</code> (named + default).</li>
+            <li>The <b>DOM</b> is the page as a tree of objects; you select, change, and respond to events — what React automates.</li>
+            <li>An app's <b>state</b> is just data (often an array of objects); operations return new data immutably.</li>
+            <li>You've built <b>P01 v0</b> in plain JS — and you're already using React's core mental model.</li>
+            <li>🎉 <b>Part 0 complete!</b> You went from zero to writing real, structured JavaScript. Next: TypeScript.</li>
+          </ul>
+        </div>
+
+        <div class="callout concept">
+          <span class="ic">🏁</span>
+          <div class="body">
+            <div class="tt">End of Part 0 — what's next</div>
+            <p style="margin:6px 0 0">
+              In <b>Part 1 · TypeScript Core</b>, we add a type-safety layer on top of everything you just
+              learned. You'll see how TypeScript catches bugs <em>before</em> you run the code, and we'll rebuild
+              P01 into a polished, typed, tested CLI. The hardest part — starting from nothing — is behind you.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

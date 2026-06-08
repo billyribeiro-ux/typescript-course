@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-05 · How JavaScript Runs: Engines, Node &amp; the Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 5</div>
+        <h1>How JavaScript Runs: Engines, Node &amp; the Browser</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~22 min</span>
+          <span class="chip">🧠 Mental model</span>
+        </div>
+        <p class="lead">
+          JavaScript is the only language that runs natively in every web browser — and, thanks to Node,
+          on servers too. To write it well you need a clear picture of <em>what runs your code</em>, where
+          it runs, and the single most important rule of how it executes. This is the model that will
+          stop async code from ever confusing you later.
+        </p>
+
+        <h2>1. Engines: the thing that runs JavaScript</h2>
+        <p>
+          A <strong>JavaScript engine</strong> reads your code and executes it. The most famous is
+          <strong>V8</strong>, built by Google — it powers Chrome <em>and</em> Node.js. Other engines
+          include JavaScriptCore (Safari) and SpiderMonkey (Firefox). The engine parses your text,
+          compiles it to fast machine code just-in-time, and runs it.
+        </p>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Two homes for JavaScript</div>
+            <p style="margin:6px 0 0">
+              The <b>browser</b> runs JS to make web pages interactive and gives it access to the page (the
+              DOM), the network, and the screen. <b>Node.js</b> runs the same language on your computer or a
+              server, and gives it access to files, databases, and the operating system. Same language, two
+              sets of superpowers.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The call stack: one thing at a time</h2>
+        <p>
+          JavaScript is <strong>single-threaded</strong>: it does exactly one thing at a time, using a
+          structure called the <strong>call stack</strong>. When you call a function, it's pushed onto the
+          stack; when it returns, it's popped off. Read this and predict the output before revealing it:
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">stack.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function greet(name) {
+  return "Hello, " + name;
+}
+
+function welcome() {
+  const message = greet("Ada");   // greet is pushed, runs, returns, pops
+  console.log(message);
+}
+
+welcome(); // -> "Hello, Ada"</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> calling <code>welcome()</code> pushes it onto the stack. Inside,
+            it calls <code>greet("Ada")</code>, which pushes <em>on top</em>, runs, returns its string, and
+            pops off. Then <code>console.log</code> runs. The stack is strictly last-in, first-out.
+          </div>
+        </div>
+
+        <h2>3. The event loop (the 60-second version)</h2>
+        <p>
+          If JS only does one thing at a time, how does it handle a network request that takes two seconds
+          without freezing? The answer is the <strong>event loop</strong>. Slow operations (timers, network,
+          file reads) are handed off to the environment (browser or Node) to do <em>in the background</em>.
+          When they finish, their follow-up code is queued and run when the stack is free.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">eventloop.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">console.log("1 — first");
+
+setTimeout(() => {
+  console.log("3 — later (after the stack clears)");
+}, 0);
+
+console.log("2 — second");
+
+// Output order: 1, 2, 3  — even though the timeout is 0ms!</pre>
+          <div class="annot">
+            <strong>The lesson:</strong> <code>setTimeout</code> doesn't run immediately even at <code>0</code>ms.
+            It's queued and runs only after the current synchronous code finishes. This single idea explains
+            almost all "why did this run in that order?!" surprises. We'll go deep on async in Lesson 11.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · Node, Deno &amp; Bun</div>
+            <p style="margin:6px 0 0">
+              Node is the established standard, but you'll hear about <b>Deno</b> and <b>Bun</b> — newer
+              runtimes that also run JS/TS with modern features built in. This course uses Node 24 because
+              it's the safest, most universal choice, but the language you're learning runs on all of them.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. Browser vs Node: a quick map</h2>
+        <table>
+          <thead><tr><th></th><th>Browser</th><th>Node.js</th></tr></thead>
+          <tbody>
+            <tr><td>Has the DOM (<code>document</code>, <code>window</code>)</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Can read/write files</td><td>❌ (sandboxed)</td><td>✅</td></tr>
+            <tr><td>Can make network requests (<code>fetch</code>)</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Runs your UI</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Runs your server/build tools</td><td>❌</td><td>✅</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Predict, then verify</div>
+            <p style="margin:6px 0 0">
+              Add a second <code>setTimeout</code> with a 10ms delay and another <code>console.log</code> at
+              the very end. Write down the order you expect, then run it with <code>node eventloop.js</code>.
+              Did reality match your model? Adjust your model, not the result.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A JS <b>engine</b> (like V8) runs your code; it powers both Chrome and Node.</li>
+            <li>JS is <b>single-threaded</b> and uses a <b>call stack</b> — one thing at a time, last-in first-out.</li>
+            <li>Slow work is offloaded; the <b>event loop</b> runs the follow-up later, once the stack is free.</li>
+            <li><code>setTimeout(fn, 0)</code> still runs <em>after</em> the current code — async ≠ immediate.</li>
+            <li>Browser and Node share the language but expose different capabilities.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-02 · Setting Up Your Professional Dev Environment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html">
+      <span class="logo">TS</span>
+      <span>TS + React Mastery <small>2026</small></span>
+    </a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 2</div>
+        <h1>Setting Up Your Professional Dev Environment</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~25 min</span>
+          <span class="chip">🛠️ Hands-on setup</span>
+        </div>
+
+        <p class="lead">
+          A craftsman is only as good as their workshop. In this lesson you'll install and configure the
+          exact toolchain professional engineers use every day in 2026 — Node.js, the pnpm package
+          manager, and Visual Studio Code — and you'll run your very first program. We set this up
+          carefully and correctly once, so it never gets in your way again.
+        </p>
+
+        <h2>1. The tools, and why each one exists</h2>
+        <table>
+          <thead><tr><th>Tool</th><th>What it is</th><th>Why you need it</th></tr></thead>
+          <tbody>
+            <tr><td><b>Node.js</b></td><td>A program that runs JavaScript/TypeScript outside the browser.</td><td>Lets you run code, build apps, and use the whole ecosystem.</td></tr>
+            <tr><td><b>pnpm</b></td><td>A fast, disk-efficient package manager.</td><td>Installs the open-source libraries your projects depend on.</td></tr>
+            <tr><td><b>VS Code</b></td><td>A free, world-class code editor from Microsoft.</td><td>Where you'll write code, with autocompletion and TypeScript built in.</td></tr>
+            <tr><td><b>Git</b></td><td>Version control (next lesson).</td><td>Tracks changes and is the backbone of collaboration.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · "Runtime" and "package manager"</div>
+            <p style="margin:6px 0 0">
+              A <b>runtime</b> is the engine that actually executes your code (Node is a runtime). A
+              <b>package manager</b> downloads and organises reusable code other people wrote (called
+              <em>packages</em> or <em>dependencies</em>) so you don't reinvent everything. Modern apps
+              stand on the shoulders of thousands of these packages.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Install Node.js (the right way)</h2>
+        <p>
+          Don't install Node from a one-off download — professionals use a <strong>version manager</strong>
+          so they can switch Node versions per project. On macOS/Linux we recommend <strong>fnm</strong>
+          (Fast Node Manager); on Windows, use <strong>fnm</strong> or the official installer. We target
+          <strong>Node 24 LTS</strong> (the long-term-support release current in 2026).
+        </p>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">macOS / Linux — terminal</span></div>
+          <pre><span class="cmd">curl -fsSL https://fnm.vercel.app/install | bash</span>
+<span class="out"># restart your terminal, then:</span>
+<span class="cmd">fnm install 24</span>
+<span class="cmd">fnm use 24</span>
+<span class="cmd">node --version</span>
+<span class="out">v24.x.x</span></pre>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">Windows — PowerShell (with winget)</span></div>
+          <pre><span class="cmd">winget install Schniz.fnm</span>
+<span class="cmd">fnm install 24</span>
+<span class="cmd">fnm use 24</span>
+<span class="cmd">node --version</span>
+<span class="out">v24.x.x</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">💡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · What "LTS" means</div>
+            <p style="margin:6px 0 0">
+              <b>LTS = Long-Term Support.</b> Node releases a new major version often, but LTS versions
+              get years of bug/security fixes and are what you run in production. Even-numbered majors
+              (22, 24, …) become LTS. Always build on LTS unless you have a specific reason not to.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Enable pnpm</h2>
+        <p>
+          Node ships with a tool called <strong>Corepack</strong> that manages package managers for you.
+          We'll use it to turn on <strong>pnpm</strong> — faster and more disk-efficient than the default
+          <code>npm</code>, and the standard for serious projects in 2026.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">corepack enable</span>
+<span class="cmd">corepack prepare pnpm@latest --activate</span>
+<span class="cmd">pnpm --version</span>
+<span class="out">10.x.x</span></pre>
+        </div>
+
+        <h2>4. Install VS Code + the essential extensions</h2>
+        <p>
+          Download <strong>Visual Studio Code</strong> from <code>code.visualstudio.com</code>. Once
+          installed, open it and add these extensions (click the squares icon in the left bar, search,
+          install):
+        </p>
+        <ul>
+          <li><strong>ESLint</strong> — flags mistakes as you type.</li>
+          <li><strong>Prettier</strong> — formats your code automatically.</li>
+          <li><strong>Error Lens</strong> — shows errors inline, right on the line.</li>
+          <li><strong>ES7+ React/Redux snippets</strong> — handy shortcuts for later.</li>
+        </ul>
+        <p>
+          TypeScript support is <em>built into VS Code already</em> — that's not a coincidence. VS Code and
+          TypeScript are both made by Microsoft and designed to work together beautifully. You'll feel it
+          the moment you start typing.
+        </p>
+
+        <div class="callout note">
+          <span class="ic">⌨️</span>
+          <div class="body">
+            <div class="tt">Note · The integrated terminal</div>
+            <p style="margin:6px 0 0">
+              VS Code has a built-in terminal: press <span class="kbd">Ctrl</span> + <span class="kbd">`</span>
+              (backtick) to open it. You'll run all your commands here without leaving the editor. This is
+              where you'll live.
+            </p>
+          </div>
+        </div>
+
+        <h2>5. Your first program</h2>
+        <p>
+          Let's prove the whole toolchain works. Create a folder, make a file called <code>hello.js</code>,
+          paste in this code, and run it with Node. Here's the file:
+        </p>
+
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">hello.js</span>
+            <span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Your very first program.
+// console.log prints a message to the terminal.
+const name = "future engineer";
+console.log("Hello, " + name + "! Your environment works. 🎉");
+
+// A tiny bit of logic: print today's year.
+const year = new Date().getFullYear();
+console.log("It is the year " + year + " and you are now coding.");</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> <code>const name = ...</code> stores a piece of text.
+            <code>console.log(...)</code> prints to the terminal. <code>new Date().getFullYear()</code> asks
+            the system for the current year. You'll understand every token of this within a few lessons.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">mkdir my-first-project</span>
+<span class="cmd">cd my-first-project</span>
+<span class="out"># create hello.js (paste the code above), then run it:</span>
+<span class="cmd">node hello.js</span>
+<span class="out">Hello, future engineer! Your environment works. 🎉</span>
+<span class="out">It is the year 2026 and you are now coding.</span></pre>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · "command not found"</div>
+            <p style="margin:6px 0 0">
+              If <code>node</code> or <code>pnpm</code> says "command not found", your terminal hasn't
+              picked up the new install. <b>Close and reopen the terminal</b> (or restart VS Code). On
+              macOS/Linux, make sure the <code>fnm</code> line was added to your shell profile
+              (<code>~/.zshrc</code> or <code>~/.bashrc</code>) — the installer usually does this for you.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Make it yours</div>
+            <p style="margin:6px 0 0">
+              Change the program to print your real name and a sentence about why you're learning to code.
+              Run it again with <code>node hello.js</code>. Congratulations — you've written, saved, and
+              executed your own software.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Use a <b>version manager</b> (fnm) to install <b>Node 24 LTS</b> — never a one-off download.</li>
+            <li>Enable <b>pnpm</b> via Corepack; it's the fast, modern package manager.</li>
+            <li><b>VS Code</b> + ESLint/Prettier/Error Lens is the professional editor setup; TypeScript is built in.</li>
+            <li><code>node file.js</code> runs a program; <code>console.log</code> prints output.</li>
+            <li>When a command isn't found, restart your terminal — it likely just needs to reload.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

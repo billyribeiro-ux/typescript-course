@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-04 · Git &amp; GitHub: Version Control Foundations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 4</div>
+        <h1>Git &amp; GitHub: Version Control Foundations</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~25 min</span>
+          <span class="chip">🌿 Collaboration</span>
+        </div>
+        <p class="lead">
+          Git is the time machine and collaboration backbone of all modern software. It lets you save
+          snapshots of your work, experiment fearlessly, undo mistakes, and work with others without
+          chaos. GitHub is where those snapshots live online. Mastering the everyday Git workflow now
+          will pay off in every single project for the rest of your career.
+        </p>
+
+        <h2>1. The problem Git solves</h2>
+        <p>
+          Without version control, saving versions looks like <code>app-final.js</code>,
+          <code>app-final-v2.js</code>, <code>app-final-REALLY.js</code> — and collaboration means emailing
+          zip files. Git replaces all of that with one elegant idea: a <strong>repository</strong> (repo)
+          that remembers the <em>entire history</em> of your project as a series of <strong>commits</strong>
+          (snapshots), each with a message describing the change.
+        </p>
+
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · The three areas</div>
+            <p style="margin:6px 0 0">
+              Git moves your changes through three places: the <b>working directory</b> (your actual
+              files), the <b>staging area</b> (changes you've marked to include in the next snapshot), and
+              the <b>repository</b> (the saved history of commits). You <code>add</code> files to staging,
+              then <code>commit</code> them to history.
+            </p>
+          </div>
+        </div>
+
+        <svg class="diagram" viewBox="0 0 720 130" role="img" aria-label="Working directory to staging to repository" style="display:block;margin:22px auto;max-width:100%">
+          <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <rect x="10" y="40" width="190" height="56" rx="10" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="105" y="66" text-anchor="middle" font-family="Inter" font-weight="700" font-size="13" fill="#1d4ed8">Working directory</text>
+          <text x="105" y="84" text-anchor="middle" font-family="Inter" font-size="11" fill="#4a5160">your files</text>
+          <rect x="265" y="40" width="190" height="56" rx="10" fill="#fffaeb" stroke="#b45309" stroke-width="2"/>
+          <text x="360" y="66" text-anchor="middle" font-family="Inter" font-weight="700" font-size="13" fill="#b45309">Staging area</text>
+          <text x="360" y="84" text-anchor="middle" font-family="Inter" font-size="11" fill="#4a5160">git add</text>
+          <rect x="520" y="40" width="190" height="56" rx="10" fill="#ecfdf3" stroke="#15803d" stroke-width="2"/>
+          <text x="615" y="66" text-anchor="middle" font-family="Inter" font-weight="700" font-size="13" fill="#15803d">Repository</text>
+          <text x="615" y="84" text-anchor="middle" font-family="Inter" font-size="11" fill="#4a5160">git commit</text>
+          <line x1="205" y1="68" x2="260" y2="68" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a)"/>
+          <line x1="460" y1="68" x2="515" y2="68" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a)"/>
+        </svg>
+
+        <h2>2. One-time setup</h2>
+        <p>Install Git (<code>git-scm.com</code>, or it's likely already installed), then tell it who you are:</p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git --version</span>
+<span class="out">git version 2.4x.x</span>
+<span class="cmd">git config --global user.name "Your Name"</span>
+<span class="cmd">git config --global user.email "you@example.com"</span>
+<span class="cmd">git config --global init.defaultBranch main</span></pre>
+        </div>
+
+        <h2>3. The everyday workflow</h2>
+        <p>This loop — <em>change → add → commit</em> — is what you'll do dozens of times a day:</p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git init</span>                       <span class="out"># start tracking this folder (once)</span>
+<span class="cmd">git status</span>                     <span class="out"># what's changed?</span>
+<span class="cmd">git add .</span>                       <span class="out"># stage all changes</span>
+<span class="cmd">git commit -m "Add hello program"</span> <span class="out"># save a snapshot</span>
+<span class="cmd">git log --oneline</span>              <span class="out"># view history</span>
+<span class="out">a1b2c3d Add hello program</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">✍️</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Write commit messages like a professional</div>
+            <p style="margin:6px 0 0">
+              A good message completes the sentence "If applied, this commit will…": <code>Add login
+              form</code>, <code>Fix crash on empty cart</code>. Present tense, imperative mood, specific.
+              Future-you (and your teammates) will thank you. We'll cover <em>Conventional Commits</em>
+              formally in Part 3.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. Branches: experiment without fear</h2>
+        <p>
+          A <strong>branch</strong> is a parallel line of work. You branch off <code>main</code>, build a
+          feature, and merge it back when it's ready — <code>main</code> stays stable the whole time.
+          This is the heart of professional collaboration.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git switch -c feature/add-button</span>  <span class="out"># create + switch to a branch</span>
+<span class="out"># ...make changes, add, commit...</span>
+<span class="cmd">git switch main</span>                   <span class="out"># back to the main line</span>
+<span class="cmd">git merge feature/add-button</span>     <span class="out"># fold the work in</span></pre>
+        </div>
+
+        <h2>5. GitHub: your code in the cloud</h2>
+        <p>
+          <strong>GitHub</strong> hosts your repos online — for backup, portfolio, and collaboration. Create
+          a free account, make a new repository, and connect your local repo to it. You <code>push</code> to
+          send commits up, and <code>pull</code> to bring others' commits down.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git remote add origin https://github.com/you/my-project.git</span>
+<span class="cmd">git push -u origin main</span>          <span class="out"># upload + remember the link</span>
+<span class="out"># later, after committing more:</span>
+<span class="cmd">git push</span>
+<span class="cmd">git pull</span>                          <span class="out"># download teammates' changes</span></pre>
+        </div>
+
+        <div class="callout note">
+          <span class="ic">🙈</span>
+          <div class="body">
+            <div class="tt">Note · .gitignore</div>
+            <p style="margin:6px 0 0">
+              Some files shouldn't be tracked — like the huge <code>node_modules</code> folder or secret
+              <code>.env</code> files. A <code>.gitignore</code> file lists patterns Git should skip. Every
+              project you build in this course will have one (this very course repo has one too).
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Your first repo</div>
+            <p style="margin:6px 0 0">
+              Take the <code>hello.js</code> project from Lesson 2. Run <code>git init</code>, commit it with
+              a clear message, create a new repo on GitHub, and push it. You now have your first project
+              online — the start of your portfolio.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Git records your project's history as <b>commits</b> (snapshots) inside a <b>repository</b>.</li>
+            <li>The daily loop: change → <code>git add</code> → <code>git commit -m "…"</code>.</li>
+            <li><b>Branches</b> let you build features in isolation and merge them when ready.</li>
+            <li><b>GitHub</b> stores repos online; <code>push</code> sends, <code>pull</code> receives.</li>
+            <li>Use <code>.gitignore</code> to keep junk and secrets out of version control.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

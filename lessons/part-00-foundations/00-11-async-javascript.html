@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-11 · Async JavaScript: Promises &amp; async/await</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 11</div>
+        <h1>Async JavaScript: Promises &amp; async/await</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Core</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⏳ Handling time</span>
+        </div>
+        <p class="lead">
+          Most real work takes <em>time</em>: fetching data from a server, reading a file, waiting for a user.
+          <strong>Asynchronous</strong> code lets your program kick off slow work and keep going, handling the
+          result when it arrives. We'll go from the underlying <strong>Promise</strong> to the clean
+          <strong>async/await</strong> syntax you'll use in every data-driven React app.
+        </p>
+
+        <h2>1. Why async exists</h2>
+        <p>
+          Recall from Lesson 5: JavaScript does one thing at a time. If fetching data <em>blocked</em> until it
+          finished, your whole app would freeze for seconds. Instead, slow operations return immediately with a
+          placeholder for the eventual result — a <strong>Promise</strong> — and your code says "when this is
+          ready, do that."
+        </p>
+        <div class="callout concept">
+          <span class="ic">🎫</span>
+          <div class="body">
+            <div class="tt">Concept · A Promise is a receipt</div>
+            <p style="margin:6px 0 0">
+              Think of ordering food: you get a <b>receipt</b> immediately (the Promise), not the meal. Later the
+              order either <b>resolves</b> (your food arrives) or <b>rejects</b> (they're out of it). A Promise
+              is a placeholder for a value that will exist <em>later</em>.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Promises with .then / .catch</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">promises.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A function that returns a Promise resolving after 1 second:
+function fetchUser() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve({ name: "Ada", id: 1 }), 1000);
+  });
+}
+
+console.log("Requesting...");
+fetchUser()
+  .then((user) => {
+    console.log("Got user:", user.name);   // runs ~1s later
+  })
+  .catch((error) => {
+    console.log("Something went wrong:", error);
+  });
+console.log("This prints BEFORE the user arrives!");</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> <code>.then()</code> registers a callback for when the Promise
+            resolves; <code>.catch()</code> handles failure. Notice the last line prints first — the program
+            didn't wait. That's async in action.
+          </div>
+        </div>
+
+        <h2>3. async / await — the modern way</h2>
+        <p>
+          Chaining <code>.then()</code> gets unwieldy. <strong>async/await</strong> lets you write asynchronous
+          code that <em>reads</em> like ordinary top-to-bottom code. Mark a function <code>async</code>, then
+          <code>await</code> any Promise inside it.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">async-await.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function fetchUser() {
+  return new Promise((resolve) =>
+    setTimeout(() => resolve({ name: "Ada" }), 1000)
+  );
+}
+
+async function showUser() {
+  console.log("Requesting...");
+  const user = await fetchUser();   // pause here until it resolves
+  console.log("Got user:", user.name);
+  return user;
+}
+
+showUser();
+// Reads like synchronous code, but doesn't block the program.</pre>
+          <div class="annot">
+            <strong>The magic of await:</strong> it pauses <em>this function</em> until the Promise resolves,
+            then continues with the result — without freezing the rest of the app. An <code>async</code> function
+            always returns a Promise itself.
+          </div>
+        </div>
+
+        <h2>4. Real data: fetch from an API</h2>
+        <p>
+          The browser and Node both provide <code>fetch()</code> for making network requests. It returns a
+          Promise. Here's the canonical pattern you'll use to load data — including proper error handling with
+          <code>try/catch</code>.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">fetch.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">async function getPost(id) {
+  try {
+    const response = await fetch(
+      `https://jsonplaceholder.typicode.com/posts/${id}`
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`); // turn a bad status into an error
+    }
+    const post = await response.json();  // parse the JSON body (also a Promise)
+    return post;
+  } catch (error) {
+    console.log("Failed to load post:", error.message);
+    return null;
+  }
+}
+
+// Use it:
+const post = await getPost(1);
+console.log(post?.title);</pre>
+          <div class="annot">
+            <strong>The standard recipe:</strong> <code>await fetch(url)</code> → check <code>response.ok</code>
+            → <code>await response.json()</code>, all wrapped in <code>try/catch</code> for failures. You will
+            write this shape hundreds of times. (In Part 6, TanStack Query will manage it for you — but you must
+            understand the fundamentals first.)
+          </div>
+        </div>
+
+        <h2>5. Running things in parallel</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">parallel.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function delay(value, ms) {
+  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+// SLOW: awaits one after another (300 + 300 = ~600ms)
+async function sequential() {
+  const a = await delay("A", 300);
+  const b = await delay("B", 300);
+  return [a, b];
+}
+
+// FAST: start both, then await together (~300ms total)
+async function parallel() {
+  const [a, b] = await Promise.all([delay("A", 300), delay("B", 300)]);
+  return [a, b];
+}
+console.log(await parallel()); // ["A", "B"]</pre>
+          <div class="annot">
+            <strong>Performance lesson:</strong> if tasks don't depend on each other, start them together and
+            <code>await Promise.all([...])</code> — don't await them one-by-one. Knowing when to parallelise is
+            a mark of an experienced engineer.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Forgetting await</div>
+            <p style="margin:6px 0 0">
+              If you forget <code>await</code>, you get the Promise object itself instead of its value — leading
+              to confusing <code>[object Promise]</code> bugs. When something async "isn't working", check for a
+              missing <code>await</code> first. TypeScript will also warn you about many of these.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Fetch and display</div>
+            <p style="margin:6px 0 0">
+              Write an async function that fetches
+              <code>https://jsonplaceholder.typicode.com/users</code>, parses the JSON, and logs each user's
+              <code>name</code> using <code>map</code>. Wrap it in <code>try/catch</code>. Run it with Node 24
+              (which has <code>fetch</code> built in). You've now combined async, fetch, and array methods.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Async code starts slow work and continues, handling results later — it never blocks the app.</li>
+            <li>A <b>Promise</b> is a placeholder that later <b>resolves</b> (success) or <b>rejects</b> (failure).</li>
+            <li><b>async/await</b> makes async code read top-to-bottom; <code>await</code> pauses until a Promise settles.</li>
+            <li>Load data with <code>fetch</code> → check <code>.ok</code> → <code>.json()</code>, inside <code>try/catch</code>.</li>
+            <li>Run independent tasks together with <code>Promise.all</code>; never forget <code>await</code>.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-07 · Operators, Conditionals &amp; Control Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 7</div>
+        <h1>Operators, Conditionals &amp; Control Flow</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🔀 Logic &amp; decisions</span>
+        </div>
+        <p class="lead">
+          Programs make decisions and repeat work. <strong>Control flow</strong> is how you direct that:
+          running different code depending on conditions, and looping over data. Combined with operators —
+          the verbs of the language — this is where your code starts to feel genuinely alive.
+        </p>
+
+        <h2>1. Operators you'll use daily</h2>
+        <table>
+          <thead><tr><th>Category</th><th>Operators</th></tr></thead>
+          <tbody>
+            <tr><td>Arithmetic</td><td><code>+ - * / %</code> (<code>%</code> = remainder), <code>**</code> (power)</td></tr>
+            <tr><td>Comparison</td><td><code>=== !==</code> (equal / not), <code>&lt; &gt; &lt;= &gt;=</code></td></tr>
+            <tr><td>Logical</td><td><code>&amp;&amp;</code> (and), <code>||</code> (or), <code>!</code> (not)</td></tr>
+            <tr><td>Assignment</td><td><code>= += -= *=</code></td></tr>
+          </tbody>
+        </table>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Always use === , never ==</div>
+            <p style="margin:6px 0 0">
+              JavaScript has a loose <code>==</code> that silently converts types (<code>0 == ""</code> is
+              <code>true</code>!). It's a notorious bug source. <b>Always use the strict <code>===</code> and
+              <code>!==</code></b>, which compare without surprises. Professionals never use <code>==</code>.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. if / else if / else</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">conditions.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const score = 78;
+
+if (score >= 90) {
+  console.log("A");
+} else if (score >= 80) {
+  console.log("B");
+} else if (score >= 70) {
+  console.log("C");   // this runs
+} else {
+  console.log("Keep practising");
+}
+
+// Combine conditions with && and ||
+const age = 20;
+const hasTicket = true;
+if (age >= 18 && hasTicket) {
+  console.log("Welcome in!");
+}</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> JavaScript checks each condition top-to-bottom and runs the
+            first block whose condition is <code>true</code>. <code>&amp;&amp;</code> requires both sides true;
+            <code>||</code> requires either.
+          </div>
+        </div>
+
+        <h2>3. Truthy &amp; falsy</h2>
+        <p>
+          In a condition, non-boolean values are coerced to true/false. The <strong>falsy</strong> values are
+          few — memorise them: <code>false</code>, <code>0</code>, <code>""</code> (empty string),
+          <code>null</code>, <code>undefined</code>, <code>NaN</code>. <em>Everything else is truthy.</em>
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">truthy.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const username = "";
+
+if (username) {
+  console.log("Hi, " + username);
+} else {
+  console.log("Please enter a name"); // runs: "" is falsy
+}
+
+// Modern, super-common patterns:
+const input = null;
+const name = input ?? "Guest";   // ?? = "use right side if left is null/undefined"
+console.log(name);               // "Guest"
+
+const config = { theme: "dark" };
+const theme = config.theme || "light"; // || = "use right side if left is falsy"
+console.log(theme);              // "dark"</pre>
+          <div class="annot">
+            <strong>2020+ operators:</strong> <code>??</code> (nullish coalescing) only falls back on
+            <code>null</code>/<code>undefined</code>, while <code>||</code> falls back on <em>any</em> falsy
+            value. Use <code>??</code> when <code>0</code> or <code>""</code> are valid values you want to keep.
+          </div>
+        </div>
+
+        <h2>4. Loops: repeating work</h2>
+        <p>
+          The modern workhorse is <code>for...of</code>, which walks through every item in a list. You'll also
+          meet the classic counting <code>for</code> and the <code>while</code> loop.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">loops.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const fruits = ["apple", "banana", "cherry"];
+
+// Modern: for...of (read as "for each fruit of fruits")
+for (const fruit of fruits) {
+  console.log(fruit.toUpperCase());
+}
+
+// Classic counting loop (when you need the index)
+for (let i = 0; i < fruits.length; i++) {
+  console.log(`${i + 1}. ${fruits[i]}`);
+}
+
+// while: repeat until a condition becomes false
+let countdown = 3;
+while (countdown > 0) {
+  console.log(countdown);
+  countdown -= 1;   // shorthand for countdown = countdown - 1
+}</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> <code>for...of</code> hands you each item directly — cleanest for
+            most cases. The counting <code>for</code> gives you an index <code>i</code>. <code>while</code> keeps
+            going until its condition is false (don't forget to change the condition, or it loops forever!).
+          </div>
+        </div>
+
+        <h2>5. switch &amp; the ternary</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">switch-ternary.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const day = "sat";
+
+switch (day) {
+  case "sat":
+  case "sun":
+    console.log("Weekend!");
+    break;            // stop here — don't fall through
+  default:
+    console.log("Weekday");
+}
+
+// Ternary: a one-line if/else that produces a value
+const age = 17;
+const status = age >= 18 ? "adult" : "minor";
+console.log(status); // "minor"</pre>
+          <div class="annot">
+            <strong>The ternary</strong> <code>condition ? a : b</code> is everywhere in React for conditional
+            rendering, so get comfortable with it. <code>switch</code> is handy when comparing one value
+            against many fixed options — remember <code>break</code>.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · FizzBuzz</div>
+            <p style="margin:6px 0 0">
+              The classic. Loop from 1 to 20. For multiples of 3 print "Fizz", for multiples of 5 print
+              "Buzz", for multiples of both print "FizzBuzz", otherwise print the number. Hint: use
+              <code>%</code> to test divisibility (<code>n % 3 === 0</code>).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Use <code>===</code>/<code>!==</code> — never the loose <code>==</code>.</li>
+            <li><code>if/else if/else</code> branches; the <b>ternary</b> <code>?:</code> is a one-line value-producing version.</li>
+            <li>Falsy values: <code>false 0 "" null undefined NaN</code>. Everything else is truthy.</li>
+            <li><code>??</code> falls back only on null/undefined; <code>||</code> on any falsy value.</li>
+            <li>Prefer <code>for...of</code> to loop items; use counting <code>for</code> when you need the index.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

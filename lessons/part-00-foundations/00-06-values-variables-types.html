@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00-06 · Values, Variables &amp; Types in JavaScript</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "00-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 0 · Foundations — Lesson 6</div>
+        <h1>Values, Variables &amp; Types in JavaScript</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎯 Beginner</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">💾 Core syntax</span>
+        </div>
+        <p class="lead">
+          Every program is data plus the logic that transforms it. This lesson is about the data: the
+          kinds of <strong>values</strong> JavaScript has, how to store them in <strong>variables</strong>,
+          and the concept of <strong>types</strong> — which is the doorway to everything TypeScript adds.
+          Take your time here; these foundations recur in every line you'll ever write.
+        </p>
+
+        <h2>1. Variables: naming your data</h2>
+        <p>
+          A variable is a labelled box that holds a value. In modern JavaScript you declare them with
+          <code>const</code> or <code>let</code>. The rule of thumb: <strong>reach for <code>const</code>
+          first</strong>, and only use <code>let</code> when you genuinely need to reassign the value.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">variables.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const country = "Brazil";   // can't be reassigned
+let score = 0;              // can change later
+score = score + 10;         // now 10
+
+// const protects you from accidental reassignment:
+// country = "Spain";  // ❌ TypeError: Assignment to constant variable
+
+console.log(country, score); // Brazil 10</pre>
+          <div class="annot">
+            <strong>Why <code>const</code> first?</strong> It signals intent ("this won't change") and prevents
+            a whole class of bugs. <code>let</code> is for counters and accumulators that must change.
+            <em>Never</em> use the old <code>var</code> — it has confusing scoping rules we've moved past.
+          </div>
+        </div>
+
+        <h2>2. The primitive types</h2>
+        <p>JavaScript has a small set of basic ("primitive") value types. These seven cover almost everything:</p>
+        <table>
+          <thead><tr><th>Type</th><th>Example</th><th>Use for</th></tr></thead>
+          <tbody>
+            <tr><td><b>string</b></td><td><code>"hello"</code>, <code>'hi'</code>, <code>`yo`</code></td><td>Text</td></tr>
+            <tr><td><b>number</b></td><td><code>42</code>, <code>3.14</code>, <code>-7</code></td><td>All numbers (no separate int/float)</td></tr>
+            <tr><td><b>boolean</b></td><td><code>true</code>, <code>false</code></td><td>Yes/no, on/off</td></tr>
+            <tr><td><b>null</b></td><td><code>null</code></td><td>Intentional "no value"</td></tr>
+            <tr><td><b>undefined</b></td><td><code>undefined</code></td><td>"Not assigned yet"</td></tr>
+            <tr><td><b>bigint</b></td><td><code>9007199254740993n</code></td><td>Huge integers</td></tr>
+            <tr><td><b>symbol</b></td><td><code>Symbol("id")</code></td><td>Unique keys (advanced)</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Strings and template literals</h2>
+        <p>
+          Text is a <strong>string</strong>. The modern, preferred way to build strings is the
+          <strong>template literal</strong> — backticks with <code>${}</code> placeholders. It's cleaner
+          than gluing strings with <code>+</code>.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">strings.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const name = "Marie";
+const age = 30;
+
+// Old way: concatenation
+const a = "Hi, " + name + ". You are " + age + ".";
+
+// Modern way: template literal (note the backticks ` `)
+const b = `Hi, ${name}. You are ${age}.`;
+
+console.log(b);                 // Hi, Marie. You are 30.
+console.log(name.toUpperCase()); // MARIE
+console.log(name.length);        // 5
+console.log(`Next year: ${age + 1}`); // expressions work inside ${}</pre>
+          <div class="annot">
+            <strong>What's happening:</strong> inside backticks, anything in <code>${ }</code> is evaluated and
+            inserted. Strings also have built-in helpers like <code>.toUpperCase()</code> and a
+            <code>.length</code> property. You'll use template literals constantly.
+          </div>
+        </div>
+
+        <h2>4. Numbers and booleans</h2>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">numbers.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const price = 19.99;
+const quantity = 3;
+const total = price * quantity;     // 59.97
+const rounded = Math.round(total);  // 60
+
+const inStock = true;
+const isFree = price === 0;          // false (=== is "exactly equal")
+const canBuy = inStock && !isFree;   // true  (&& = and, ! = not)
+
+console.log(total, rounded, canBuy);</pre>
+          <div class="annot">
+            <strong>Note the operators:</strong> <code>* / + -</code> for math, <code>===</code> for equality,
+            <code>&amp;&amp;</code> (and), <code>||</code> (or), <code>!</code> (not). We'll explore all of them
+            in the next lesson on control flow.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · null vs undefined</div>
+            <p style="margin:6px 0 0">
+              Both mean "no value", but by convention <b>undefined</b> = "this was never set" (JavaScript's
+              default), and <b>null</b> = "deliberately empty" (you set it). Keeping them straight matters,
+              and TypeScript will help you handle both safely.
+            </p>
+          </div>
+        </div>
+
+        <h2>5. typeof and dynamic typing</h2>
+        <p>
+          JavaScript is <strong>dynamically typed</strong>: a variable can hold any type, and that type can
+          change at runtime. This is flexible but dangerous — it's exactly the freedom that lets bugs slip
+          in, and exactly what <strong>TypeScript</strong> tames by letting you declare and enforce types.
+          You can inspect a value's type with <code>typeof</code>:
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">typeof.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">let thing = "hello";
+console.log(typeof thing);  // "string"
+
+thing = 42;                 // legal in JS! the box now holds a number
+console.log(typeof thing);  // "number"
+
+thing = true;
+console.log(typeof thing);  // "boolean"
+
+// This flexibility is powerful but error-prone.
+// In Part 1, TypeScript lets us say "thing is ALWAYS a string"
+// and catches mistakes before the program ever runs.</pre>
+          <div class="annot">
+            <strong>The big idea:</strong> the same variable held a string, then a number, then a boolean — and
+            JavaScript allowed it silently. This is why large JavaScript codebases get bug-prone, and why the
+            entire rest of this course leans on TypeScript.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A tiny receipt</div>
+            <p style="margin:6px 0 0">
+              Declare <code>const item = "Coffee"</code>, <code>const unitPrice = 4.5</code>, and
+              <code>const qty = 2</code>. Using a template literal, print:
+              <code>2 × Coffee = $9.00</code>. Hint: <code>(unitPrice * qty).toFixed(2)</code> formats to two
+              decimals.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Declare variables with <code>const</code> by default; use <code>let</code> only to reassign. Never <code>var</code>.</li>
+            <li>The primitives are string, number, boolean, null, undefined, bigint, symbol.</li>
+            <li>Build strings with <b>template literals</b>: <code>`Hi, ${name}`</code>.</li>
+            <li><code>===</code> checks exact equality; <code>&amp;&amp; || !</code> are logic operators.</li>
+            <li>JS is <b>dynamically typed</b> — flexible but bug-prone — which is precisely what TypeScript fixes.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
