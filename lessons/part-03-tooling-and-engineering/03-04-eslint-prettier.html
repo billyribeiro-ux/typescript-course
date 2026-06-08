@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-04 · ESLint Flat Config &amp; Prettier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 4</div>
+        <h1>ESLint Flat Config &amp; Prettier</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">✨ Code quality</span>
+        </div>
+        <p class="lead">
+          Two tools keep a codebase clean and consistent. <strong>Prettier</strong> formats your code
+          automatically — no more arguing about spaces. <strong>ESLint</strong> catches likely bugs and enforces
+          best practices. Together they remove an entire category of code-review nitpicks and let humans focus on
+          what matters. We set up the modern <strong>flat config</strong> used in 2026.
+        </p>
+
+        <h2>1. Prettier — formatting, settled</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm add -D prettier</span>
+<span class="cmd">pnpm prettier --write .</span>   <span class="out"># format every file</span>
+<span class="cmd">pnpm prettier --check .</span>   <span class="out"># verify formatting (CI gate)</span></pre>
+        </div>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">.prettierrc.json</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "semi": true,
+  "singleQuote": false,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2
+}</pre>
+          <div class="annot">
+            <strong>The point of Prettier is to stop deciding.</strong> Pick settings once, then never think about
+            formatting again — on save, your editor reformats. Code reviews stop containing "add a space here"
+            and focus on logic. Configure your editor to "format on save" with the Prettier extension.
+          </div>
+        </div>
+
+        <h2>2. ESLint — catching real problems</h2>
+        <p>
+          ESLint analyses your code for bugs and anti-patterns: unused variables, missing <code>await</code>,
+          incorrect React Hook usage, accidental <code>any</code>. In 2026 the standard is the
+          <strong>flat config</strong> (<code>eslint.config.js</code>), which replaced the old
+          <code>.eslintrc</code> format.
+        </p>
+        <div class="editor" data-lang="javascript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">eslint.config.js</span><span class="lang-tag">javascript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import react from "eslint-plugin-react-hooks";
+
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked, // type-aware rules!
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: { projectService: true }, // connect to your tsconfig
+    },
+    plugins: { "react-hooks": react },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/no-floating-promises": "error", // catch missing await
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+  { ignores: ["dist/", "node_modules/"] },
+);</pre>
+          <div class="annot">
+            <strong>The flat config is just an array of config objects</strong> — each can target specific files
+            and apply rules. The big upgrade is <em>type-aware linting</em> (<code>recommendedTypeChecked</code>):
+            rules that use TypeScript's type information to catch subtle bugs like floating promises (a missing
+            <code>await</code> — recall lesson 00-11). The React Hooks rules are non-negotiable in React projects.
+          </div>
+        </div>
+
+        <h2>3. Making them work together</h2>
+        <p>
+          ESLint and Prettier have overlapping concerns (both care about some style). The modern approach: let
+          <strong>Prettier own all formatting</strong>, and turn off ESLint's formatting rules so they don't
+          fight. ESLint then focuses purely on code <em>correctness</em>.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">package.json scripts</span></div>
+          <pre><span class="out">"scripts": {</span>
+<span class="out">  "lint": "eslint .",</span>
+<span class="out">  "lint:fix": "eslint . --fix",</span>
+<span class="out">  "format": "prettier --write .",</span>
+<span class="out">  "check": "tsc --noEmit &amp;&amp; eslint . &amp;&amp; prettier --check ."</span>
+<span class="out">}</span></pre>
+        </div>
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The "check" script is your quality gate</div>
+            <p style="margin:6px 0 0">
+              A single <code>pnpm check</code> that runs <code>tsc --noEmit</code> (types), <code>eslint</code>
+              (correctness), and <code>prettier --check</code> (formatting) is the exact command you'll run in CI
+              (lesson 03-09). If it passes locally, it passes in CI. Three tools, one gate.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Catch a real bug</div>
+            <p style="margin:6px 0 0">
+              Set up ESLint with <code>no-floating-promises</code>. Write <code>async function save() {}</code> and
+              call it without <code>await</code> inside another async function. Watch ESLint flag it. Add the
+              <code>await</code> and watch the error clear. You just prevented a classic production race condition
+              at lint time.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Prettier</b> owns formatting — configure once, format on save, never debate style again.</li>
+            <li><b>ESLint</b> (flat config, 2026) catches bugs and enforces best practices.</li>
+            <li><b>Type-aware linting</b> (<code>recommendedTypeChecked</code>) finds subtle issues like floating promises.</li>
+            <li>The <b>React Hooks</b> ESLint rules are essential for any React project.</li>
+            <li>One <code>check</code> script (tsc + eslint + prettier) is your local-and-CI quality gate.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

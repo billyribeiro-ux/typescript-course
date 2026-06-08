@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-05 · Testing with Vitest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 5</div>
+        <h1>Testing with Vitest</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">✅ Confidence</span>
+        </div>
+        <p class="lead">
+          Tests are how you change code without fear. <strong>Vitest</strong> is the modern test runner — fast,
+          Vite-powered, with a Jest-compatible API and first-class TypeScript support. You already used it in
+          Projects P01 and P02; now we cover it properly: structure, matchers, mocking, async tests, coverage,
+          and the type-level testing you saw in P02.
+        </p>
+
+        <h2>1. Anatomy of a test</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">math.test.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { describe, it, expect } from "vitest";
+import { add } from "./math.js";
+
+describe("add", () =&gt; {                 // groups related tests
+  it("sums two positive numbers", () =&gt; {
+    expect(add(2, 3)).toBe(5);          // assertion
+  });
+
+  it("handles negatives", () =&gt; {
+    expect(add(-1, -1)).toBe(-2);
+  });
+
+  it.each([                             // table-driven tests
+    [1, 1, 2],
+    [0, 5, 5],
+    [-2, 2, 0],
+  ])("add(%i, %i) = %i", (a, b, expected) =&gt; {
+    expect(add(a, b)).toBe(expected);
+  });
+});</pre>
+          <div class="annot">
+            <strong>The structure:</strong> <code>describe</code> groups, <code>it</code> (or <code>test</code>)
+            defines a case, <code>expect(...).matcher(...)</code> asserts. <code>it.each</code> runs the same test
+            over a table of inputs — perfect for covering many cases concisely. This is exactly the shape of P01's
+            and P02's test suites.
+          </div>
+        </div>
+
+        <h2>2. Matchers you'll actually use</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">matchers.test.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">expect(value).toBe(5);                 // strict === (primitives)
+expect(obj).toEqual({ a: 1 });         // deep equality (objects/arrays)
+expect(list).toContain("x");
+expect(list).toHaveLength(3);
+expect(value).toBeTruthy();            // / toBeNull / toBeUndefined
+expect(value).toBeGreaterThan(10);
+expect(str).toMatch(/error/i);         // regex
+expect(() =&gt; risky()).toThrow(/invalid/); // function throws
+await expect(promise).resolves.toBe(42);  // async resolution
+await expect(promise).rejects.toThrow();  // async rejection</pre>
+          <div class="annot">
+            <strong>The big one: <code>toBe</code> vs <code>toEqual</code>.</strong> <code>toBe</code> is reference/
+            primitive equality (<code>===</code>); <code>toEqual</code> recursively compares structure. Use
+            <code>toBe</code> for numbers/strings/booleans, <code>toEqual</code> for objects and arrays. Mixing
+            them up is the #1 beginner test bug.
+          </div>
+        </div>
+
+        <h2>3. Mocking &amp; spies</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">mocking.test.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// A spy/mock function tracks how it was called:
+const onSave = vi.fn();
+onSave("a");
+expect(onSave).toHaveBeenCalledWith("a");
+expect(onSave).toHaveBeenCalledTimes(1);
+
+// Mock a whole module (e.g. avoid real network in tests):
+vi.mock("./api.js", () =&gt; ({
+  fetchUser: vi.fn().mockResolvedValue({ id: 1, name: "Ada" }),
+}));
+
+// Control time deterministically:
+beforeEach(() =&gt; vi.useFakeTimers());
+// ... vi.advanceTimersByTime(1000) ...</pre>
+          <div class="annot">
+            <strong>Mock the edges, test the core.</strong> Mock network calls, timers, and external services so
+            tests are fast and deterministic — then test <em>your</em> logic for real. This is why P01/P02 put
+            logic in pure functions: pure code needs almost no mocking, which is the secret to a fast, reliable
+            suite.
+          </div>
+        </div>
+
+        <h2>4. Coverage &amp; type testing</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm vitest</span>                  <span class="out"># watch mode (re-runs on save)</span>
+<span class="cmd">pnpm vitest run</span>              <span class="out"># single run (CI)</span>
+<span class="cmd">pnpm vitest run --coverage</span>   <span class="out"># % of code exercised by tests</span>
+<span class="cmd">pnpm vitest --typecheck</span>      <span class="out"># run *.test-d.ts TYPE-level tests</span></pre>
+        </div>
+        <div class="callout note">
+          <span class="ic">📊</span>
+          <div class="body">
+            <div class="tt">Note · Coverage is a tool, not a target</div>
+            <p style="margin:6px 0 0">
+              Coverage shows which lines ran during tests. Useful for finding <em>untested</em> code, but 100%
+              coverage doesn't mean bug-free — you can execute a line without asserting it's correct. Aim to test
+              behaviour and edge cases, not to chase a number. And remember <code>--typecheck</code> for the
+              <code>expectTypeOf</code> assertions you wrote in P02.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Test-drive a function</div>
+            <p style="margin:6px 0 0">
+              Write a <code>slugify(title: string): string</code> that lowercases, trims, and replaces spaces with
+              hyphens. <em>First</em> write the tests (empty string, extra spaces, mixed case, punctuation), then
+              implement until they pass. Add an <code>it.each</code> table for several inputs. This is TDD.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Vitest</b>: <code>describe</code>/<code>it</code>/<code>expect</code>, with <code>it.each</code> for table-driven tests.</li>
+            <li><code>toBe</code> for primitives/references; <code>toEqual</code> for deep object/array equality.</li>
+            <li>Use <code>vi.fn()</code>/<code>vi.mock()</code> to mock the edges (network, timers); test pure logic for real.</li>
+            <li><code>--coverage</code> finds untested code; <code>--typecheck</code> runs type-level tests.</li>
+            <li>Pure functions (P01/P02 style) make for fast, mock-free, reliable suites.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-08 · Git Workflows, Conventional Commits &amp; Releases</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 8</div>
+        <h1>Git Workflows, Conventional Commits &amp; Releases</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Collaboration</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🌿 Team practices</span>
+        </div>
+        <p class="lead">
+          You learned Git basics in Part 0. Now we cover how <em>teams</em> use it: feature-branch workflows, pull
+          requests and code review, the <strong>Conventional Commits</strong> standard that powers automated
+          changelogs and versioning, and how releases happen. These practices are how professional teams ship
+          dozens of changes a day without chaos.
+        </p>
+
+        <h2>1. The feature-branch / PR workflow</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git switch -c feat/user-profile</span>   <span class="out"># branch off main</span>
+<span class="out"># ...commit your work in small, logical commits...</span>
+<span class="cmd">git push -u origin feat/user-profile</span>
+<span class="out"># Open a Pull Request on GitHub. CI runs. A teammate reviews.</span>
+<span class="out"># Address feedback, then SQUASH-MERGE into main.</span>
+<span class="cmd">git switch main &amp;&amp; git pull</span>       <span class="out"># sync up</span></pre>
+        </div>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · main is always shippable</div>
+            <p style="margin:6px 0 0">
+              The golden rule of "trunk-based" development: the <code>main</code> branch is always deployable. All
+              work happens on short-lived feature branches, gets reviewed via a Pull Request, passes CI, and
+              merges back. Branch protection rules enforce "no direct pushes to main; reviews + green CI required".
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Conventional Commits</h2>
+        <p>
+          A simple, structured commit-message format that machines can parse to auto-generate changelogs and
+          determine version bumps. The format is <code>type(scope): description</code>.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">commit messages</span></div>
+          <pre><span class="out">feat(auth): add password reset flow         → MINOR bump</span>
+<span class="out">fix(cart): prevent negative quantities       → PATCH bump</span>
+<span class="out">docs(readme): update setup steps             → no release</span>
+<span class="out">refactor(api): extract request builder       → no release</span>
+<span class="out">test(utils): cover edge cases                → no release</span>
+<span class="out">feat(api)!: rename user endpoint             → MAJOR bump (! = breaking)</span></pre>
+        </div>
+        <div class="annot" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--text-soft);margin:-4px 0 18px">
+          The common types: <code>feat</code> (new feature), <code>fix</code> (bug), <code>docs</code>,
+          <code>refactor</code>, <code>test</code>, <code>chore</code>, <code>perf</code>, <code>ci</code>. A
+          <code>!</code> or a <code>BREAKING CHANGE:</code> footer signals a major version bump. This maps directly
+          onto SemVer (lesson 03-01).
+        </div>
+
+        <h2>3. Automated versioning &amp; changelogs</h2>
+        <p>
+          Tools read your conventional commits and do the release work for you. In the JS ecosystem,
+          <strong>Changesets</strong> is the monorepo-friendly favourite; <strong>semantic-release</strong> fully
+          automates from commits.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal (Changesets)</span></div>
+          <pre><span class="cmd">pnpm changeset</span>             <span class="out"># describe your change + pick bump level</span>
+<span class="cmd">pnpm changeset version</span>     <span class="out"># apply bumps + update CHANGELOG.md</span>
+<span class="cmd">pnpm changeset publish</span>     <span class="out"># publish updated packages to npm</span></pre>
+        </div>
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Git hooks enforce quality</div>
+            <p style="margin:6px 0 0">
+              Tools like <b>husky</b> + <b>lint-staged</b> run checks automatically on <code>git commit</code> —
+              formatting and linting only the staged files, and validating the commit message format. Bad commits
+              never even enter history. Combined with CI (next lesson), quality is enforced at multiple gates.
+            </p>
+          </div>
+        </div>
+
+        <h2>4. Useful recovery commands</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">git stash</span>                  <span class="out"># shelve changes temporarily</span>
+<span class="cmd">git restore --staged file</span>   <span class="out"># unstage</span>
+<span class="cmd">git revert &lt;hash&gt;</span>           <span class="out"># undo a commit with a NEW commit (safe)</span>
+<span class="cmd">git rebase main</span>            <span class="out"># replay your branch on latest main</span>
+<span class="cmd">git reflog</span>                 <span class="out"># your safety net — find "lost" commits</span></pre>
+        </div>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Never force-push shared branches</div>
+            <p style="margin:6px 0 0">
+              <code>git push --force</code> rewrites history and can destroy teammates' work on a shared branch.
+              If you must, use <code>--force-with-lease</code> (which refuses if someone else pushed). On
+              <code>main</code> and shared branches: never force-push. On your own un-merged feature branch: it's
+              usually fine.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A full PR cycle</div>
+            <p style="margin:6px 0 0">
+              On a practice repo, create a <code>feat/</code> branch, make two conventional commits, push, and open
+              a PR. Add a <code>.changeset</code> describing the change. Then practise <code>git revert</code> on a
+              commit and observe that history is preserved (vs <code>reset</code>, which rewrites it).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Feature branches + PRs + review + green CI</b>, with <code>main</code> always shippable (trunk-based).</li>
+            <li><b>Conventional Commits</b> (<code>feat</code>/<code>fix</code>/<code>!</code>) map to SemVer and power automation.</li>
+            <li><b>Changesets</b>/semantic-release auto-generate changelogs and version bumps from commits.</li>
+            <li><b>husky + lint-staged</b> enforce formatting/linting/commit format before code enters history.</li>
+            <li>Prefer <code>revert</code> (safe) over history rewriting; never force-push shared branches.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

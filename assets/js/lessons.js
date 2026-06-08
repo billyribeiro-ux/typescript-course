@@ -89,16 +89,16 @@ window.COURSE = {
       icon: "🛠️",
       subtitle: "pnpm, monorepos, Vite, ESLint, Vitest, CI and TS 7 'tsgo'.",
       lessons: [
-        { id: "03-01", title: "Package Managers & pnpm Workspaces", file: "lessons/part-03-tooling-and-engineering/03-01-pnpm-workspaces.html", status: "soon" },
-        { id: "03-02", title: "Monorepos with Turborepo", file: "lessons/part-03-tooling-and-engineering/03-02-turborepo.html", status: "soon" },
-        { id: "03-03", title: "Vite Deep Dive", file: "lessons/part-03-tooling-and-engineering/03-03-vite-deep-dive.html", status: "soon" },
-        { id: "03-04", title: "ESLint Flat Config & Prettier", file: "lessons/part-03-tooling-and-engineering/03-04-eslint-prettier.html", status: "soon" },
-        { id: "03-05", title: "Testing with Vitest", file: "lessons/part-03-tooling-and-engineering/03-05-vitest.html", status: "soon" },
-        { id: "03-06", title: "Project References & Build Performance", file: "lessons/part-03-tooling-and-engineering/03-06-project-references.html", status: "soon" },
-        { id: "03-07", title: "TypeScript 7 'tsgo': The Native Compiler", file: "lessons/part-03-tooling-and-engineering/03-07-typescript-7-tsgo.html", status: "soon" },
-        { id: "03-08", title: "Git Workflows, Conventional Commits & Releases", file: "lessons/part-03-tooling-and-engineering/03-08-git-workflows.html", status: "soon" },
-        { id: "03-09", title: "CI/CD with GitHub Actions", file: "lessons/part-03-tooling-and-engineering/03-09-github-actions.html", status: "soon" },
-        { id: "03-10", title: "Project: Publish P02 as a Monorepo", file: "lessons/part-03-tooling-and-engineering/03-10-project-monorepo.html", status: "soon" }
+        { id: "03-01", title: "Package Managers & pnpm Workspaces", file: "lessons/part-03-tooling-and-engineering/03-01-pnpm-workspaces.html", status: "available" },
+        { id: "03-02", title: "Monorepos with Turborepo", file: "lessons/part-03-tooling-and-engineering/03-02-turborepo.html", status: "available" },
+        { id: "03-03", title: "Vite Deep Dive", file: "lessons/part-03-tooling-and-engineering/03-03-vite-deep-dive.html", status: "available" },
+        { id: "03-04", title: "ESLint Flat Config & Prettier", file: "lessons/part-03-tooling-and-engineering/03-04-eslint-prettier.html", status: "available" },
+        { id: "03-05", title: "Testing with Vitest", file: "lessons/part-03-tooling-and-engineering/03-05-vitest.html", status: "available" },
+        { id: "03-06", title: "Project References & Build Performance", file: "lessons/part-03-tooling-and-engineering/03-06-project-references.html", status: "available" },
+        { id: "03-07", title: "TypeScript 7 'tsgo': The Native Compiler", file: "lessons/part-03-tooling-and-engineering/03-07-typescript-7-tsgo.html", status: "available" },
+        { id: "03-08", title: "Git Workflows, Conventional Commits & Releases", file: "lessons/part-03-tooling-and-engineering/03-08-git-workflows.html", status: "available" },
+        { id: "03-09", title: "CI/CD with GitHub Actions", file: "lessons/part-03-tooling-and-engineering/03-09-github-actions.html", status: "available" },
+        { id: "03-10", title: "Project: Publish P02 as a Monorepo", file: "lessons/part-03-tooling-and-engineering/03-10-project-monorepo.html", status: "available" }
       ]
     },
     {

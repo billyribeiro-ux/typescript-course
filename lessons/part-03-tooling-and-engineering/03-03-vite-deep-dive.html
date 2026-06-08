@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-03 · Vite Deep Dive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 3</div>
+        <h1>Vite Deep Dive</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⚡ The dev server</span>
+        </div>
+        <p class="lead">
+          <strong>Vite</strong> is the build tool that powers nearly all modern React development outside of
+          Next.js. It gives you an instant dev server with near-zero startup, lightning-fast hot module
+          replacement, and an optimised production build — all with almost no configuration. Understanding how it
+          works makes you faster and unblocks you when builds misbehave.
+        </p>
+
+        <h2>1. Why Vite is instant</h2>
+        <p>
+          Old bundlers (Webpack) had to bundle your <em>entire</em> app before the dev server could start —
+          slower as the app grew. Vite flips this: it serves your source files as <strong>native ES modules</strong>
+          straight to the browser during development, transforming each file on demand. Startup is independent of
+          app size.
+        </p>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Two modes, two engines</div>
+            <p style="margin:6px 0 0">
+              In <b>dev</b>, Vite uses native ESM + <b>esbuild</b> (written in Go, ~100× faster than JS bundlers)
+              to transform files on demand — no bundling, instant HMR. In <b>production</b>, it bundles with
+              <b>Rollup</b> for an optimised, tree-shaken, code-split output. Best of both: dev speed and prod
+              quality.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Creating and running a Vite app</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm create vite@latest my-app --template react-ts</span>
+<span class="cmd">cd my-app &amp;&amp; pnpm install</span>
+<span class="cmd">pnpm dev</span>      <span class="out"># dev server at http://localhost:5173 (instant)</span>
+<span class="cmd">pnpm build</span>    <span class="out"># optimised production bundle → dist/</span>
+<span class="cmd">pnpm preview</span>  <span class="out"># serve the production build locally to verify</span></pre>
+        </div>
+
+        <h2>3. The config file</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">vite.config.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
+
+export default defineConfig({
+  plugins: [react()],            // enables JSX, Fast Refresh, the React Compiler
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"), // import "@/components/Button"
+    },
+  },
+  server: { port: 3000 },
+  build: {
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: { vendor: ["react", "react-dom"] }, // split big deps
+      },
+    },
+  },
+});</pre>
+          <div class="annot">
+            <strong>The two things you'll configure most:</strong> <em>plugins</em> (React, and later Tailwind,
+            etc.) and <em>path aliases</em> (so you write <code>@/components</code> instead of
+            <code>../../../components</code>). Everything else has sensible defaults. The <code>@vitejs/plugin-react</code>
+            also wires up the React Compiler (Part 4).
+          </div>
+        </div>
+
+        <h2>4. Env vars &amp; static assets</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">env-and-assets.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Env vars must be prefixed VITE_ to be exposed to client code:
+//   .env →  VITE_API_URL=https://api.example.com
+const apiUrl = import.meta.env.VITE_API_URL;       // typed string
+const isDev = import.meta.env.DEV;                 // boolean
+
+// Importing assets gives you a URL (handled by the bundler):
+import logoUrl from "./logo.svg";   // string URL, hashed for caching
+
+// Glob imports — load many modules at once (great for routes/pages):
+const pages = import.meta.glob("./pages/*.tsx");</pre>
+          <div class="annot">
+            <strong>Security note:</strong> only <code>VITE_</code>-prefixed env vars reach the browser — this
+            prevents you from accidentally leaking server secrets into client code. Type them with an ambient
+            declaration (lesson 02-11) for full safety. We use exactly this in Project P03.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Scaffold and explore</div>
+            <p style="margin:6px 0 0">
+              Create a Vite React-TS app, add the <code>@</code> path alias, set a <code>VITE_GREETING</code> env
+              var, and render it. Run <code>pnpm build</code> and inspect <code>dist/</code> — note the hashed
+              filenames (for cache-busting) and the separate vendor chunk. You now understand what ships to users.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Vite</b> serves native ESM in dev (instant, esbuild-powered) and bundles with Rollup for production.</li>
+            <li>Scaffold with <code>pnpm create vite</code>; <code>dev</code>/<code>build</code>/<code>preview</code> are the core scripts.</li>
+            <li>You'll mostly configure <b>plugins</b> and <b>path aliases</b> — sensible defaults handle the rest.</li>
+            <li>Only <code>VITE_</code>-prefixed env vars reach the client (a safety guardrail).</li>
+            <li>Imports of assets become hashed URLs; glob imports load many modules at once.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

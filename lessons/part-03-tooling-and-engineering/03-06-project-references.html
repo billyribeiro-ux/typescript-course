@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-06 · Project References &amp; Build Performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 6</div>
+        <h1>Project References &amp; Build Performance</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">⚙️ Scaling tsc</span>
+        </div>
+        <p class="lead">
+          As a TypeScript codebase grows into many packages, a single <code>tsc</code> run gets slow and the type
+          relationships get murky. <strong>Project references</strong> split your build into independent,
+          incrementally-compiled units with explicit dependencies — the official way to scale TypeScript across a
+          monorepo. They also make your editor faster and your boundaries clearer.
+        </p>
+
+        <h2>1. The idea</h2>
+        <p>
+          You give each package its own <code>tsconfig.json</code> and declare which other packages it depends on
+          via <code>references</code>. TypeScript then builds them in order, caches each one
+          (<code>.tsbuildinfo</code>), and only recompiles what changed — like Turborepo, but for type-checking
+          specifically.
+        </p>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">packages/app/tsconfig.json</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,        // required for referenced projects
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true    // lets "go to definition" jump to SOURCE, not .d.ts
+  },
+  "references": [
+    { "path": "../utils" }    // app depends on the utils package
+  ],
+  "include": ["src"]
+}</pre>
+          <div class="annot">
+            <strong>Two flags do the heavy lifting:</strong> <code>"composite": true</code> marks a project as
+            referenceable (enabling incremental caching), and <code>"declarationMap": true</code> means
+            cmd-clicking an imported symbol jumps to its <em>source</em> instead of a generated
+            <code>.d.ts</code>. <code>references</code> declares the dependency, mirroring your
+            <code>workspace:*</code> package deps.
+          </div>
+        </div>
+
+        <h2>2. Building with <code>--build</code></h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">tsc --build</span>            <span class="out"># builds all referenced projects in order, cached</span>
+<span class="cmd">tsc --build --watch</span>    <span class="out"># incremental watch across the whole graph</span>
+<span class="cmd">tsc --build --clean</span>    <span class="out"># remove all build outputs</span>
+<span class="out"># Only changed projects (and their dependents) recompile.</span></pre>
+        </div>
+
+        <h2>3. The root solution file</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tsconfig.json (repo root)</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  // A "solution" tsconfig: no files of its own, just references.
+  "files": [],
+  "references": [
+    { "path": "packages/utils" },
+    { "path": "packages/ui" },
+    { "path": "apps/web" }
+  ]
+}</pre>
+          <div class="annot">
+            <strong>The root config ties the graph together</strong> so <code>tsc --build</code> at the root builds
+            everything in dependency order. Your editor uses it to understand the whole repo, giving you fast,
+            accurate IntelliSense across package boundaries. This is the standard layout for a typed monorepo —
+            exactly what we assemble in lesson 03-10.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · Turborepo + project references</div>
+            <p style="margin:6px 0 0">
+              In practice you combine both: <b>Turborepo</b> orchestrates and caches high-level tasks
+              (build/test/lint across packages), while <b>project references</b> make the TypeScript type-checking
+              within and across those packages fast and incremental. They're complementary layers of the same
+              "only rebuild what changed" philosophy.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Reference one package from another</div>
+            <p style="margin:6px 0 0">
+              In your workspace, give <code>utils</code> and <code>app</code> each a <code>composite</code>
+              tsconfig, add a <code>reference</code> from <code>app</code> to <code>utils</code>, and a root
+              solution config. Run <code>tsc --build</code>, then touch a file in <code>utils</code> and rebuild —
+              confirm only <code>utils</code> and <code>app</code> recompile.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Project references</b> split a large TypeScript build into incremental, explicitly-dependent units.</li>
+            <li><code>composite: true</code> enables referencing + caching; <code>declarationMap</code> makes go-to-definition jump to source.</li>
+            <li><code>tsc --build</code> compiles the graph in order and only recompiles what changed.</li>
+            <li>A root "solution" tsconfig with only <code>references</code> ties the monorepo together.</li>
+            <li>Pair with Turborepo: references for type-checking, Turbo for task orchestration.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

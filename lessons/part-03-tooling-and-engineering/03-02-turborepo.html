@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-02 · Monorepos with Turborepo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 2</div>
+        <h1>Monorepos with Turborepo</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🏎️ Build orchestration</span>
+        </div>
+        <p class="lead">
+          pnpm workspaces let many packages live together; <strong>Turborepo</strong> makes building them fast and
+          correct. It understands the dependency graph between your packages, runs tasks in the right order, runs
+          them in parallel where possible, and — crucially — <strong>caches</strong> results so unchanged work is
+          never repeated. This is how companies with hundreds of packages keep their builds fast.
+        </p>
+
+        <h2>1. The problem Turborepo solves</h2>
+        <p>
+          In a monorepo, <code>pnpm -r build</code> rebuilds everything, every time — even packages that didn't
+          change. As the repo grows, this becomes painfully slow. Turborepo adds an intelligent task runner with
+          a content-addressed cache: if a package's inputs haven't changed, its previous output is restored
+          instantly.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm add -D turbo -w</span>     <span class="out"># add to the workspace root</span>
+<span class="cmd">turbo build</span>             <span class="out"># build all packages, in graph order, cached</span>
+<span class="cmd">turbo build</span>             <span class="out"># run again →</span>
+<span class="out">• Packages in scope: ui, utils, web</span>
+<span class="out">• Running build in 3 packages</span>
+<span class="out">  ✓ utils:build (cache hit, replaying logs)  0ms</span>
+<span class="out">  ✓ ui:build    (cache hit)                  0ms</span>
+<span class="out">  ✓ web:build   (cache hit)                  0ms</span>
+<span class="out"> Time: 120ms  &gt;&gt;&gt; FULL TURBO</span></pre>
+        </div>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · The task graph</div>
+            <p style="margin:6px 0 0">
+              If <code>web</code> depends on <code>ui</code>, then <code>ui:build</code> must finish before
+              <code>web:build</code> starts. Turborepo reads your workspace graph and orders tasks automatically,
+              parallelising independent ones across all CPU cores. You declare <em>relationships</em>, not order.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Configuring the pipeline</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">turbo.json</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],          // ^ = build my dependencies first
+      "inputs": ["src/**", "tsconfig.json"],
+      "outputs": ["dist/**"]            // what to cache
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "lint": {},
+    "dev": {
+      "cache": false,                   // never cache a long-running dev server
+      "persistent": true
+    }
+  }
+}</pre>
+          <div class="annot">
+            <strong>The two key ideas:</strong> <code>"dependsOn": ["^build"]</code> means "before building me,
+            build everything I depend on" (the <code>^</code> points up the dependency graph). <code>outputs</code>
+            tells Turbo what files to cache. Change one file in <code>utils</code> and only <code>utils</code> and
+            its dependents rebuild — everything else is a cache hit.
+          </div>
+        </div>
+
+        <h2>3. Why caching is transformative</h2>
+        <ul>
+          <li><strong>Local cache:</strong> re-running a task you've already run is instant.</li>
+          <li><strong>Remote cache:</strong> teams (and CI) share a cache, so if a teammate already built a
+          commit, your machine downloads the result instead of rebuilding. CI that took 20 minutes can drop to
+          2.</li>
+          <li><strong>Correctness:</strong> the cache key is a hash of all inputs (source, deps, config, env), so
+          a cache hit is <em>guaranteed</em> to equal a fresh build. Speed without risk.</li>
+        </ul>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · Nx and the alternatives</div>
+            <p style="margin:6px 0 0">
+              <b>Turborepo</b> (by Vercel) is the lightweight, config-light choice we use. <b>Nx</b> is a heavier,
+              more feature-rich alternative popular in large enterprises (code generators, dependency graph
+              visualisation, plugins). Both solve the same core problem: fast, cached, ordered task running across
+              a monorepo. The concepts transfer.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Watch the cache work</div>
+            <p style="margin:6px 0 0">
+              In your workspace from 03-01, add Turborepo and a <code>turbo.json</code> with a cached
+              <code>build</code> task. Run <code>turbo build</code> twice and observe the second run hit the cache.
+              Then change one source file and run again — note only the affected packages rebuild. That's the
+              whole value proposition, felt directly.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Turborepo</b> orchestrates monorepo tasks: correct order, parallelism, and caching.</li>
+            <li><code>"dependsOn": ["^build"]</code> builds a package's dependencies before the package itself.</li>
+            <li><b>Content-hash caching</b> skips unchanged work; a cache hit is guaranteed equal to a fresh build.</li>
+            <li><b>Remote caching</b> shares results across the team and CI — minutes become seconds.</li>
+            <li>Nx is the heavier enterprise alternative; the concepts are the same.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

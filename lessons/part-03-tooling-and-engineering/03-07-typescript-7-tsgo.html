@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-07 · TypeScript 7 'tsgo': The Native Compiler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 7</div>
+        <h1>TypeScript 7 "tsgo": The Native Compiler</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling · 2026</span>
+          <span class="chip">⏱️ ~22 min</span>
+          <span class="chip">🚀 10× faster</span>
+        </div>
+        <p class="lead">
+          The biggest TypeScript news of the decade: the compiler has been <strong>rewritten in Go</strong>. The
+          original <code>tsc</code> was written in TypeScript itself; the new native port — nicknamed
+          <strong>"tsgo"</strong> and shipping as <strong>TypeScript 7</strong> — type-checks roughly
+          <strong>10× faster</strong> and uses far less memory. This lesson explains what changed, why it matters,
+          and how to try it.
+        </p>
+
+        <h2>1. Why rewrite the compiler?</h2>
+        <p>
+          As codebases grew to millions of lines, type-checking and editor responsiveness became bottlenecks. The
+          JavaScript-based compiler could only go so far. By porting the same algorithms to <strong>Go</strong> —
+          a compiled language with true multithreading — the team achieved order-of-magnitude speedups without
+          changing the language itself.
+        </p>
+        <table>
+          <thead><tr><th>Metric</th><th>Typical improvement</th></tr></thead>
+          <tbody>
+            <tr><td>Full type-check time</td><td>~10× faster</td></tr>
+            <tr><td>Editor load (large projects)</td><td>~8× faster startup</td></tr>
+            <tr><td>Memory usage</td><td>Roughly half</td></tr>
+          </tbody>
+        </table>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Same language, new engine</div>
+            <p style="margin:6px 0 0">
+              Crucially, <b>the type system and syntax are unchanged</b>. Everything you learned in Parts 1–2 —
+              conditional types, mapped types, inference — works identically. tsgo is a faster <em>implementation</em>
+              of the same compiler. Your code doesn't change; it just checks far faster.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Trying it</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm add -D @typescript/native-preview</span>
+<span class="cmd">tsgo --version</span>
+<span class="out">Version 7.0.0-dev (native)</span>
+<span class="cmd">tsgo --noEmit</span>          <span class="out"># same flags as tsc, dramatically faster</span>
+<span class="out"># A check that took 12s with tsc finishes in ~1.2s with tsgo.</span></pre>
+        </div>
+        <div class="callout note">
+          <span class="ic">🧭</span>
+          <div class="body">
+            <div class="tt">Note · Status as of June 2026</div>
+            <p style="margin:6px 0 0">
+              The native compiler ships as a <b>preview</b> alongside the stable <b>TypeScript 5.9</b> line. The
+              VS Code extension can opt into the native language service for huge editor responsiveness gains. As
+              it stabilises into the full TypeScript 7 release, it becomes the default. For production today, many
+              teams use <code>tsc</code> (5.9) for emit and <code>tsgo</code> for fast CI type-checks — and you
+              should keep both in mind.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. What it means for you</h2>
+        <ul>
+          <li><strong>Faster feedback:</strong> CI type-checks that gated your merges in minutes now take seconds.</li>
+          <li><strong>Snappier editor:</strong> autocomplete and error squiggles stay instant even in huge repos.</li>
+          <li><strong>Bigger ambitions:</strong> advanced type-level programming (Part 2) that was previously too
+          slow to compile becomes practical at scale.</li>
+          <li><strong>No migration cost:</strong> because the language is identical, adopting it is just swapping
+          the binary — your types and code are untouched.</li>
+        </ul>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Mention this in interviews</div>
+            <p style="margin:6px 0 0">
+              Knowing <em>why</em> the compiler was rewritten (JS single-threaded performance ceiling → Go's
+              compiled, concurrent execution) and the practical impact (CI speed, editor responsiveness, viability
+              of heavier types) signals you track the ecosystem at a senior level. It's a great "what's new in
+              your field?" answer.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>The TypeScript compiler was <b>rewritten in Go</b> ("tsgo", TypeScript 7) for ~10× faster checking and ~half the memory.</li>
+            <li>The <b>language and type system are unchanged</b> — only the implementation is faster.</li>
+            <li>Try it via <code>@typescript/native-preview</code>; <code>tsgo</code> takes the same flags as <code>tsc</code>.</li>
+            <li>Impact: faster CI, snappier editors, and heavier type-level programming becomes practical.</li>
+            <li>As of mid-2026 it's a preview alongside stable 5.9; adoption is just swapping the binary.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

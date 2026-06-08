@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-09 · CI/CD with GitHub Actions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 9</div>
+        <h1>CI/CD with GitHub Actions</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Automation</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🤖 Continuous integration</span>
+        </div>
+        <p class="lead">
+          <strong>CI/CD</strong> — Continuous Integration / Continuous Deployment — means every push is
+          automatically built, type-checked, linted, and tested, and (when ready) deployed. <strong>GitHub
+          Actions</strong> is the most common tool: you describe a workflow in YAML, and GitHub runs it on every
+          push or pull request. This is the automated safety net that lets teams move fast without breaking
+          things.
+        </p>
+
+        <h2>1. A complete CI workflow</h2>
+        <div class="editor" data-lang="yaml">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">.github/workflows/ci.yml</span><span class="lang-tag">yaml</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:            # run on every PR
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm          # cache deps for speed
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tsc --noEmit  # types
+      - run: pnpm lint          # correctness
+      - run: pnpm prettier --check .  # formatting
+      - run: pnpm test          # unit tests
+      - run: pnpm build         # build must succeed</pre>
+          <div class="annot">
+            <strong>Read it top-to-bottom:</strong> on every push to main and every PR, spin up a fresh Ubuntu
+            machine, install Node 24 + pnpm, install dependencies from the locked versions
+            (<code>--frozen-lockfile</code> ensures reproducibility), then run the same quality gate you run
+            locally. If any step fails, the PR is blocked. This is your <code>check</code> script (03-04), enforced
+            on every change.
+          </div>
+        </div>
+
+        <h2>2. Key concepts</h2>
+        <table>
+          <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><b>Workflow</b></td><td>A YAML file describing automation, triggered by events.</td></tr>
+            <tr><td><b>Event (<code>on</code>)</b></td><td>What triggers it: push, pull_request, schedule, manual.</td></tr>
+            <tr><td><b>Job</b></td><td>A set of steps running on one fresh machine; jobs run in parallel by default.</td></tr>
+            <tr><td><b>Step</b></td><td>A single command (<code>run</code>) or reusable <code>action</code> (<code>uses</code>).</td></tr>
+            <tr><td><b>Runner</b></td><td>The machine (Ubuntu/macOS/Windows) executing a job.</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Matrix builds &amp; deployment</h2>
+        <div class="editor" data-lang="yaml">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">matrix + deploy</span><span class="lang-tag">yaml</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">jobs:
+  test:
+    strategy:
+      matrix:
+        node: [22, 24]      # run the SAME job across multiple Node versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # ...test on each node version...
+
+  deploy:
+    needs: test             # only deploy if tests passed
+    if: github.ref == 'refs/heads/main'   # only on main
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying..."   # e.g. vercel deploy, or push a Docker image
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}  # secrets, never hardcoded</pre>
+          <div class="annot">
+            <strong>Two professional patterns:</strong> a <em>matrix</em> runs the same checks across several Node
+            versions (catching version-specific bugs), and a <em>deploy</em> job that <code>needs</code> the test
+            job ensures you only ship green code. Secrets live in GitHub's encrypted store and are injected as env
+            vars — never committed to the repo.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 context · CD platforms</div>
+            <p style="margin:6px 0 0">
+              For React/Next.js apps, <b>Vercel</b> and <b>Netlify</b> handle deployment with zero-config: connect
+              your repo and every push to <code>main</code> deploys automatically, with preview deployments for
+              each PR. For containers, GitHub Actions builds and pushes Docker images. We deploy for real in Part
+              7 and the capstone.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Add CI to a project</div>
+            <p style="margin:6px 0 0">
+              Add the <code>ci.yml</code> above to your P02 monorepo (or any repo with tests). Push a branch and
+              open a PR — watch the checks run on GitHub. Then intentionally break a test and push; confirm the PR
+              goes red and is blocked. You've built a real safety net.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>CI</b> runs your quality gate (types, lint, format, test, build) automatically on every push/PR.</li>
+            <li>A <b>workflow</b> (YAML) has <b>jobs</b> (parallel machines) made of <b>steps</b> (<code>run</code>/<code>uses</code>).</li>
+            <li>Use <code>--frozen-lockfile</code> + dependency caching for reproducible, fast installs.</li>
+            <li><b>Matrix</b> builds test across versions; <code>needs</code> + <code>if</code> gate deployment on green tests + the right branch.</li>
+            <li><b>Secrets</b> live in GitHub's encrypted store — never in the repo.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

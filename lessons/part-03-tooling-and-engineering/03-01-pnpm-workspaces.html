@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-01 · Package Managers &amp; pnpm Workspaces</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 1</div>
+        <h1>Package Managers &amp; pnpm Workspaces</h1>
+        <div class="lesson-meta">
+          <span class="chip">🛠️ Tooling</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">📦 Dependency mastery</span>
+        </div>
+        <p class="lead">
+          Every project you build stands on a tower of open-source packages. The package manager installs and
+          organises them, and <strong>pnpm</strong> — the 2026 professional standard — does it faster and more
+          correctly than the alternatives. Understanding how dependencies, versions, and lockfiles work is the
+          difference between "works on my machine" and reproducible, reliable builds.
+        </p>
+
+        <h2>1. What a package manager really does</h2>
+        <p>
+          When you <code>pnpm add react</code>, the manager resolves the full dependency tree, downloads the
+          packages, records exact versions in a <strong>lockfile</strong>, and links them into
+          <code>node_modules</code>. The lockfile is what makes installs reproducible — everyone gets the exact
+          same versions.
+        </p>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm add react react-dom</span>        <span class="out"># runtime dependency</span>
+<span class="cmd">pnpm add -D vitest typescript</span>    <span class="out"># dev-only dependency (-D)</span>
+<span class="cmd">pnpm add -E zod</span>                  <span class="out"># pin EXACT version (no ^ range)</span>
+<span class="cmd">pnpm install</span>                     <span class="out"># install everything from the lockfile</span>
+<span class="cmd">pnpm up --latest</span>                  <span class="out"># upgrade to newest versions</span>
+<span class="cmd">pnpm why react</span>                   <span class="out"># explain WHY a package is installed</span></pre>
+        </div>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · dependencies vs devDependencies</div>
+            <p style="margin:6px 0 0">
+              <b>dependencies</b> ship with your app at runtime (React, Zod). <b>devDependencies</b> are only
+              needed to build/test (TypeScript, Vitest, ESLint). Getting this split right keeps production
+              installs lean. UI libraries you import = dependency; tools you run = devDependency.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Why pnpm beats npm and yarn</h2>
+        <table>
+          <thead><tr><th>Feature</th><th>pnpm</th><th>npm</th></tr></thead>
+          <tbody>
+            <tr><td>Disk usage</td><td>One global store, hard-linked — huge savings</td><td>Copies per project</td></tr>
+            <tr><td>Install speed</td><td>Fastest (links, not copies)</td><td>Slower</td></tr>
+            <tr><td>Strictness</td><td>No "phantom" deps — you can only import what you declared</td><td>Flat, leaky</td></tr>
+            <tr><td>Monorepos</td><td>First-class workspaces</td><td>Workspaces (weaker)</td></tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · pnpm's strictness is a feature</div>
+            <p style="margin:6px 0 0">
+              pnpm uses a non-flat <code>node_modules</code>, so you <em>can't</em> accidentally import a package
+              you didn't declare (a "phantom dependency"). This catches a real class of bugs where code works
+              locally but breaks when a transitive dependency changes. Strict by default = fewer 2am surprises.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Semantic versioning</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">package.json (versions)</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "dependencies": {
+    "react": "^19.1.0",     // ^ = compatible: &gt;=19.1.0 &lt;20.0.0 (minor+patch ok)
+    "zod": "~3.24.1",       // ~ = patch only: &gt;=3.24.1 &lt;3.25.0
+    "left-pad": "1.3.0"     // exact: only 1.3.0
+  }
+}
+// SemVer is MAJOR.MINOR.PATCH:
+//   MAJOR = breaking changes
+//   MINOR = new features, backward-compatible
+//   PATCH = bug fixes, backward-compatible</pre>
+          <div class="annot">
+            <strong>The lockfile is the source of truth.</strong> The ranges (<code>^</code>, <code>~</code>) in
+            <code>package.json</code> say what's <em>allowed</em>; the <code>pnpm-lock.yaml</code> records what's
+            <em>actually installed</em>. Always commit your lockfile — it's what guarantees your teammate and your
+            CI server build the identical tree.
+          </div>
+        </div>
+
+        <h2>4. Workspaces: many packages, one repo</h2>
+        <p>
+          A <strong>workspace</strong> (monorepo) holds multiple related packages that can depend on each other,
+          sharing one install and one lockfile. This is how teams manage a design system + several apps together.
+        </p>
+        <div class="editor" data-lang="yaml">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">pnpm-workspace.yaml</span><span class="lang-tag">yaml</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">packages:
+  - "apps/*"        # your applications
+  - "packages/*"    # shared libraries (ui, config, utils)</pre>
+        </div>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm --filter web add @myorg/ui</span>     <span class="out"># add a workspace pkg as a dep</span>
+<span class="cmd">pnpm --filter web dev</span>               <span class="out"># run a script in one package</span>
+<span class="cmd">pnpm -r build</span>                       <span class="out"># run "build" in EVERY package</span></pre>
+        </div>
+        <div class="annot" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--text-soft);margin-top:-6px">
+          The <code>workspace:*</code> protocol lets <code>apps/web</code> depend on <code>packages/ui</code> by
+          its name, resolved to the local code — no publishing needed during development. We build a real
+          workspace in lesson 03-10.
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Set up a workspace</div>
+            <p style="margin:6px 0 0">
+              Create a folder with a <code>pnpm-workspace.yaml</code> declaring <code>packages/*</code>. Add two
+              packages — <code>packages/utils</code> (exports a function) and <code>packages/app</code> (depends on
+              utils via <code>"@you/utils": "workspace:*"</code>). Run <code>pnpm install</code> and import the
+              function across packages. You've built your first monorepo.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>The package manager resolves, installs, and <b>locks</b> dependency versions for reproducible builds — always commit the lockfile.</li>
+            <li><b>pnpm</b> is fastest, disk-efficient, and strict (no phantom dependencies) — the 2026 standard.</li>
+            <li>Split <b>dependencies</b> (runtime) from <b>devDependencies</b> (build/test tools).</li>
+            <li><b>SemVer</b>: <code>^</code> allows minor+patch, <code>~</code> patch only, exact pins one version.</li>
+            <li><b>Workspaces</b> manage multiple inter-dependent packages with one install — the basis of monorepos.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

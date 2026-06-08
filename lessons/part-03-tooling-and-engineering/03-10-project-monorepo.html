@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03-10 · Project — Publish P02 as a Monorepo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "03-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 3 · Professional Tooling — Lesson 10 · 🏗️ PROJECT</div>
+        <h1>Project — Publish P02 as a Monorepo</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏗️ Build</span>
+          <span class="chip">⏱️ ~70 min</span>
+          <span class="chip">📦 Real engineering</span>
+        </div>
+        <p class="lead">
+          Time to assemble everything from Part 3. We'll take the P02 schema validator and turn it into a
+          professional <strong>monorepo</strong>: pnpm workspaces, Turborepo caching, TypeScript project
+          references, shared ESLint/Prettier config, a consuming demo app, and a CI pipeline. This is the exact
+          structure of a real company's frontend platform repo.
+        </p>
+
+        <h2>1. The target structure</h2>
+        <div class="editor" data-lang="text">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">repo layout</span><span class="lang-tag">text</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">validator-monorepo/
+  package.json            # root: scripts + devDeps (turbo, prettier, eslint)
+  pnpm-workspace.yaml     # packages: ["packages/*", "apps/*"]
+  turbo.json              # build/test/lint pipeline + caching
+  tsconfig.base.json      # shared strict compiler options
+  tsconfig.json           # solution file: references all packages
+  eslint.config.js        # shared flat config
+  .github/workflows/ci.yml
+  packages/
+    validator/            # the P02 library (publishable)
+      src/ ...
+      package.json        # name: "@acme/validator", exports, build script
+      tsconfig.json       # composite: true, extends base
+  apps/
+    demo/                 # a tiny app that USES @acme/validator
+      src/main.ts
+      package.json        # "@acme/validator": "workspace:*"
+      tsconfig.json       # references ../../packages/validator</pre>
+          <div class="annot">
+            <strong>This is the canonical monorepo shape:</strong> shared libraries in <code>packages/*</code>,
+            runnable apps in <code>apps/*</code>, and root-level config + tooling. The validator becomes a
+            publishable package; the demo app consumes it locally via <code>workspace:*</code> — no publishing
+            needed during development.
+          </div>
+        </div>
+
+        <h2>2. Root configuration</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">package.json (root)</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "name": "validator-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "check": "turbo build lint test &amp;&amp; prettier --check ."
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.9.0"
+  },
+  "packageManager": "pnpm@10.0.0"
+}</pre>
+          <div class="annot">
+            <strong><code>"private": true</code></strong> on the root prevents accidentally publishing the whole
+            repo. Scripts delegate to <code>turbo</code>, which fans out to each package's own script in dependency
+            order with caching. One <code>pnpm check</code> at the root verifies the entire repo — locally and in
+            CI.
+          </div>
+        </div>
+
+        <h2>3. The publishable package</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">packages/validator/package.json</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">{
+  "name": "@acme/validator",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run",
+    "lint": "eslint src"
+  }
+}</pre>
+          <div class="annot">
+            <strong>The <code>exports</code> + <code>types</code> fields are how a package ships its API and its
+            types</strong> (recall lesson 01-10). <code>"files": ["dist"]</code> means only the built output is
+            published — not your source or tests. This is exactly the <code>package.json</code> shape of the real
+            P02 project you already built, now slotted into a monorepo.
+          </div>
+        </div>
+
+        <h2>4. Wiring the demo app to the library</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">apps/demo/src/main.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// The demo imports the local workspace package by its published name.
+import { v, type Infer } from "@acme/validator";
+
+const Event = v.object({
+  name: v.string().min(1),
+  attendees: v.number().int().min(0),
+});
+type Event = Infer&lt;typeof Event&gt;;
+
+const result = Event.safeParse({ name: "Launch", attendees: 120 });
+console.log(result.success ? result.data : result.error.issues);
+// Edit the validator's source, and `turbo build` rebuilds only what changed.</pre>
+          <div class="annot">
+            <strong>This is the payoff of the whole part.</strong> The app uses <code>@acme/validator</code> as if
+            it were published from npm, but it resolves to your local source. Change the library, and Turborepo +
+            project references rebuild only the affected packages. Editing across package boundaries feels
+            seamless. This is daily life at a company with a shared platform.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm install</span>
+<span class="cmd">pnpm check</span>        <span class="out"># turbo build + lint + test across all packages, cached</span>
+<span class="cmd">pnpm --filter demo dev</span>  <span class="out"># run just the demo app</span></pre>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build it for real</div>
+            <p style="margin:6px 0 0">
+              Create the monorepo above, moving your P02 code into <code>packages/validator</code> and adding the
+              <code>apps/demo</code> consumer. Wire up <code>turbo.json</code>, project references, shared ESLint,
+              and the CI workflow from 03-09. Run <code>pnpm check</code> twice and watch the second run hit the
+              cache. Add a <code>.changeset</code> (03-08) describing a change. You now have a portfolio-grade
+              monorepo.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A real monorepo: <code>packages/*</code> (libraries) + <code>apps/*</code> (consumers) + root tooling.</li>
+            <li><b>pnpm workspaces</b> link packages via <code>workspace:*</code>; <b>Turborepo</b> caches and orders tasks.</li>
+            <li><b>Project references</b> make cross-package type-checking incremental; the root solution config ties it together.</li>
+            <li>The library ships via <code>exports</code>/<code>types</code>/<code>files</code> — the same shape as your P02 project.</li>
+            <li>🎉 <b>Part 3 complete.</b> You can architect a professional repo. Next: React — where it all comes alive.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
