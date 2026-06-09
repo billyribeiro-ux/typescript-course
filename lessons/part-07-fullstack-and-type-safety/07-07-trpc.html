@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-07 · End-to-End Type Safety with tRPC v11</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 7</div>
+        <h1>End-to-End Type Safety with tRPC v11</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack · pivotal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🔗 No codegen</span>
+        </div>
+        <p class="lead">
+          <strong>tRPC</strong> gives you a fully type-safe API between your server and client with <em>zero code
+          generation and no schemas to maintain</em> — the types simply flow from the server to the client through
+          TypeScript inference. Call a server procedure from the client and get autocomplete + type-checking on the
+          inputs and outputs. It's the purest expression of "one language, end to end".
+        </p>
+
+        <h2>1. Define a router on the server</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">server/router.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { initTRPC } from "@trpc/server";
+import { z } from "zod";
+import { db } from "./db.js";
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  getPosts: t.procedure.query(() =&gt; db.post.findMany()),
+
+  getPost: t.procedure
+    .input(z.object({ id: z.number() }))          // Zod validates + types the input
+    .query(({ input }) =&gt; db.post.findById(input.id)),
+
+  createPost: t.procedure
+    .input(z.object({ title: z.string().min(1) }))
+    .mutation(({ input }) =&gt; db.post.create({ data: input })),
+});
+
+// The ONLY thing the client imports is this TYPE — no runtime code:
+export type AppRouter = typeof appRouter;</pre>
+          <div class="annot">
+            <strong>A router is a tree of procedures</strong> — <code>query</code> (read) or <code>mutation</code>
+            (write), each with a Zod-validated, typed <code>input</code>. Crucially, the client only imports the
+            <em>type</em> <code>AppRouter</code> (erased at runtime). There's no OpenAPI spec, no generated SDK — the
+            contract is the TypeScript type itself.
+          </div>
+        </div>
+
+        <h2>2. Call it from the client — fully typed</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Posts.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use client";
+import { trpc } from "@/lib/trpc"; // a client typed with &lt;AppRouter&gt;
+
+function Posts() {
+  // Autocompleted procedure names, typed inputs AND outputs — no fetch, no types:
+  const posts = trpc.getPosts.useQuery();              // built on TanStack Query!
+  const post = trpc.getPost.useQuery({ id: 1 });        // input type-checked
+  const create = trpc.createPost.useMutation();
+
+  if (posts.isPending) return &lt;Spinner /&gt;;
+  return (
+    &lt;&gt;
+      &lt;ul&gt;{posts.data!.map((p) =&gt; &lt;li key={p.id}&gt;{p.title}&lt;/li&gt;)}&lt;/ul&gt;
+      &lt;button onClick={() =&gt; create.mutate({ title: "New" })}&gt;Add&lt;/button&gt;
+      {/* create.mutate({ titel: "x" }) ❌ compile error: typo in input */}
+    &lt;/&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>The server's types are the client's types — automatically.</strong> Rename a procedure or change
+            an input on the server, and every call site updates or errors instantly across the whole codebase. tRPC's
+            React client is built on TanStack Query (06-03), so you get caching, loading states, and mutations for
+            free. This is the same "single source of truth" idea as your P02 validator, applied to an entire API.
+          </div>
+        </div>
+
+        <h2>3. Context, middleware &amp; auth</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">protected.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Middleware that requires an authenticated user:
+const isAuthed = t.middleware(({ ctx, next }) =&gt; {
+  if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+  return next({ ctx: { user: ctx.user } }); // narrows ctx.user to non-null
+});
+const protectedProcedure = t.procedure.use(isAuthed);
+
+export const appRouter = t.router({
+  me: protectedProcedure.query(({ ctx }) =&gt; ctx.user), // ctx.user is guaranteed
+});</pre>
+          <div class="annot">
+            <strong>Middleware composes auth, logging, and rate-limiting</strong> into reusable
+            <code>protectedProcedure</code>s. The context (<code>ctx</code>) carries per-request data (the user,
+            db). After the auth middleware, <code>ctx.user</code> is type-narrowed to non-null — the type system
+            enforces that protected procedures always have a user.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · tRPC vs Server Actions</div>
+            <p style="margin:6px 0 0">
+              <b>Server Actions</b> (07-04) are great for simple form mutations within Next.js. <b>tRPC</b> shines
+              for a large, organised API with many procedures, shared between web + mobile, with middleware and
+              subscriptions. They coexist — many apps use Server Actions for forms and tRPC for the broader data
+              layer. Both deliver end-to-end type safety.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A typed todos API</div>
+            <p style="margin:6px 0 0">
+              Build a tRPC router with <code>list</code>, <code>byId</code>, <code>create</code>, <code>toggle</code>,
+              and <code>remove</code> procedures (Zod inputs). Add a <code>protectedProcedure</code> for writes. Call
+              them from a client component and confirm that a typo in a procedure name or input is a compile error.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>tRPC</b> gives end-to-end type safety with <b>no codegen</b> — the client imports only the server router <em>type</em>.</li>
+            <li>Procedures are <code>query</code>/<code>mutation</code> with Zod-validated, typed inputs.</li>
+            <li>The React client is built on <b>TanStack Query</b> — caching/loading/mutations for free.</li>
+            <li><b>Middleware + context</b> compose auth/logging; auth middleware type-narrows the context.</li>
+            <li>Coexists with Server Actions; ideal for large shared APIs across web + mobile.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

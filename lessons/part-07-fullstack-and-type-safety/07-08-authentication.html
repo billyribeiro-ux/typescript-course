@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-08 · Authentication &amp; Sessions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 8</div>
+        <h1>Authentication &amp; Sessions</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack · critical</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🔐 Who are you?</span>
+        </div>
+        <p class="lead">
+          Authentication (who you are) and authorization (what you can do) are foundational to any real app — and
+          getting them wrong is dangerous. We'll cover the concepts (sessions vs JWTs, password hashing, OAuth),
+          the modern libraries that handle the hard parts safely (Auth.js, Lucia, Clerk), and how to protect routes
+          and Server Actions.
+        </p>
+
+        <h2>1. The core concepts</h2>
+        <table>
+          <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><b>Authentication</b></td><td>Verifying identity (login)</td></tr>
+            <tr><td><b>Authorization</b></td><td>Checking permissions (can this user do X?)</td></tr>
+            <tr><td><b>Session</b></td><td>Server-tracked login state, referenced by a cookie</td></tr>
+            <tr><td><b>JWT</b></td><td>A signed token carrying claims, verifiable without a DB lookup</td></tr>
+            <tr><td><b>OAuth</b></td><td>"Sign in with Google/GitHub" — delegating auth to a provider</td></tr>
+          </tbody>
+        </table>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Never roll your own crypto</div>
+            <p style="margin:6px 0 0">
+              Always hash passwords with a slow, salted algorithm (<b>bcrypt</b>, <b>argon2</b>) — never store them
+              or use fast hashes like MD5/SHA. Better still: use a vetted auth library and don't handle raw passwords
+              at all. Auth bugs are security incidents; lean on battle-tested tools.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Use a library (Auth.js)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">auth.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import NextAuth from "next-auth";
+import GitHub from "next-auth/providers/github";
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { db } from "@/lib/db";
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: DrizzleAdapter(db),        // store users/sessions in YOUR database
+  providers: [GitHub],                // OAuth provider(s)
+});
+
+// In a Server Component / Action, get the current session:
+// const session = await auth();
+// if (!session?.user) redirect("/login");</pre>
+          <div class="annot">
+            <strong>Auth.js (NextAuth) handles the dangerous parts</strong> — OAuth flows, session cookies, CSRF
+            protection — and stores users/sessions in your own database via the Drizzle adapter (07-06). You call
+            <code>auth()</code> on the server to get the session. Alternatives: <b>Lucia</b> (lightweight, you own
+            more), <b>Clerk</b>/<b>WorkOS</b> (hosted, fastest to ship).
+          </div>
+        </div>
+
+        <h2>3. Protecting routes &amp; actions</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">protect.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Protect a page (Server Component):
+export default async function Dashboard() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  return &lt;h1&gt;Welcome, {session.user.name}&lt;/h1&gt;;
+}
+
+// Protect a Server Action — ALWAYS check auth + authorization inside:
+"use server";
+export async function deletePost(id: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const post = await db.post.findById(id);
+  if (post.authorId !== session.user.id) throw new Error("Forbidden"); // authz
+  await db.post.delete(id);
+}</pre>
+          <div class="annot">
+            <strong>Check authorization on the server, every time.</strong> Hiding a button in the UI is not
+            security — a Server Action or Route Handler is a public endpoint (07-04). Verify the session
+            <em>and</em> that this specific user is allowed to perform this specific operation (ownership/roles).
+            Middleware can also guard whole route groups.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Gate a dashboard</div>
+            <p style="margin:6px 0 0">
+              Set up Auth.js with a GitHub provider and the Drizzle adapter. Protect a <code>/dashboard</code> route
+              (redirect to login if signed out). Add a Server Action that only lets a user edit their own profile —
+              verify ownership inside the action and test that another user's id is rejected.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Authentication</b> = who you are; <b>authorization</b> = what you may do. Both matter.</li>
+            <li>Use a vetted library (<b>Auth.js</b>/Lucia/Clerk) — never roll your own crypto; hash with bcrypt/argon2.</li>
+            <li>Store users/sessions in your DB via an adapter; read the session with <code>auth()</code> on the server.</li>
+            <li><b>Always check auth + authorization inside</b> Server Actions and Route Handlers — UI hiding isn't security.</li>
+            <li>Verify <b>ownership/roles</b> for each operation, not just "is logged in".</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

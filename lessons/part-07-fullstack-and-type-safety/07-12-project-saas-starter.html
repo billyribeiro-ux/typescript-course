@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-12 · Project P07 — The Next.js SaaS Starter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-12";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 12 · 🚀 PROJECT</div>
+        <h1>Project P07 — The Next.js SaaS Starter</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏗️ Build</span>
+          <span class="chip">⏱️ ~3 hrs</span>
+          <span class="chip">✅ 14 tests</span>
+        </div>
+        <p class="lead">
+          A multi-tenant SaaS starter built on everything in Part 7. The full app is a Next.js App Router project
+          with Drizzle, Auth.js, tRPC, and Stripe-style billing. We build it around a <strong>pure, fully-tested
+          server core</strong> — permissions, billing, and a typed procedure layer — in
+          <code>projects/p07-nextjs-saas-starter/</code>, with <strong>14 passing tests</strong>. The framework glue
+          is thin; the logic is tested exhaustively.
+        </p>
+
+        <div class="callout concept">
+          <span class="ic">🏛️</span>
+          <div class="body">
+            <div class="tt">Architecture · pure core, framework at the edges</div>
+            <p style="margin:6px 0 0">
+              The same discipline as every project: the <b>security and billing rules are pure functions</b> you can
+              test without a database, browser, or framework. Server Actions (07-04), tRPC procedures (07-07), and
+              Drizzle queries (07-06) are thin wrappers that <em>call</em> this core. Test the core to death; keep
+              the glue minimal.
+            </p>
+          </div>
+        </div>
+
+        <h2>1. Role-based permissions</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/server/permissions.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export type Role = "owner" | "admin" | "member" | "viewer";
+const RANK: Record&lt;Role, number&gt; = { owner: 3, admin: 2, member: 1, viewer: 0 };
+
+const REQUIRED: Record&lt;Action, Role&gt; = {
+  "org:delete": "owner", "billing:manage": "owner",
+  "member:invite": "admin", "project:create": "member", "project:view": "viewer",
+};
+
+export function can(role: Role, action: Action): boolean {
+  return RANK[role] &gt;= RANK[REQUIRED[action]];
+}
+// You can never act on someone of equal-or-higher rank than yourself:
+export function canActOnMember(actor: Role, target: Role): boolean {
+  return RANK[actor] &gt; RANK[target];
+}</pre>
+          <div class="annot">
+            <strong>An action→minimum-role matrix is the clean way to model RBAC.</strong> One <code>can()</code>
+            function answers every "is this allowed?" question, and <code>canActOnMember</code> prevents an admin
+            from removing an owner. These are pure — the test file checks every role against every action.
+          </div>
+        </div>
+
+        <h2>2. Billing rules (no money bugs)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/server/billing.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export function canAddSeat(plan: Plan, currentSeats: number): boolean {
+  return currentSeats &lt; LIMITS[plan].maxSeats;
+}
+// Proration: charge only for the remaining days of the cycle.
+export function prorateAddSeatsCents(plan: Plan, added: number, daysLeft: number, cycle = 30) {
+  const fraction = Math.min(daysLeft, cycle) / cycle;
+  return Math.round(added * LIMITS[plan].seatPriceCents * fraction);
+}</pre>
+          <div class="annot">
+            <strong>Money math must be correct — so it's pure and tested.</strong> Plan limits gate seats/projects;
+            proration charges fairly for mid-cycle changes. Working in integer cents (never floats) avoids rounding
+            bugs, and branded types (02-08) could enforce cents-vs-dollars. Every branch has a test.
+          </div>
+        </div>
+
+        <h2>3. The typed procedure layer (mini-tRPC)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">usage (api.test.ts)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const createProject = protectedProcedure       // requires auth
+  .input(z.object({ name: z.string().min(1) })) // validates input (Zod)
+  .mutation(({ ctx, input }) =&gt; {
+    authorize(ctx.user.role, "project:create"); // ctx.user is non-null + typed
+    return { id: "p1", name: input.name, orgId: ctx.user.orgId };
+  });
+
+// The three guarantees, tested:
+await createProject.call({ user: null }, { name: "X" });        // → UNAUTHORIZED
+await createProject.call(memberCtx, { name: "" });              // → BAD_REQUEST
+await createProject.call(viewerCtx, { name: "Site" });          // → ForbiddenError
+await createProject.call(memberCtx, { name: "Site" });          // ✅ success</pre>
+          <div class="annot">
+            <strong>This is tRPC (07-07) in miniature.</strong> <code>protectedProcedure</code> gates auth and
+            type-narrows <code>ctx.user</code> to non-null; <code>.input()</code> validates with Zod and types the
+            <code>input</code>; the resolver authorizes via the permissions core. The test proves all four paths.
+            Swap this builder for real tRPC and the patterns are identical.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">cd projects/p07-nextjs-saas-starter &amp;&amp; pnpm install &amp;&amp; pnpm test</span>
+<span class="out">✓ src/server/permissions.test.ts (4)  ✓ billing.test.ts (5)  ✓ api.test.ts (5)</span>
+<span class="out">Test Files  3 passed (3)   Tests  14 passed (14)</span></pre>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build the full app around the core</div>
+            <p style="margin:6px 0 0">
+              Scaffold a Next.js app: a Drizzle schema for orgs/members/projects (07-06), Auth.js with sessions
+              (07-08), and tRPC procedures (07-07) that call this exact <code>permissions</code>/<code>billing</code>
+              core. Add a Server Action to invite a member that checks <code>can(role, "member:invite")</code> and
+              <code>canAddSeat</code>. Keep all 14 core tests green as you build.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A SaaS's <b>security &amp; billing logic should be pure functions</b> — tested exhaustively, framework-free.</li>
+            <li><b>RBAC</b> via an action→min-role matrix; never let someone act on an equal/higher rank.</li>
+            <li><b>Billing</b> in integer cents with tested proration — no money bugs.</li>
+            <li>A <b>typed procedure layer</b> gates auth, validates input (Zod), and authorizes in the resolver — tRPC's model.</li>
+            <li>🎉 <b>Part 7 complete.</b> You're a full-stack engineer. Next: architecture &amp; the principal-engineer mindset.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

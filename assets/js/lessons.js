@@ -179,14 +179,14 @@ window.COURSE = {
         { id: "07-02", title: "Server Components vs Client Components", file: "lessons/part-07-fullstack-and-type-safety/07-02-server-vs-client.html", status: "available" },
         { id: "07-03", title: "Data Fetching, Caching & PPR", file: "lessons/part-07-fullstack-and-type-safety/07-03-data-caching-ppr.html", status: "available" },
         { id: "07-04", title: "Server Actions & Mutations", file: "lessons/part-07-fullstack-and-type-safety/07-04-server-actions.html", status: "available" },
-        { id: "07-05", title: "Route Handlers & APIs", file: "lessons/part-07-fullstack-and-type-safety/07-05-route-handlers.html", status: "soon" },
-        { id: "07-06", title: "Databases with Drizzle ORM", file: "lessons/part-07-fullstack-and-type-safety/07-06-drizzle-orm.html", status: "soon" },
-        { id: "07-07", title: "End-to-End Type Safety with tRPC v11", file: "lessons/part-07-fullstack-and-type-safety/07-07-trpc.html", status: "soon" },
-        { id: "07-08", title: "Authentication & Sessions", file: "lessons/part-07-fullstack-and-type-safety/07-08-authentication.html", status: "soon" },
-        { id: "07-09", title: "File Uploads, Emails & Background Jobs", file: "lessons/part-07-fullstack-and-type-safety/07-09-uploads-emails-jobs.html", status: "soon" },
-        { id: "07-10", title: "Environment, Secrets & Configuration", file: "lessons/part-07-fullstack-and-type-safety/07-10-env-secrets.html", status: "soon" },
-        { id: "07-11", title: "Deployment & Observability", file: "lessons/part-07-fullstack-and-type-safety/07-11-deployment.html", status: "soon" },
-        { id: "07-12", title: "Project P07: The Next.js SaaS Starter", file: "lessons/part-07-fullstack-and-type-safety/07-12-project-saas-starter.html", status: "soon" }
+        { id: "07-05", title: "Route Handlers & APIs", file: "lessons/part-07-fullstack-and-type-safety/07-05-route-handlers.html", status: "available" },
+        { id: "07-06", title: "Databases with Drizzle ORM", file: "lessons/part-07-fullstack-and-type-safety/07-06-drizzle-orm.html", status: "available" },
+        { id: "07-07", title: "End-to-End Type Safety with tRPC v11", file: "lessons/part-07-fullstack-and-type-safety/07-07-trpc.html", status: "available" },
+        { id: "07-08", title: "Authentication & Sessions", file: "lessons/part-07-fullstack-and-type-safety/07-08-authentication.html", status: "available" },
+        { id: "07-09", title: "File Uploads, Emails & Background Jobs", file: "lessons/part-07-fullstack-and-type-safety/07-09-uploads-emails-jobs.html", status: "available" },
+        { id: "07-10", title: "Environment, Secrets & Configuration", file: "lessons/part-07-fullstack-and-type-safety/07-10-env-secrets.html", status: "available" },
+        { id: "07-11", title: "Deployment & Observability", file: "lessons/part-07-fullstack-and-type-safety/07-11-deployment.html", status: "available" },
+        { id: "07-12", title: "Project P07: The Next.js SaaS Starter", file: "lessons/part-07-fullstack-and-type-safety/07-12-project-saas-starter.html", status: "available" }
       ]
     },
     {

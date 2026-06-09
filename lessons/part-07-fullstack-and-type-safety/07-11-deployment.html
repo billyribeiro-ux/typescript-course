@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-11 · Deployment &amp; Observability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 11</div>
+        <h1>Deployment &amp; Observability</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🚀 Ship &amp; watch</span>
+        </div>
+        <p class="lead">
+          Shipping is just the start — you also need to <em>see</em> what your app does in production. This lesson
+          covers deploying a Next.js app, the hosting options, and the observability essentials (logs, metrics,
+          error tracking, analytics) that let you find and fix problems before users complain. A senior engineer
+          owns their software in production, not just in the repo.
+        </p>
+
+        <h2>1. Deploying</h2>
+        <table>
+          <thead><tr><th>Option</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td><b>Vercel</b></td><td>Next.js (made by them) — zero-config, preview deploys per PR, edge network</td></tr>
+            <tr><td><b>Netlify / Cloudflare</b></td><td>Similar managed hosting, edge functions</td></tr>
+            <tr><td><b>Docker + a VPS/cloud</b></td><td>Full control, any framework, predictable cost</td></tr>
+            <tr><td><b>SST / AWS</b></td><td>Deep AWS integration, infrastructure-as-code</td></tr>
+          </tbody>
+        </table>
+        <div class="callout concept">
+          <span class="ic">🚀</span>
+          <div class="body">
+            <div class="tt">Concept · Preview deployments</div>
+            <p style="margin:6px 0 0">
+              Connect your Git repo and every push to <code>main</code> deploys to production; every PR gets its own
+              <b>preview URL</b> with the changes live. Combined with the CI gate (03-09), nothing reaches production
+              that didn't pass types/lint/tests. This is the modern, safe deployment flow.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The four pillars of observability</h2>
+        <ul>
+          <li><strong>Logs:</strong> structured, searchable records of what happened (use a logger, not
+          <code>console.log</code>, in production).</li>
+          <li><strong>Metrics:</strong> numbers over time — request rate, latency, error rate, resource usage.</li>
+          <li><strong>Traces:</strong> follow one request across services to find where time/errors go
+          (OpenTelemetry).</li>
+          <li><strong>Error tracking:</strong> capture exceptions with stack traces and context (Sentry).</li>
+        </ul>
+
+        <h2>3. Error tracking with Sentry</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">instrumentation</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 0.1,          // sample 10% of requests for performance traces
+});
+
+// Now uncaught errors (and the ones your error.tsx boundaries catch, 05-04)
+// are reported with stack traces, the user, the request, and a session replay.
+// You learn about the bug before the user emails you.</pre>
+          <div class="annot">
+            <strong>Error tracking turns "the app is broken" into an actionable report</strong> — the exact line,
+            the input, the user, even a replay of their session. Wire it into your error boundaries
+            (<code>componentDidCatch</code>, 05-04) and Server Actions. Add web analytics (Vercel Analytics,
+            PostHog) and Core Web Vitals monitoring (Part 8) to complete the picture.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Deploy + observe</div>
+            <p style="margin:6px 0 0">
+              Deploy a Next.js app to Vercel, connected to your repo so PRs get preview URLs and main auto-deploys.
+              Add Sentry and trigger a test error to confirm it appears in the dashboard with a stack trace. Add a
+              structured logger and a <code>/api/health</code> endpoint.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Deploy via Git-connected hosts (Vercel/Netlify/Cloudflare) with <b>preview deploys per PR</b>, gated by CI.</li>
+            <li>Observability has four pillars: <b>logs, metrics, traces, error tracking</b>.</li>
+            <li>Use a real <b>logger</b> (not console.log) and <b>Sentry</b> for exceptions with full context.</li>
+            <li>Wire error tracking into your error boundaries (05-04) and Server Actions.</li>
+            <li>A senior engineer <b>owns their app in production</b> — sees problems before users report them.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-06 · Databases with Drizzle ORM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 6</div>
+        <h1>Databases with Drizzle ORM</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🗄️ Type-safe SQL</span>
+        </div>
+        <p class="lead">
+          Real apps need a database. <strong>Drizzle</strong> is the modern TypeScript ORM: you define your schema
+          in TypeScript, and it gives you a <em>fully-typed</em> query builder that reads like SQL, plus automatic
+          migrations. Unlike heavier ORMs, Drizzle is thin, fast, and SQL-first — you always know exactly what query
+          runs. It's the 2026 favourite for type-safe data access.
+        </p>
+
+        <h2>1. Define the schema in TypeScript</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">schema.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+});
+
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  published: boolean("published").notNull().default(false),
+  authorId: integer("author_id").notNull().references(() =&gt; users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// The TYPES come from the schema — your single source of truth:
+export type User = typeof users.$inferSelect;   // row shape
+export type NewUser = typeof users.$inferInsert; // insert shape</pre>
+          <div class="annot">
+            <strong>Your schema IS your types.</strong> <code>$inferSelect</code>/<code>$inferInsert</code> derive
+            the row and insert types directly from the table definition (the "derive types from implementation"
+            principle again — 02-04). Change a column and every query that touches it is re-checked. No separate
+            type definitions to drift.
+          </div>
+        </div>
+
+        <h2>2. Type-safe queries</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">queries.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { drizzle } from "drizzle-orm/node-postgres";
+import { eq, and, desc } from "drizzle-orm";
+import { users, posts } from "./schema.js";
+
+const db = drizzle(process.env.DATABASE_URL!);
+
+// SELECT — fully typed result, autocompleted columns:
+const published = await db
+  .select()
+  .from(posts)
+  .where(and(eq(posts.published, true)))
+  .orderBy(desc(posts.createdAt))
+  .limit(10);
+
+// INSERT — typed to NewPost, returns the created row:
+const [created] = await db.insert(posts)
+  .values({ title: "Hello", authorId: 1 })
+  .returning();
+
+// JOIN with relations:
+const withAuthors = await db.select({ title: posts.title, author: users.name })
+  .from(posts).innerJoin(users, eq(posts.authorId, users.id));</pre>
+          <div class="annot">
+            <strong>The query builder mirrors SQL but is fully typed.</strong> Columns autocomplete,
+            <code>where</code>/<code>orderBy</code> are type-checked against your schema, and results are typed to
+            exactly the columns you selected. You always know the SQL being generated (no hidden N+1 surprises).
+            Drizzle also offers a relational query API for nested fetches.
+          </div>
+        </div>
+
+        <h2>3. Migrations</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm drizzle-kit generate</span>   <span class="out"># diff schema → generate SQL migration files</span>
+<span class="cmd">pnpm drizzle-kit migrate</span>    <span class="out"># apply migrations to the database</span>
+<span class="cmd">pnpm drizzle-kit studio</span>     <span class="out"># a GUI to browse your data</span></pre>
+        </div>
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Drizzle vs Prisma</div>
+            <p style="margin:6px 0 0">
+              <b>Drizzle</b> is SQL-first, thin, fast, and edge-compatible — you write queries that look like SQL.
+              <b>Prisma</b> is higher-level with its own schema language and a generated client. Both are excellent
+              and fully typed; Drizzle has gained huge momentum in 2026 for its transparency and performance. We use
+              Drizzle in the SaaS project (P07).
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Model a blog</div>
+            <p style="margin:6px 0 0">
+              Define <code>users</code>, <code>posts</code>, and <code>comments</code> tables with proper foreign
+              keys. Write typed queries: published posts with their author, a post with its comments, and an insert
+              that returns the new row. Generate and apply a migration against a local Postgres.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Drizzle</b> defines your DB schema in TypeScript; types are inferred (<code>$inferSelect</code>/<code>$inferInsert</code>).</li>
+            <li>The <b>query builder</b> mirrors SQL but is fully typed — columns autocomplete, results are precise.</li>
+            <li><b>drizzle-kit</b> generates and applies migrations from your schema diff; Studio browses data.</li>
+            <li>SQL-first and thin — you always know the query that runs (no hidden N+1).</li>
+            <li>Drizzle (SQL-first) vs Prisma (higher-level) — both typed; we use Drizzle in P07.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

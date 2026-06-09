@@ -1,0 +1,19 @@
+{
+  "name": "p07-saas-core",
+  "private": true,
+  "version": "1.0.0",
+  "description": "The type-safe server core of the Next.js SaaS starter (auth, billing, typed procedures).",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-05 · Route Handlers &amp; APIs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 5</div>
+        <h1>Route Handlers &amp; APIs</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🔌 HTTP endpoints</span>
+        </div>
+        <p class="lead">
+          Server Actions cover most mutations, but you still need real HTTP <strong>API endpoints</strong> for
+          webhooks, third-party integrations, mobile clients, and public APIs. Next.js <strong>Route Handlers</strong>
+          (<code>route.ts</code> files) let you build them with the standard web <code>Request</code>/<code>Response</code>
+          APIs you can use anywhere.
+        </p>
+
+        <h2>1. A Route Handler</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/api/products/route.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { NextResponse } from "next/server";
+import { z } from "zod";
+import { db } from "@/lib/db";
+
+// GET /api/products?category=...
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const category = searchParams.get("category");
+  const products = await db.product.findMany({ where: category ? { category } : {} });
+  return NextResponse.json(products);
+}
+
+// POST /api/products
+const CreateProduct = z.object({ name: z.string().min(1), price: z.number().positive() });
+export async function POST(request: Request) {
+  const parsed = CreateProduct.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+  const product = await db.product.create({ data: parsed.data });
+  return NextResponse.json(product, { status: 201 });
+}</pre>
+          <div class="annot">
+            <strong>Export a function per HTTP method</strong> (<code>GET</code>, <code>POST</code>,
+            <code>PATCH</code>, <code>DELETE</code>). You get a standard <code>Request</code> and return a
+            <code>Response</code> (or <code>NextResponse</code> for helpers). Same validation discipline: parse the
+            body with Zod, return proper status codes (<code>400</code> for bad input, <code>201</code> for created).
+            This is a real, framework-agnostic web API.
+          </div>
+        </div>
+
+        <h2>2. When to use which</h2>
+        <table>
+          <thead><tr><th>Use…</th><th>For…</th></tr></thead>
+          <tbody>
+            <tr><td><b>Server Components</b></td><td>Reading data to render a page</td></tr>
+            <tr><td><b>Server Actions</b></td><td>Mutations from your own UI (forms, buttons)</td></tr>
+            <tr><td><b>Route Handlers</b></td><td>Webhooks, third-party/mobile clients, public REST APIs, file streaming</td></tr>
+            <tr><td><b>tRPC</b> (07-07)</td><td>A fully type-safe internal API across many procedures</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Webhooks &amp; dynamic segments</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/api/webhooks/stripe/route.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export async function POST(request: Request) {
+  const signature = request.headers.get("stripe-signature");
+  const body = await request.text();           // raw body for signature check
+  // verify signature, then handle the event type...
+  return new Response("ok", { status: 200 });
+}
+
+// Dynamic segment: app/api/users/[id]/route.ts
+export async function GET(_req: Request, { params }: { params: Promise&lt;{ id: string }&gt; }) {
+  const { id } = await params;                 // params is async in Next 15
+  return Response.json(await db.user.findById(id));
+}</pre>
+          <div class="annot">
+            <strong>Route Handlers are the standard way to receive webhooks</strong> (Stripe, GitHub, etc.) — you
+            need the raw body and headers for signature verification. Dynamic segments (<code>[id]</code>) work just
+            like pages; note that in Next 15 <code>params</code> is a promise you <code>await</code>.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A small REST resource</div>
+            <p style="margin:6px 0 0">
+              Build <code>/api/notes</code> with <code>GET</code> (list) and <code>POST</code> (create, Zod-validated,
+              returns 201), plus <code>/api/notes/[id]</code> with <code>GET</code> and <code>DELETE</code>. Test it
+              with <code>curl</code> or a REST client, checking the status codes for valid and invalid input.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Route Handlers</b> (<code>route.ts</code>) build real HTTP APIs with web <code>Request</code>/<code>Response</code>.</li>
+            <li>Export a function per method (<code>GET</code>/<code>POST</code>/…); validate bodies with Zod and return proper status codes.</li>
+            <li>Use them for <b>webhooks, third-party/mobile clients, and public REST</b> — not for your own UI mutations (use Actions).</li>
+            <li>Dynamic <code>[id]</code> segments work like pages; <code>params</code> is async in Next 15.</li>
+            <li>Choose the right tool: Server Components (read), Actions (UI mutations), Route Handlers (external), tRPC (typed internal API).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

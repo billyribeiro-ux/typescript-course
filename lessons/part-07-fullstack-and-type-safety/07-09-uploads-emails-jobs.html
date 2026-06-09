@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-09 · File Uploads, Emails &amp; Background Jobs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 9</div>
+        <h1>File Uploads, Emails &amp; Background Jobs</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🧰 Real-world plumbing</span>
+        </div>
+        <p class="lead">
+          Real SaaS apps need three pieces of plumbing beyond CRUD: uploading files, sending emails, and running
+          work in the background. Doing these well — without blocking requests or losing data — is what makes an app
+          production-grade. We'll cover the patterns and the 2026 tools.
+        </p>
+
+        <h2>1. File uploads</h2>
+        <div class="callout concept">
+          <span class="ic">📤</span>
+          <div class="body">
+            <div class="tt">Concept · Upload direct to storage</div>
+            <p style="margin:6px 0 0">
+              Don't stream large files through your server. Instead, your server issues a short-lived <b>presigned
+              URL</b>, and the browser uploads <em>directly</em> to object storage (S3, R2, Vercel Blob). Your server
+              just records the resulting URL. Libraries like <b>UploadThing</b> wrap this whole flow with typed,
+              ready-made components. Always validate file type and size.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">presigned.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use server";
+// 1. Server: validate + create a presigned upload URL (expires soon).
+export async function getUploadUrl(input: { name: string; type: string; size: number }) {
+  if (input.size &gt; 5_000_000) throw new Error("Max 5MB");
+  if (!input.type.startsWith("image/")) throw new Error("Images only");
+  return createPresignedPutUrl(input.name); // from your storage SDK
+}
+// 2. Browser PUTs the file straight to storage using that URL.
+// 3. Server stores the final URL in the DB (a separate action).</pre>
+        </div>
+
+        <h2>2. Transactional email</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">email.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { Resend } from "resend";
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// React Email lets you write emails as React components!
+export async function sendWelcome(to: string, name: string) {
+  await resend.emails.send({
+    from: "hello@app.com",
+    to,
+    subject: "Welcome!",
+    react: &lt;WelcomeEmail name={name} /&gt;,   // a typed React Email component
+  });
+}</pre>
+          <div class="annot">
+            <strong>Transactional emails</strong> (welcome, password reset, receipts) go through a provider like
+            <b>Resend</b> or Postmark. <b>React Email</b> lets you author them as React components — the same JSX
+            skills, rendered to email-safe HTML. Don't send email on the request path if it's slow; queue it (below).
+          </div>
+        </div>
+
+        <h2>3. Background jobs</h2>
+        <div class="callout concept">
+          <span class="ic">⏳</span>
+          <div class="body">
+            <div class="tt">Concept · Don't make the user wait</div>
+            <p style="margin:6px 0 0">
+              Slow or retry-able work (sending emails, processing images, syncing to a CRM, generating reports)
+              should run <b>outside the request</b>. A job queue accepts the task and processes it reliably with
+              retries. Modern serverless-friendly tools: <b>Inngest</b>, <b>Trigger.dev</b>, or a queue like BullMQ.
+              The request returns instantly; the work happens in the background.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">job.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Define a durable, retry-able job (Inngest-style):
+export const onSignup = inngest.createFunction(
+  { id: "send-welcome", retries: 3 },
+  { event: "user/signup" },
+  async ({ event, step }) =&gt; {
+    await step.run("send-email", () =&gt; sendWelcome(event.data.email, event.data.name));
+    await step.sleep("wait", "1d");
+    await step.run("send-tips", () =&gt; sendTips(event.data.email));
+  }
+);
+// Your action just fires the event: inngest.send({ name: "user/signup", data });</pre>
+          <div class="annot">
+            <strong>A Server Action fires an event and returns; the job runs reliably with retries.</strong> Steps
+            are durable — if one fails, it retries without re-running completed steps, and you can even sleep for
+            days between steps (drip campaigns). This decoupling keeps requests fast and work resilient.
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Uploads</b>: issue a presigned URL, upload direct to object storage, store the URL; validate type/size.</li>
+            <li><b>Email</b>: use a provider (Resend/Postmark); author with React Email; don't block requests on it.</li>
+            <li><b>Background jobs</b> run slow/retry-able work outside the request (Inngest/Trigger.dev/BullMQ).</li>
+            <li>Decoupling keeps requests fast and work <b>reliable</b> (retries, durable steps).</li>
+            <li>These three are the standard plumbing of any production SaaS.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
