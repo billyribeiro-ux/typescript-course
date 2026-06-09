@@ -11,6 +11,11 @@ the **latest tools and syntax as of June 2026**.
 This is a **follow-along** course: you read the lessons, copy/run the code in live
 editors, and build a real project in every part — line by line.
 
+> ✅ **Status: complete.** All **111 lessons** across **10 parts** are live, plus
+> **8 hands-on projects** with **132 passing tests** (unit, component, and
+> type-level). Every lesson page is render-audited (Monaco editors mount, 0 page
+> errors); every project's `pnpm typecheck` + `pnpm test` pass.
+
 ---
 
 ## ✨ What makes this course different
