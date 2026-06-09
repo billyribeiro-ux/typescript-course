@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-09 · Accessibility (a11y) Done Right</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 9</div>
+        <h1>Accessibility (a11y) Done Right</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced · essential</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">♿ For everyone</span>
+        </div>
+        <p class="lead">
+          Accessibility means your app works for everyone — including people using screen readers, keyboard-only
+          navigation, or other assistive technology. It's not optional: it's a legal requirement in many
+          jurisdictions, a quality bar at every top company, and simply the right thing to do. The good news: most
+          accessibility comes free from using the right HTML, and TypeScript helps you get the details right.
+        </p>
+
+        <h2>1. Semantic HTML is 80% of accessibility</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">semantic.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ A div pretending to be a button — invisible to screen readers,
+//    not keyboard-focusable, no Enter/Space handling:
+&lt;div className="button" onClick={handleClick}&gt;Save&lt;/div&gt;
+
+// ✅ A real button — focusable, announced as a button, keyboard-activatable:
+&lt;button onClick={handleClick}&gt;Save&lt;/button&gt;
+
+// Use elements for their MEANING, not their looks (style with CSS):
+&lt;nav&gt;…&lt;/nav&gt;  &lt;main&gt;…&lt;/main&gt;  &lt;header&gt;…&lt;/header&gt;  &lt;footer&gt;…&lt;/footer&gt;
+&lt;button&gt;  &lt;a href&gt;  &lt;label htmlFor&gt;  &lt;ul&gt;/&lt;li&gt;  &lt;h1&gt;…&lt;h6&gt; (in order)</pre>
+          <div class="annot">
+            <strong>The single biggest a11y win is using the right element.</strong> A real <code>&lt;button&gt;</code>
+            is focusable, keyboard-operable, and announced correctly — for free. A clickable <code>&lt;div&gt;</code>
+            breaks all of that and forces you to re-implement it badly. Reach for semantic elements first; add ARIA
+            only when no semantic element fits.
+          </div>
+        </div>
+
+        <h2>2. Labels, forms, and focus</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">forms-a11y.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useId } from "react";
+
+function Field({ label }: { label: string }) {
+  const id = useId();                 // stable unique id (05-08)
+  const errorId = `${id}-error`;
+  return (
+    &lt;div&gt;
+      &lt;label htmlFor={id}&gt;{label}&lt;/label&gt;          {/* explicit association */}
+      &lt;input id={id} aria-describedby={errorId} aria-invalid={true} /&gt;
+      &lt;p id={errorId} role="alert"&gt;This field is required&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+// Every input needs a real &lt;label htmlFor&gt;. Errors use role="alert" so
+// screen readers announce them, and aria-describedby links them to the input.</pre>
+          <div class="annot">
+            <strong>Forms are where a11y matters most.</strong> Every input needs an associated
+            <code>&lt;label&gt;</code> (use <code>useId</code> to link them). Announce errors with
+            <code>role="alert"</code> and connect them via <code>aria-describedby</code>. Manage focus on route
+            changes and when opening modals (move focus in, trap it, restore it on close — lesson 05-06).
+          </div>
+        </div>
+
+        <h2>3. Keyboard, contrast &amp; ARIA</h2>
+        <ul>
+          <li><strong>Keyboard:</strong> everything interactive must be reachable with Tab and operable with
+          Enter/Space (and Escape to dismiss). Never remove focus outlines without a visible replacement.</li>
+          <li><strong>Contrast:</strong> text must meet WCAG contrast ratios (4.5:1 for normal text). Don't convey
+          meaning by colour alone (add icons/text).</li>
+          <li><strong>ARIA, sparingly:</strong> ARIA attributes describe roles/states to assistive tech
+          (<code>aria-label</code>, <code>aria-expanded</code>, <code>aria-live</code>). The first rule of ARIA:
+          <em>don't use ARIA if a native element does the job.</em></li>
+        </ul>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Automate and audit</div>
+            <p style="margin:6px 0 0">
+              Add <code>eslint-plugin-jsx-a11y</code> (catches missing labels/alt text as you code), test with
+              <b>axe</b> (e.g. <code>jest-axe</code> / Playwright's axe integration), and actually <b>navigate your
+              app with only the keyboard</b> and a screen reader (VoiceOver/NVDA). Testing Library encourages a11y
+              by querying via roles and labels (next lesson) — write accessible UIs and your tests get easier.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Make a widget accessible</div>
+            <p style="margin:6px 0 0">
+              Take a <code>&lt;div&gt;</code>-based "button" and dropdown and rebuild them accessibly: real
+              <code>&lt;button&gt;</code>s, labelled inputs, keyboard support (Tab/Enter/Escape/arrow keys),
+              <code>aria-expanded</code>, and visible focus states. Run <code>eslint-plugin-jsx-a11y</code> and
+              navigate it with only the keyboard.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Semantic HTML</b> gives you most accessibility for free — use the right element, not a styled <code>div</code>.</li>
+            <li>Associate every input with a <code>&lt;label htmlFor&gt;</code>; announce errors with <code>role="alert"</code> + <code>aria-describedby</code>.</li>
+            <li>Ensure full <b>keyboard</b> operability, visible focus, and sufficient <b>colour contrast</b>.</li>
+            <li>Use <b>ARIA sparingly</b> — only when no native element fits.</li>
+            <li>Automate with <code>eslint-plugin-jsx-a11y</code> + axe, and test by hand with keyboard + screen reader.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-03 · Suspense &amp; Data Fetching Patterns</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 3</div>
+        <h1>Suspense &amp; Data Fetching Patterns</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⏳ Declarative loading</span>
+        </div>
+        <p class="lead">
+          <strong>Suspense</strong> lets you declare loading UI declaratively: wrap part of your tree in a
+          boundary, and React shows a fallback while anything inside is "suspending" (waiting on data or code).
+          It replaces scattered <code>isLoading</code> flags with a clean, composable pattern, and it's the
+          foundation for code splitting, the <code>use()</code> hook, and Server Components (Part 7).
+        </p>
+
+        <h2>1. The Suspense boundary</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">suspense.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { Suspense } from "react";
+
+function App() {
+  return (
+    &lt;Suspense fallback={&lt;Spinner /&gt;}&gt;
+      &lt;Profile /&gt;        {/* if Profile suspends, the Spinner shows */}
+      &lt;Timeline /&gt;       {/* both must be ready before the boundary reveals */}
+    &lt;/Suspense&gt;
+  );
+}
+
+// Boundaries compose and nest — granular loading states:
+function Page() {
+  return (
+    &lt;Suspense fallback={&lt;PageSkeleton /&gt;}&gt;
+      &lt;Header /&gt;
+      &lt;Suspense fallback={&lt;FeedSkeleton /&gt;}&gt;
+        &lt;Feed /&gt;        {/* its own independent loading region */}
+      &lt;/Suspense&gt;
+    &lt;/Suspense&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Suspense moves loading state out of components and into the tree.</strong> A component "suspends"
+            by throwing a promise (libraries and <code>use()</code> do this for you); the nearest
+            <code>&lt;Suspense&gt;</code> ancestor catches it and shows the fallback until it resolves. Nest boundaries
+            for granular skeletons — the header can show while the feed still loads.
+          </div>
+        </div>
+
+        <h2>2. Suspense with the use() hook</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">use-suspense.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { use, Suspense } from "react";
+
+function Comments({ commentsPromise }: { commentsPromise: Promise&lt;string[]&gt; }) {
+  const comments = use(commentsPromise); // suspends until resolved (04-12)
+  return &lt;ul&gt;{comments.map((c, i) =&gt; &lt;li key={i}&gt;{c}&lt;/li&gt;)}&lt;/ul&gt;;
+}
+
+function Post({ commentsPromise }: { commentsPromise: Promise&lt;string[]&gt; }) {
+  return (
+    &lt;article&gt;
+      &lt;h2&gt;My Post&lt;/h2&gt;
+      &lt;Suspense fallback={&lt;p&gt;Loading comments…&lt;/p&gt;}&gt;
+        &lt;Comments commentsPromise={commentsPromise} /&gt;
+      &lt;/Suspense&gt;
+    &lt;/article&gt;
+  );
+}
+// The post renders instantly; comments stream in when ready.</pre>
+          <div class="annot">
+            <strong><code>use(promise)</code> + Suspense is the modern data pattern.</strong> The component reads
+            the promise's value directly (no <code>useState</code>/<code>useEffect</code> loading dance), and
+            Suspense handles the pending UI. Pair it with an Error Boundary (next lesson) for failures. In practice,
+            <b>TanStack Query</b> (Part 6) and Server Components (Part 7) provide the promises and caching.
+          </div>
+        </div>
+
+        <h2>3. The patterns that matter</h2>
+        <ul>
+          <li><strong>Render-as-you-fetch:</strong> start fetching <em>before/while</em> rendering (not in an
+          effect after), so data and UI load in parallel. Suspense reveals content as it arrives.</li>
+          <li><strong>Streaming:</strong> with Server Components, the server sends HTML progressively, filling
+          Suspense fallbacks as data resolves — fast first paint, no waterfall.</li>
+          <li><strong>Avoid waterfalls:</strong> sequential <code>await</code>s (or effect-triggered fetches) make
+          requests wait on each other. Kick off independent requests together (lesson 00-11's
+          <code>Promise.all</code>).</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Granular skeletons</div>
+            <p style="margin:6px 0 0">
+              Build a profile page with two independent data sources (user + posts), each read with
+              <code>use()</code> inside its own nested <code>&lt;Suspense&gt;</code>. Give each a distinct skeleton.
+              Confirm the user section appears before the slower posts section, rather than the whole page waiting.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Suspense</b> declares loading UI in the tree: a boundary shows a <code>fallback</code> while descendants suspend.</li>
+            <li>Boundaries <b>nest</b> for granular, independent loading regions.</li>
+            <li><b><code>use(promise)</code> + Suspense</b> is the modern fetch pattern — no manual loading state.</li>
+            <li>Prefer <b>render-as-you-fetch</b> and avoid request <b>waterfalls</b>.</li>
+            <li>TanStack Query (Part 6) and Server Components (Part 7) build on this foundation.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

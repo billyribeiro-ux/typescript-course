@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-08 · Headless Components &amp; Render Props</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 8</div>
+        <h1>Headless Components &amp; Render Props</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🎭 Logic vs presentation</span>
+        </div>
+        <p class="lead">
+          The most reusable components separate <strong>behaviour</strong> from <strong>appearance</strong>.
+          <strong>Headless</strong> components provide all the logic, state, and accessibility but <em>no</em>
+          styling — you supply the markup. This is the philosophy behind the most popular 2026 libraries (Radix,
+          TanStack, Headless UI). We'll cover the headless hook approach and the classic render-prop pattern that
+          preceded it.
+        </p>
+
+        <h2>1. The headless hook approach (modern)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useDisclosure.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useId, useState } from "react";
+
+// All the LOGIC + a11y wiring, ZERO markup/styles. The caller renders.
+function useDisclosure(initial = false) {
+  const [open, setOpen] = useState(initial);
+  const panelId = useId();
+  return {
+    open,
+    toggle: () =&gt; setOpen((o) =&gt; !o),
+    close: () =&gt; setOpen(false),
+    // "Prop getters" return the props to spread onto your elements:
+    triggerProps: {
+      "aria-expanded": open,
+      "aria-controls": panelId,
+      onClick: () =&gt; setOpen((o) =&gt; !o),
+    },
+    panelProps: { id: panelId, hidden: !open },
+  } as const;
+}
+
+// You own 100% of the markup and styling:
+function FAQ() {
+  const d = useDisclosure();
+  return (
+    &lt;div&gt;
+      &lt;button {...d.triggerProps} className="my-button"&gt;What is headless?&lt;/button&gt;
+      &lt;div {...d.panelProps} className="my-panel"&gt;Logic without looks.&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Headless = behaviour as a hook, presentation as your problem.</strong> The hook owns state,
+            accessibility (<code>aria-expanded</code>, linked ids via <code>useId</code>), and keyboard handling;
+            you bring the markup and styles via "prop getters" you spread onto elements. This is why TanStack Table
+            and Query, Radix, and React Aria are so flexible — they never dictate how things look.
+          </div>
+        </div>
+
+        <h2>2. Render props (the classic pattern)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">render-props.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState } from "react";
+
+// A component whose `children` is a FUNCTION that receives state:
+function MousePosition({ children }: {
+  children: (pos: { x: number; y: number }) =&gt; React.ReactNode;
+}) {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  return (
+    &lt;div onMouseMove={(e) =&gt; setPos({ x: e.clientX, y: e.clientY })}&gt;
+      {children(pos)}   {/* hand the state to the caller's render function */}
+    &lt;/div&gt;
+  );
+}
+
+// The consumer decides what to render with the shared state:
+&lt;MousePosition&gt;
+  {({ x, y }) =&gt; &lt;p&gt;Mouse at {x}, {y}&lt;/p&gt;}
+&lt;/MousePosition&gt;;</pre>
+          <div class="annot">
+            <strong>Render props share logic by passing a render <em>function</em> as children.</strong> It was the
+            dominant reuse pattern before hooks. You'll still encounter it (e.g. some chart and virtualization
+            libraries), and it's occasionally the cleanest fit — but for most "reuse stateful logic" needs, a
+            custom hook (04-11) is simpler. Knowing both lets you read any codebase.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · The headless ecosystem</div>
+            <p style="margin:6px 0 0">
+              The dominant pattern today is <b>headless</b>: <b>Radix UI</b> and <b>React Aria</b> for accessible
+              primitives, <b>TanStack</b> Table/Query/Virtual for headless data UIs, and <b>shadcn/ui</b> (Part 6)
+              which gives you styled-but-editable components built on Radix. You'll consume these constantly —
+              understanding the headless philosophy is essential.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A headless useToggleButton</div>
+            <p style="margin:6px 0 0">
+              Build a headless <code>useToggleButton</code> hook returning <code>pressed</code> state and
+              <code>buttonProps</code> (with <code>aria-pressed</code> and <code>onClick</code>). Use it to build two
+              completely different-looking toggle buttons that share the same logic and accessibility. Then rebuild
+              one with a render-prop component for contrast.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Headless</b> components/hooks provide behaviour + accessibility but no styling — you own the markup.</li>
+            <li><b>Prop getters</b> (e.g. <code>triggerProps</code>) bundle the props/handlers/ARIA to spread onto elements.</li>
+            <li><b>Render props</b> share logic by passing a render function as children — the pre-hooks pattern.</li>
+            <li>Prefer <b>custom hooks</b> for logic reuse today; know render props for reading older/library code.</li>
+            <li>The 2026 ecosystem (Radix, React Aria, TanStack, shadcn) is built on the headless philosophy.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

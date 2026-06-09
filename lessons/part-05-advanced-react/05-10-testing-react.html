@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-10 · Testing React: Testing Library &amp; Playwright</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 10</div>
+        <h1>Testing React: Testing Library &amp; Playwright</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced · essential</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">✅ Confidence at scale</span>
+        </div>
+        <p class="lead">
+          You tested components in Project P03; now we cover React testing properly. The philosophy:
+          <strong>test behaviour the way a user experiences it</strong>, not implementation details. We'll use
+          <strong>React Testing Library</strong> (component/integration tests) and <strong>Playwright</strong>
+          (end-to-end browser tests) — the standard 2026 stack — and the accessible-query approach that ties
+          testing to the a11y you just learned.
+        </p>
+
+        <h2>1. The Testing Library philosophy</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Query by accessibility, not by class</div>
+            <p style="margin:6px 0 0">
+              Testing Library makes you find elements the way a user (or screen reader) would: by <b>role</b>,
+              <b>label</b>, and <b>text</b> — not by CSS classes or component internals. This means your tests survive
+              refactors (you can rewrite the implementation freely) and double as accessibility checks (if you can't
+              query by role, neither can assistive tech).
+            </p>
+          </div>
+        </div>
+
+        <h2>2. A component test</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Counter.test.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Counter } from "./Counter.js";
+
+describe("&lt;Counter&gt;", () =&gt; {
+  it("increments when the button is clicked", async () =&gt; {
+    const user = userEvent.setup();
+    render(&lt;Counter /&gt;);
+
+    // Query by accessible role + name (like a user would):
+    const button = screen.getByRole("button", { name: /increment/i });
+    expect(screen.getByText("Count: 0")).toBeInTheDocument();
+
+    await user.click(button);                 // simulate a real click
+    expect(screen.getByText("Count: 1")).toBeInTheDocument();
+  });
+});
+// getByRole / getByLabelText / getByText / findBy* (async) are your tools.
+// userEvent simulates real user interactions (typing, clicking, tabbing).</pre>
+          <div class="annot">
+            <strong>This is exactly the pattern from Project P03.</strong> <code>render</code> mounts the component
+            in jsdom, <code>screen.getByRole</code> finds elements accessibly, and <code>userEvent</code> simulates
+            real interactions. Assert on what the user sees (text, roles), never on internal state or props. Use
+            <code>findBy*</code> (async) when content appears after a delay/fetch.
+          </div>
+        </div>
+
+        <h2>3. Querying cheat-sheet</h2>
+        <table>
+          <thead><tr><th>Query</th><th>Use for</th></tr></thead>
+          <tbody>
+            <tr><td><code>getByRole("button", {name})</code></td><td>Buttons, links, headings, inputs (preferred)</td></tr>
+            <tr><td><code>getByLabelText</code></td><td>Form fields by their label</td></tr>
+            <tr><td><code>getByText</code></td><td>Visible text content</td></tr>
+            <tr><td><code>findByRole</code></td><td>Async — waits for an element to appear</td></tr>
+            <tr><td><code>queryByRole</code></td><td>Assert something is <em>absent</em> (returns null)</td></tr>
+          </tbody>
+        </table>
+
+        <h2>4. End-to-end tests with Playwright</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">e2e/signup.spec.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { test, expect } from "@playwright/test";
+
+test("a user can sign up", async ({ page }) =&gt; {
+  await page.goto("/signup");
+  await page.getByLabel("Email").fill("ada@example.com");
+  await page.getByLabel("Password").fill("hunter2!");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByText("Welcome, ada")).toBeVisible();
+});
+// Playwright drives a REAL browser (Chromium/Firefox/WebKit), testing the
+// whole app end-to-end: routing, network, the actual rendered DOM.</pre>
+          <div class="annot">
+            <strong>Playwright tests the real thing.</strong> It launches an actual browser and exercises full user
+            journeys across pages, network, and real rendering — catching integration bugs unit tests can't. Note it
+            uses the <em>same</em> accessible queries (<code>getByLabel</code>, <code>getByRole</code>) as Testing
+            Library, so the skill transfers directly.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">🧪</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The testing trophy</div>
+            <p style="margin:6px 0 0">
+              Modern guidance favours mostly <b>integration tests</b> (a component + its real children, behaviour
+              tested via RTL), a solid base of <b>unit tests</b> for pure logic (P01/P02 style), a few high-value
+              <b>E2E tests</b> (Playwright) for critical journeys, and <b>static</b> checks (TypeScript + ESLint) as
+              the foundation. Test behaviour and contracts, not implementation.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Test a form three ways</div>
+            <p style="margin:6px 0 0">
+              For a login form: 1) unit-test the validation function; 2) RTL-test that submitting empty shows an
+              error and submitting valid calls <code>onSubmit</code> (use accessible queries + <code>userEvent</code>);
+              3) write a Playwright E2E that logs in against a running dev server. Notice how the same accessible
+              queries appear at every level.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Test <b>behaviour as users experience it</b>, not implementation details — refactor-proof tests.</li>
+            <li><b>React Testing Library</b>: query by <b>role/label/text</b>, interact with <code>userEvent</code>, assert on visible output.</li>
+            <li>Use <code>findBy*</code> for async UI and <code>queryBy*</code> to assert absence.</li>
+            <li><b>Playwright</b> drives a real browser for end-to-end journeys, using the same accessible queries.</li>
+            <li>Balance the layers: static → unit → integration → a few E2E. Accessible UIs are easier to test.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

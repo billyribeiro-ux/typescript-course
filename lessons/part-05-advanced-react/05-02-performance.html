@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-02 · Performance Profiling &amp; Optimization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 2</div>
+        <h1>Performance Profiling &amp; Optimization</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">⚡ Make it fast</span>
+        </div>
+        <p class="lead">
+          Performance work follows one rule: <strong>measure first, optimise second.</strong> Guessing wastes
+          time and often makes code worse. This lesson covers the React DevTools Profiler, the common causes of
+          slowness, and the concrete techniques — many now automated by the React Compiler — to fix them. You'll
+          learn to diagnose, not guess.
+        </p>
+
+        <h2>1. Measure with the Profiler</h2>
+        <div class="callout concept">
+          <span class="ic">📊</span>
+          <div class="body">
+            <div class="tt">Concept · The React DevTools Profiler</div>
+            <p style="margin:6px 0 0">
+              Install React DevTools, open the <b>Profiler</b> tab, hit record, interact, stop. It shows a flame
+              graph of which components rendered, how long each took, and <em>why</em> they rendered. This is your
+              source of truth — always profile before changing anything. "It feels slow" is not a diagnosis.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The usual suspects</h2>
+        <table>
+          <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td>Everything re-renders on every keystroke</td><td>State too high in the tree</td><td>Move state down / colocate it</td></tr>
+            <tr><td>Expensive list re-renders constantly</td><td>New object/array/fn props each render</td><td>Memoize (or React Compiler)</td></tr>
+            <tr><td>Big list janks on scroll</td><td>Rendering thousands of DOM nodes</td><td>Virtualization (windowing)</td></tr>
+            <tr><td>Slow initial load</td><td>Huge JS bundle</td><td>Code splitting / lazy loading</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Colocation &amp; lifting state down</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">colocate.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ Typing in the search box re-renders the ENTIRE expensive list:
+function Page() {
+  const [query, setQuery] = useState("");
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={(e) =&gt; setQuery(e.target.value)} /&gt;
+      &lt;ExpensiveList /&gt;   {/* re-renders on every keystroke! */}
+    &lt;/&gt;
+  );
+}
+
+// ✅ Push the state DOWN into the component that actually uses it:
+function SearchBox() {
+  const [query, setQuery] = useState("");
+  return &lt;input value={query} onChange={(e) =&gt; setQuery(e.target.value)} /&gt;;
+}
+function Page2() {
+  return (&lt;&gt;&lt;SearchBox /&gt;&lt;ExpensiveList /&gt;&lt;/&gt;); // list no longer re-renders on typing
+}</pre>
+          <div class="annot">
+            <strong>The cheapest optimization is structural.</strong> State only triggers re-renders of the
+            component that owns it and its descendants. Keep state as low and as close to where it's used as
+            possible ("colocation"). Often this removes a performance problem entirely — before you reach for any
+            memoization.
+          </div>
+        </div>
+
+        <h2>4. Virtualization &amp; code splitting</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">splitting.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { lazy, Suspense } from "react";
+
+// Code splitting: only download the Editor's JS when it's actually shown.
+const Editor = lazy(() =&gt; import("./Editor.js"));
+
+function App({ showEditor }: { showEditor: boolean }) {
+  return (
+    &lt;Suspense fallback={&lt;p&gt;Loading editor…&lt;/p&gt;}&gt;
+      {showEditor &amp;&amp; &lt;Editor /&gt;}
+    &lt;/Suspense&gt;
+  );
+}
+
+// Virtualization (windowing): render only the ~20 rows currently visible,
+// not all 10,000. Use @tanstack/react-virtual (Part 6) for big lists/tables.</pre>
+          <div class="annot">
+            <strong>Two heavy-hitters for real apps:</strong> <em>code splitting</em> with <code>lazy()</code> +
+            Suspense (next lesson) shrinks the initial bundle by loading routes/components on demand;
+            <em>virtualization</em> renders only the visible portion of a huge list. Both attack the most common
+            real-world slowdowns: big bundles and big lists.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · Let the compiler handle micro-optimization</div>
+            <p style="margin:6px 0 0">
+              With the <b>React Compiler</b> (04-10), most <code>useMemo</code>/<code>useCallback</code>/<code>memo</code>
+              tuning is automatic. Your performance effort shifts to <em>structure</em> (colocation, splitting,
+              virtualization) and <em>measuring</em> — the things the compiler can't do for you.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Diagnose then fix</div>
+            <p style="margin:6px 0 0">
+              Build a page with a search input and a list of 5,000 items that re-renders on each keystroke. Profile
+              it. Then fix it by colocating the search state. Profile again and compare. Finally, lazy-load a heavy
+              "details" panel and watch the initial bundle shrink in the Network tab.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Measure first</b> with the React DevTools Profiler — never optimise on a hunch.</li>
+            <li>The cheapest fix is structural: <b>colocate</b> state low so fewer components re-render.</li>
+            <li><b>Code splitting</b> (<code>lazy</code> + Suspense) shrinks the initial bundle.</li>
+            <li><b>Virtualization</b> renders only visible rows of huge lists.</li>
+            <li>The React Compiler automates micro-memoization; you focus on structure and measurement.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

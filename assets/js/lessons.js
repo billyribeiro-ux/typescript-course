@@ -132,17 +132,17 @@ window.COURSE = {
       icon: "🚀",
       subtitle: "Rendering, Suspense, concurrency, patterns and testing.",
       lessons: [
-        { id: "05-01", title: "Reconciliation & How React Renders", file: "lessons/part-05-advanced-react/05-01-reconciliation.html", status: "soon" },
-        { id: "05-02", title: "Performance Profiling & Optimization", file: "lessons/part-05-advanced-react/05-02-performance.html", status: "soon" },
-        { id: "05-03", title: "Suspense & Data Fetching Patterns", file: "lessons/part-05-advanced-react/05-03-suspense.html", status: "soon" },
-        { id: "05-04", title: "Error Boundaries & Resilience", file: "lessons/part-05-advanced-react/05-04-error-boundaries.html", status: "soon" },
-        { id: "05-05", title: "Concurrent Features & Transitions", file: "lessons/part-05-advanced-react/05-05-concurrency-transitions.html", status: "soon" },
-        { id: "05-06", title: "Portals, Refs & Imperative Handles", file: "lessons/part-05-advanced-react/05-06-portals-imperative.html", status: "soon" },
-        { id: "05-07", title: "Component Patterns: Compound & Provider", file: "lessons/part-05-advanced-react/05-07-compound-provider.html", status: "soon" },
-        { id: "05-08", title: "Headless Components & Render Props", file: "lessons/part-05-advanced-react/05-08-headless-render-props.html", status: "soon" },
-        { id: "05-09", title: "Accessibility (a11y) Done Right", file: "lessons/part-05-advanced-react/05-09-accessibility.html", status: "soon" },
-        { id: "05-10", title: "Testing React: Testing Library & Playwright", file: "lessons/part-05-advanced-react/05-10-testing-react.html", status: "soon" },
-        { id: "05-11", title: "Project P04: The Kanban Board", file: "lessons/part-05-advanced-react/05-11-project-kanban.html", status: "soon" }
+        { id: "05-01", title: "Reconciliation & How React Renders", file: "lessons/part-05-advanced-react/05-01-reconciliation.html", status: "available" },
+        { id: "05-02", title: "Performance Profiling & Optimization", file: "lessons/part-05-advanced-react/05-02-performance.html", status: "available" },
+        { id: "05-03", title: "Suspense & Data Fetching Patterns", file: "lessons/part-05-advanced-react/05-03-suspense.html", status: "available" },
+        { id: "05-04", title: "Error Boundaries & Resilience", file: "lessons/part-05-advanced-react/05-04-error-boundaries.html", status: "available" },
+        { id: "05-05", title: "Concurrent Features & Transitions", file: "lessons/part-05-advanced-react/05-05-concurrency-transitions.html", status: "available" },
+        { id: "05-06", title: "Portals, Refs & Imperative Handles", file: "lessons/part-05-advanced-react/05-06-portals-imperative.html", status: "available" },
+        { id: "05-07", title: "Component Patterns: Compound & Provider", file: "lessons/part-05-advanced-react/05-07-compound-provider.html", status: "available" },
+        { id: "05-08", title: "Headless Components & Render Props", file: "lessons/part-05-advanced-react/05-08-headless-render-props.html", status: "available" },
+        { id: "05-09", title: "Accessibility (a11y) Done Right", file: "lessons/part-05-advanced-react/05-09-accessibility.html", status: "available" },
+        { id: "05-10", title: "Testing React: Testing Library & Playwright", file: "lessons/part-05-advanced-react/05-10-testing-react.html", status: "available" },
+        { id: "05-11", title: "Project P04: The Kanban Board", file: "lessons/part-05-advanced-react/05-11-project-kanban.html", status: "available" }
       ]
     },
     {

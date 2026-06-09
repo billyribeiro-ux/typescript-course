@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-01 · Reconciliation &amp; How React Renders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 1</div>
+        <h1>Reconciliation &amp; How React Renders</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🧠 Under the hood</span>
+        </div>
+        <p class="lead">
+          To write fast, bug-free React, you need to understand what actually happens when a component renders.
+          This lesson opens the engine: the render/commit phases, the Virtual DOM, the reconciliation
+          (diffing) algorithm, and exactly why <code>key</code> matters so much. This mental model is what
+          separates engineers who <em>fight</em> React from those who <em>command</em> it.
+        </p>
+
+        <h2>1. Render vs Commit</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Two phases</div>
+            <p style="margin:6px 0 0">
+              <b>Render phase:</b> React calls your component functions to produce a tree of elements (the Virtual
+              DOM). This must be <em>pure</em> — no side effects. <b>Commit phase:</b> React compares the new tree
+              to the previous one and applies the <em>minimal</em> set of real DOM mutations. Effects
+              (<code>useEffect</code>) run after commit. Rendering ≠ touching the DOM; it's computing what the DOM
+              <em>should</em> be.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The Virtual DOM &amp; reconciliation</h2>
+        <p>
+          Each render produces a lightweight JavaScript description of the UI (the elements from your JSX). React
+          <strong>reconciles</strong> the new description against the previous one — a diffing algorithm — and
+          updates only what changed. Direct DOM manipulation is slow; computing a diff in memory and batching
+          minimal updates is fast.
+        </p>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">render-trigger.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A component re-renders when:
+//   1. its own state changes (setState)
+//   2. its parent re-renders
+//   3. a context it consumes changes
+// On re-render, React re-runs the function, builds a new element tree,
+// diffs it against the last one, and commits only the differences.
+
+function Parent() {
+  const [n, setN] = useState(0);
+  return (
+    &lt;div&gt;
+      &lt;button onClick={() =&gt; setN(n + 1)}&gt;{n}&lt;/button&gt;
+      &lt;Child /&gt;   {/* re-renders when Parent does — even though its props didn't change */}
+    &lt;/div&gt;
+  );
+}
+// React.memo (04-10) or the React Compiler can skip Child's re-render
+// when its props are unchanged.</pre>
+          <div class="annot">
+            <strong>Re-rendering is not re-mounting.</strong> When state changes, React re-runs the function and
+            diffs — it does not destroy and rebuild the DOM. A child re-renders when its parent does, but if its
+            output is identical, the commit phase changes nothing in the DOM. "Render" is cheap computation;
+            "commit" is the expensive DOM work React minimises.
+          </div>
+        </div>
+
+        <h2>3. The diffing rules</h2>
+        <ul>
+          <li><strong>Different element type → full replace.</strong> <code>&lt;div&gt;</code> becoming
+          <code>&lt;section&gt;</code> means React tears down the old subtree and builds a new one (state is lost).</li>
+          <li><strong>Same type → update props in place.</strong> React keeps the DOM node and just changes the
+          attributes/children that differ.</li>
+          <li><strong>Lists are matched by <code>key</code>.</strong> Keys tell React which item is which across
+          renders, so it can reorder/insert/remove efficiently and preserve each item's state.</li>
+        </ul>
+
+        <h2>4. Why keys matter (the deep reason)</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">why-keys.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Each row has its own state (the input). With index keys, deleting the
+// FIRST item shifts everyone's key up by one — React thinks item 0 just
+// "changed text" rather than "was removed", so the input values end up on
+// the WRONG rows. With stable item.id keys, React tracks identity correctly.
+
+{rows.map((row, i) =&gt; (
+  &lt;input key={i} defaultValue={row.label} /&gt;        // ❌ bug on reorder/delete
+))}
+
+{rows.map((row) =&gt; (
+  &lt;input key={row.id} defaultValue={row.label} /&gt;   // ✅ identity preserved
+))}
+
+// You can also FORCE a remount by changing a key — handy to reset a
+// component's state when an id changes:
+&lt;UserProfile key={userId} userId={userId} /&gt;</pre>
+          <div class="annot">
+            <strong>Keys are identity, not order.</strong> They tell reconciliation "this element is the same
+            logical thing as before". Using the index breaks identity when the list changes. Bonus technique:
+            deliberately <em>changing</em> a key forces React to remount a component (resetting its state) — the
+            idiomatic alternative to a "reset on prop change" effect (04-07).
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · See reconciliation in action</div>
+            <p style="margin:6px 0 0">
+              Build a list of inputs with uncontrolled <code>defaultValue</code>s, once with <code>key={index}</code>
+              and once with <code>key={item.id}</code>. Type into them, then delete the first item. Observe how the
+              index version scrambles the values and the id version doesn't. Then add <code>&lt;Profile key={id} /&gt;</code>
+              and confirm changing the id resets its internal state.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Rendering has two phases: <b>render</b> (pure, builds the element tree) and <b>commit</b> (minimal DOM updates).</li>
+            <li>The <b>Virtual DOM</b> + <b>reconciliation</b> diff trees in memory and apply only the changes.</li>
+            <li>Diffing: different type → replace subtree; same type → update in place; lists → matched by <b>key</b>.</li>
+            <li><b>Keys are identity</b>, not order — use stable IDs; changing a key intentionally remounts (resets) a component.</li>
+            <li>Re-render ≠ re-mount ≠ DOM change — understanding this is the basis of all performance work.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

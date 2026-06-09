@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-05 · Concurrent Features &amp; Transitions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 5</div>
+        <h1>Concurrent Features &amp; Transitions</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">⚡ Responsive UIs</span>
+        </div>
+        <p class="lead">
+          React's <strong>concurrent</strong> capabilities let it interrupt and prioritise rendering so the UI
+          stays responsive during heavy updates. The practical tools are <code>useTransition</code> and
+          <code>useDeferredValue</code> — they mark some updates as low-priority so urgent ones (like typing) never
+          get blocked. This is how you keep an app buttery-smooth under load.
+        </p>
+
+        <h2>1. The problem: urgent vs non-urgent updates</h2>
+        <p>
+          When you type in a search box that filters a huge list, two updates happen: the input value (urgent —
+          must feel instant) and the filtered list (non-urgent — can lag a frame). Without prioritisation, the
+          expensive list re-render blocks the keystroke, and typing feels laggy.
+        </p>
+
+        <h2>2. useTransition</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useTransition.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useTransition } from "react";
+
+function Search({ allItems }: { allItems: string[] }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState&lt;string[]&gt;(allItems);
+  const [isPending, startTransition] = useTransition();
+
+  function handleChange(e: React.ChangeEvent&lt;HTMLInputElement&gt;) {
+    const next = e.target.value;
+    setQuery(next);                       // URGENT: update the input immediately
+    startTransition(() =&gt; {               // NON-URGENT: can be interrupted
+      setResults(allItems.filter((i) =&gt; i.includes(next)));
+    });
+  }
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={handleChange} /&gt;
+      {isPending &amp;&amp; &lt;span&gt;Filtering…&lt;/span&gt;}
+      &lt;List items={results} /&gt;
+    &lt;/&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong><code>startTransition</code> marks an update as low-priority.</strong> React keeps the input
+            responsive (urgent) and renders the expensive list in the background, interrupting it if you keep
+            typing. <code>isPending</code> lets you show a subtle "updating" indicator. The keystrokes never feel
+            blocked, even with a massive list.
+          </div>
+        </div>
+
+        <h2>3. useDeferredValue</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useDeferredValue.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useState, useDeferredValue, useMemo } from "react";
+
+function Search({ allItems }: { allItems: string[] }) {
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query); // "lags behind" during fast typing
+
+  // Expensive work keyed off the DEFERRED value, so typing stays snappy:
+  const results = useMemo(
+    () =&gt; allItems.filter((i) =&gt; i.includes(deferredQuery)),
+    [allItems, deferredQuery]
+  );
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={(e) =&gt; setQuery(e.target.value)} /&gt;
+      &lt;List items={results} /&gt;
+    &lt;/&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong><code>useDeferredValue</code> is the value-based sibling of <code>useTransition</code>.</strong>
+            Instead of wrapping a state update, you defer a <em>value</em>: the input uses <code>query</code> (live),
+            while the expensive list uses <code>deferredQuery</code> (which trails during rapid input). Use it when
+            you receive a value (e.g. a prop) you can't wrap in a transition.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · It also powers Suspense transitions</div>
+            <p style="margin:6px 0 0">
+              Wrapping a navigation in <code>startTransition</code> lets React keep showing the <em>old</em> screen
+              (instead of a Suspense fallback) while the next one loads — no jarring flash of a spinner. Routers
+              (Part 6) and Server Components (Part 7) use transitions to make navigation feel instant.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Smooth a heavy filter</div>
+            <p style="margin:6px 0 0">
+              Render a list of 20,000 items and a search box. First implement it naively and feel the lag. Then fix
+              it two ways — once with <code>useTransition</code>, once with <code>useDeferredValue</code> — and
+              compare. Show an <code>isPending</code> indicator in the transition version.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Concurrent React can <b>interrupt and prioritise</b> renders so urgent updates aren't blocked.</li>
+            <li><b><code>useTransition</code></b> marks a state update as low-priority and gives you <code>isPending</code>.</li>
+            <li><b><code>useDeferredValue</code></b> defers a <em>value</em> for expensive downstream work, keeping input snappy.</li>
+            <li>Transitions also avoid jarring Suspense fallbacks during navigation.</li>
+            <li>Reach for these when an expensive render makes urgent interactions (typing, clicking) feel laggy.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

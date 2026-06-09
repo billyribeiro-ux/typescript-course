@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-06 · Portals, Refs &amp; Imperative Handles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 6</div>
+        <h1>Portals, Refs &amp; Imperative Handles</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🚪 Breaking out</span>
+        </div>
+        <p class="lead">
+          Two escape hatches for the cases where the normal tree isn't enough. <strong>Portals</strong> render
+          children into a different DOM location (for modals, tooltips, toasts) while keeping them in the React
+          tree. <strong>useImperativeHandle</strong> lets a parent call methods on a child via a ref. Used
+          sparingly, these solve real UI problems cleanly.
+        </p>
+
+        <h2>1. Portals — render elsewhere in the DOM</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Modal.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
+
+function Modal({ children, onClose }: { children: ReactNode; onClose: () =&gt; void }) {
+  // Render into document.body, ESCAPING any parent overflow:hidden / z-index trap:
+  return createPortal(
+    &lt;div className="overlay" onClick={onClose}&gt;
+      &lt;div className="dialog" role="dialog" aria-modal="true"
+           onClick={(e) =&gt; e.stopPropagation()}&gt;
+        {children}
+      &lt;/div&gt;
+    &lt;/div&gt;,
+    document.body
+  );
+}
+// Even though &lt;Modal&gt; lives deep in the tree, its DOM appears at the top of
+// &lt;body&gt; — so it overlays everything and isn't clipped by ancestors.</pre>
+          <div class="annot">
+            <strong>Portals solve the "modal trapped inside a clipped container" problem.</strong> The component
+            stays in the React tree (so context, state, and events still work — events even bubble through the React
+            tree, not the DOM tree!), but its DOM renders wherever you choose. Essential for modals, dropdowns,
+            tooltips, and toasts that must visually escape their parent.
+          </div>
+        </div>
+
+        <h2>2. useImperativeHandle — expose methods</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">imperative.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useImperativeHandle, useRef, type Ref } from "react";
+
+interface VideoHandle { play: () =&gt; void; pause: () =&gt; void; }
+
+// React 19: ref is just a prop (no forwardRef needed).
+function Video({ ref, src }: { ref: Ref&lt;VideoHandle&gt;; src: string }) {
+  const el = useRef&lt;HTMLVideoElement&gt;(null);
+  useImperativeHandle(ref, () =&gt; ({
+    play: () =&gt; el.current?.play(),
+    pause: () =&gt; el.current?.pause(),
+  }), []);
+  return &lt;video ref={el} src={src} /&gt;;
+}
+
+function Player() {
+  const videoRef = useRef&lt;VideoHandle&gt;(null);
+  return (
+    &lt;&gt;
+      &lt;Video ref={videoRef} src="/clip.mp4" /&gt;
+      &lt;button onClick={() =&gt; videoRef.current?.play()}&gt;Play&lt;/button&gt;
+    &lt;/&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>This exposes a small, intentional imperative API.</strong> Instead of leaking the raw DOM node,
+            <code>useImperativeHandle</code> lets the child publish just the methods it chooses
+            (<code>play</code>/<code>pause</code>). Use it for genuinely imperative things — media playback, focus,
+            scroll, animations — that don't fit the declarative model. Keep the surface tiny.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Reach for these last</div>
+            <p style="margin:6px 0 0">
+              Imperative handles are an escape hatch — most parent→child communication should be <em>props</em>, not
+              method calls. If you find yourself adding many imperative methods, reconsider whether the state should
+              live in the parent instead. Portals, by contrast, are the standard, expected solution for overlays.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A reusable modal + a focusable input</div>
+            <p style="margin:6px 0 0">
+              1) Build a portal-based <code>&lt;Modal&gt;</code> that closes on overlay click and Escape, with proper
+              <code>role="dialog"</code> and <code>aria-modal</code>. 2) Build a <code>&lt;TextField&gt;</code> that
+              exposes a <code>focus()</code> method via <code>useImperativeHandle</code>, and focus it from a parent
+              button.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Portals</b> (<code>createPortal</code>) render children into a different DOM node while staying in the React tree.</li>
+            <li>Use portals for modals, tooltips, dropdowns, toasts — anything that must escape parent clipping/z-index.</li>
+            <li>Events still bubble through the <b>React</b> tree from a portal, and context/state work normally.</li>
+            <li><b><code>useImperativeHandle</code></b> exposes a small, intentional method API to a parent via ref (React 19: ref is a prop).</li>
+            <li>Both are <b>escape hatches</b> — prefer props/state; use these for genuinely imperative needs.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-11 · Project P04 — The Kanban Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 11 · 🗂️ PROJECT</div>
+        <h1>Project P04 — The Kanban Board</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏗️ Build</span>
+          <span class="chip">⏱️ ~90 min</span>
+          <span class="chip">✅ 15 tests</span>
+        </div>
+        <p class="lead">
+          A Kanban board built with React 19 and <strong>Zustand</strong> — your first dedicated state-management
+          library. We model the board as <em>normalized</em> state, expose immutable actions, and test the whole
+          store without rendering anything. The complete project is in
+          <code>projects/p04-kanban-board/</code> with <strong>15 passing tests</strong>.
+        </p>
+
+        <h2>1. Why Zustand, and normalized state</h2>
+        <div class="callout concept">
+          <span class="ic">🐻</span>
+          <div class="body">
+            <div class="tt">Concept · A store outside the component tree</div>
+            <p style="margin:6px 0 0">
+              <code>useState</code>/<code>useReducer</code> live inside components; <b>Zustand</b> holds state in an
+              external store any component can read via a hook — no providers, no boilerplate. We store data
+              <b>normalized</b> (cards keyed by id, columns holding ordered id lists), the same shape Redux uses
+              (Part 6). Moves and lookups become trivial, and the store is pure data + functions — easy to test.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The store</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/store/board.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { create } from "zustand";
+
+export interface Card { readonly id: string; readonly title: string; }
+export interface Column { readonly id: string; readonly title: string; readonly cardIds: readonly string[]; }
+
+export const useBoard = create&lt;BoardState&gt;((set) =&gt; ({
+  ...initialBoard,
+  addCard: (columnId, title) =&gt;
+    set((state) =&gt; {
+      const clean = title.trim();
+      if (!clean) return state;                       // ignore empty
+      const id = nextId();
+      return {
+        cards: { ...state.cards, [id]: { id, title: clean } },        // immutable add
+        columns: state.columns.map((c) =&gt;
+          c.id === columnId ? { ...c, cardIds: [...c.cardIds, id] } : c),
+      };
+    }),
+  moveCard: (cardId, toColumnId, toIndex) =&gt;
+    set((state) =&gt; {
+      const without = removeFromColumns(state.columns, cardId);       // pull out
+      return { columns: without.map((c) =&gt; c.id === toColumnId
+        ? { ...c, cardIds: insertAt(c.cardIds, cardId, toIndex) }     // re-insert
+        : c) };
+    }),
+}));</pre>
+          <div class="annot">
+            <strong>Every action is an immutable update</strong> (spread/<code>map</code>/<code>filter</code> — the
+            Part 0 patterns, again). Components read slices with a selector: <code>useBoard((s) =&gt; s.columns)</code>.
+            Zustand re-renders only the components whose selected slice changed. No context, no provider — just a
+            hook.
+          </div>
+        </div>
+
+        <h2>3. The Zustand v5 trap (a real bug we hit)</h2>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Don't return new arrays/objects from a selector</div>
+            <p style="margin:6px 0 0">
+              Building this project, the test suite hit an <b>infinite render loop</b>. The cause:
+              <code>useBoard((s) =&gt; column.cardIds.map((id) =&gt; s.cards[id]))</code> returns a <em>new array every
+              call</em>, so <code>useSyncExternalStore</code> always sees a "changed" snapshot → re-render → new
+              array → loop. The fix: select a <b>stable reference</b> (the <code>cards</code> record) and derive the
+              array in render, or use <code>useShallow</code>. This is the #1 Zustand v5 pitfall — now you'll never
+              hit it.
+            </p>
+          </div>
+        </div>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">src/components/Column.tsx (the fix)</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ new array each call → infinite loop:
+// const cards = useBoard((s) =&gt; column.cardIds.map((id) =&gt; s.cards[id]));
+
+// ✅ select a stable reference, derive in render:
+const cardsById = useBoard((s) =&gt; s.cards);
+const cards = column.cardIds.map((id) =&gt; cardsById[id]).filter((c) =&gt; c != null);</pre>
+        </div>
+
+        <h2>4. Testing the store + components</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tests (excerpt)</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Store logic — no rendering, just call actions and assert (resetBoard each test):
+get().moveCard("a1", "done");
+expect(columnById("done").cardIds).toEqual(["a3", "a1"]);
+
+// Component — accessible queries + userEvent (05-10):
+await user.click(screen.getByRole("button", { name: /move "design the schema" right/i }));
+expect(useBoard.getState().columns.find(c =&gt; c.id === "doing")!.cardIds).toContain("a1");</pre>
+          <div class="annot">
+            <strong>The store tests are pure and instant</strong> — call actions, assert on
+            <code>getState()</code>. The component tests use accessible role/label queries (05-10) and
+            <code>userEvent</code>, resetting the store before each test. Because state is normalized data + pure
+            actions, testing is as easy as P01/P02.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">cd projects/p04-kanban-board &amp;&amp; pnpm install &amp;&amp; pnpm test</span>
+<span class="out">✓ src/store/board.test.ts (9 tests)</span>
+<span class="out">✓ src/components/Column.test.tsx (4 tests)</span>
+<span class="out">✓ src/components/AddCardForm.test.tsx (2 tests)</span>
+<span class="out">Test Files  3 passed (3)   Tests  15 passed (15)</span></pre>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Drag, animate, persist</div>
+            <p style="margin:6px 0 0">
+              1) Replace the move buttons with real drag-and-drop using <code>@dnd-kit/core</code>. 2) Animate card
+              enter/leave with <b>Motion</b> (<code>motion.li</code> + <code>AnimatePresence</code>). 3) Persist the
+              board with Zustand's <code>persist</code> middleware to <code>localStorage</code>. Keep the store tests
+              green throughout — the logic shouldn't change, only the presentation.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Zustand</b> holds state outside the tree; components read slices via a selector hook — no providers.</li>
+            <li>Model state <b>normalized</b> (entities by id + ordered id lists) for O(1) moves/lookups and easy testing.</li>
+            <li>Actions are <b>immutable updates</b> — the same spread/map/filter patterns from Part 0.</li>
+            <li>Never return a <b>new array/object</b> from a selector (infinite loop) — select stable refs or use <code>useShallow</code>.</li>
+            <li>🎉 <b>Part 5 complete.</b> You command advanced React. Next: the ecosystem — TanStack Query, routing, Redux, forms, styling.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

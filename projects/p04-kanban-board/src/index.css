@@ -1,0 +1,13 @@
+:root { font-family: system-ui, sans-serif; color: #1b1f24; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.app { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+.app-header { display: flex; justify-content: space-between; align-items: center; }
+.board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.column { background: #f1f5f9; border-radius: 12px; padding: 12px; }
+.column h2 { font-size: 15px; display: flex; justify-content: space-between; }
+.count { background: #cbd5e1; border-radius: 999px; padding: 0 8px; font-size: 12px; }
+.card-list { list-style: none; padding: 0; display: grid; gap: 8px; min-height: 24px; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; gap: 8px; }
+.card-actions button { border: none; background: transparent; cursor: pointer; }
+.add-card { display: flex; gap: 6px; margin-top: 10px; }
+.add-card input { flex: 1; }

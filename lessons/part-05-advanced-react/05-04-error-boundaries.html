@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05-04 · Error Boundaries &amp; Resilience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "05-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 5 · Advanced React — Lesson 4</div>
+        <h1>Error Boundaries &amp; Resilience</h1>
+        <div class="lesson-meta">
+          <span class="chip">🚀 Advanced</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🛡️ Don't crash the app</span>
+        </div>
+        <p class="lead">
+          Without protection, an error thrown during render unmounts your <em>entire</em> React tree — a blank
+          white screen for the user. <strong>Error boundaries</strong> contain failures: they catch render errors
+          in a subtree and show a fallback, keeping the rest of the app alive. Combined with Suspense, they give
+          you a complete declarative model for loading <em>and</em> error states.
+        </p>
+
+        <h2>1. An error boundary</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">ErrorBoundary.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { Component, type ErrorInfo, type ReactNode } from "react";
+
+interface Props { fallback: ReactNode; children: ReactNode; }
+interface State { hasError: boolean; }
+
+// Error boundaries must (still) be class components — one of the few cases:
+export class ErrorBoundary extends Component&lt;Props, State&gt; {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(): State {
+    return { hasError: true };           // render the fallback next
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Report to your error-tracking service (Sentry, etc.) — Part 8:
+    console.error("Caught by boundary:", error, info.componentStack);
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}</pre>
+          <div class="annot">
+            <strong>One of the rare places you still write a class.</strong> <code>getDerivedStateFromError</code>
+            switches to the fallback; <code>componentDidCatch</code> is where you log to an error-tracking service.
+            In real apps you'll use the <code>react-error-boundary</code> library (a function-component wrapper with
+            reset support), but understanding the primitive matters.
+          </div>
+        </div>
+
+        <h2>2. Composing with Suspense</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">resilient.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">function Widget({ dataPromise }: { dataPromise: Promise&lt;Data&gt; }) {
+  return (
+    &lt;ErrorBoundary fallback={&lt;p role="alert"&gt;Couldn’t load this widget.&lt;/p&gt;}&gt;
+      &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;
+        &lt;Content dataPromise={dataPromise} /&gt;
+      &lt;/Suspense&gt;
+    &lt;/ErrorBoundary&gt;
+  );
+}
+// Loading → Skeleton (Suspense). Failure → alert (ErrorBoundary).
+// Success → Content. The three async states, declaratively, per region.</pre>
+          <div class="annot">
+            <strong>Error boundary + Suspense = complete async UI.</strong> Wrap each independent region so one
+            widget's failure or slowness doesn't take down the page. This is the resilient, granular pattern used in
+            production dashboards: every panel loads and fails independently.
+          </div>
+        </div>
+
+        <h2>3. What boundaries do and don't catch</h2>
+        <table>
+          <thead><tr><th>Caught ✅</th><th>NOT caught ❌</th></tr></thead>
+          <tbody>
+            <tr><td>Errors during render</td><td>Errors in event handlers (use try/catch)</td></tr>
+            <tr><td>Errors in lifecycle/effects' render path</td><td>Async errors outside React (use .catch)</td></tr>
+            <tr><td>Errors in constructors of children</td><td>Errors in the boundary itself</td></tr>
+          </tbody>
+        </table>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Event handler errors aren't caught</div>
+            <p style="margin:6px 0 0">
+              Boundaries only catch errors thrown <em>during rendering</em>. An error inside an
+              <code>onClick</code> handler won't trigger them — handle those with a regular <code>try/catch</code>
+              and your own state. Boundaries are for unexpected render-time crashes, not normal control flow.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Contain a crash</div>
+            <p style="margin:6px 0 0">
+              Build a <code>&lt;BuggyWidget /&gt;</code> that throws during render when a prop is invalid. Wrap two of
+              them in separate <code>ErrorBoundary</code>s alongside a working widget. Trigger one crash and confirm
+              only that widget shows its fallback while the rest of the page keeps working. Add a "Try again" reset
+              button.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Error boundaries</b> catch render-time errors in a subtree and show a fallback — preventing whole-app crashes.</li>
+            <li>They're class components (<code>getDerivedStateFromError</code> + <code>componentDidCatch</code>); use <code>react-error-boundary</code> in practice.</li>
+            <li>Compose <b>ErrorBoundary + Suspense</b> per region for complete loading/error/success states.</li>
+            <li>They do <b>not</b> catch event-handler or async errors — use <code>try/catch</code> there.</li>
+            <li><code>componentDidCatch</code> is where you report to error tracking (Part 8).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
