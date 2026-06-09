@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-01 · SOLID &amp; Design Patterns in TypeScript</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 1</div>
+        <h1>SOLID &amp; Design Patterns in TypeScript</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🧱 Maintainable code</span>
+        </div>
+        <p class="lead">
+          You can build features; now you'll learn to build them so they stay maintainable for years and across
+          teams. <strong>SOLID</strong> is five timeless principles for structuring code, and <strong>design
+          patterns</strong> are reusable solutions to common problems. Applied with judgement (not dogma), they're
+          how you write code that's a pleasure to extend rather than a fragile mess.
+        </p>
+
+        <h2>1. The SOLID principles</h2>
+        <table>
+          <thead><tr><th>Principle</th><th>In one line</th></tr></thead>
+          <tbody>
+            <tr><td><b>S</b>ingle Responsibility</td><td>A module should have one reason to change.</td></tr>
+            <tr><td><b>O</b>pen/Closed</td><td>Open for extension, closed for modification.</td></tr>
+            <tr><td><b>L</b>iskov Substitution</td><td>Subtypes must be usable wherever their base type is.</td></tr>
+            <tr><td><b>I</b>nterface Segregation</td><td>Many small interfaces beat one fat one.</td></tr>
+            <tr><td><b>D</b>ependency Inversion</td><td>Depend on abstractions, not concretions.</td></tr>
+          </tbody>
+        </table>
+
+        <h2>2. Dependency Inversion in practice</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">dependency-inversion.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ High-level code depends on a concrete implementation:
+class OrderService {
+  private email = new SendgridClient(); // locked to Sendgrid; hard to test
+  notify(o: Order) { this.email.send(o.email, "Shipped"); }
+}
+
+// ✅ Depend on an ABSTRACTION (interface). Inject the concrete one:
+interface Mailer { send(to: string, body: string): Promise&lt;void&gt;; }
+
+class OrderService2 {
+  constructor(private mailer: Mailer) {}      // injected dependency
+  async notify(o: Order) { await this.mailer.send(o.email, "Shipped"); }
+}
+// Now you can pass a SendgridMailer in production and a FakeMailer in tests —
+// OrderService2 doesn't know or care which. Easy to test, easy to swap.</pre>
+          <div class="annot">
+            <strong>Dependency inversion is the most impactful SOLID principle for testability.</strong> By
+            depending on a <code>Mailer</code> interface and injecting the implementation, you decouple your logic
+            from external services. This is exactly why P01–P07 kept logic pure and pushed I/O to the edges — the
+            same idea, formalised. The compiler enforces the contract.
+          </div>
+        </div>
+
+        <h2>3. Useful patterns (used with judgement)</h2>
+        <ul>
+          <li><strong>Strategy:</strong> swap algorithms behind a common interface (e.g. different pricing rules) —
+          you just saw it with <code>Mailer</code>.</li>
+          <li><strong>Factory:</strong> centralise object creation (e.g. <code>createClient(config)</code>).</li>
+          <li><strong>Adapter:</strong> wrap a third-party API in your own interface so you can swap it later.</li>
+          <li><strong>Observer:</strong> publish/subscribe — the basis of event systems and React state libraries.</li>
+          <li><strong>Repository:</strong> abstract data access behind an interface (swap Drizzle for a mock in
+          tests).</li>
+        </ul>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Patterns are tools, not goals</div>
+            <p style="margin:6px 0 0">
+              Over-applying patterns creates needless abstraction ("AbstractFactoryStrategyManager"). Reach for a
+              pattern when you feel real pain (duplication, rigidity, untestability) — not preemptively. The best
+              code is as simple as the problem allows. Principal engineers add abstraction <em>reluctantly</em> and
+              remove it eagerly.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · In React, patterns look different</div>
+            <p style="margin:6px 0 0">
+              React leans functional: dependency injection is often just <b>props</b> and <b>context</b>; strategy
+              is passing a function; the repository pattern becomes a custom hook (<code>useUsers()</code>). The
+              <em>principles</em> (single responsibility, depend on abstractions) matter more than the classic OOP
+              <em>forms</em>. Apply the spirit.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Invert a dependency</div>
+            <p style="margin:6px 0 0">
+              Take a function that directly calls <code>fetch</code> and refactor it to accept a
+              <code>HttpClient</code> interface. Write a real implementation and a fake one, and a test that uses
+              the fake. Notice how the logic became trivially testable — that's SOLID paying off.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>SOLID</b>: single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion.</li>
+            <li><b>Dependency inversion</b> (depend on interfaces, inject implementations) is the key to testable, swappable code.</li>
+            <li>Patterns (Strategy, Factory, Adapter, Observer, Repository) solve recurring problems — apply with judgement.</li>
+            <li>Don't over-abstract; reach for patterns when you feel real pain, and prefer simplicity.</li>
+            <li>In React the <b>principles</b> hold, but the <b>forms</b> are functional (props/context/hooks).</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

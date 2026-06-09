@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-02 · Building a Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 2 · 🎨 PROJECT P08</div>
+        <h1>Building a Design System</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~36 min</span>
+          <span class="chip">✅ 9 + type tests</span>
+        </div>
+        <p class="lead">
+          A <strong>design system</strong> is the shared component library + design tokens + conventions that keep
+          a product consistent across teams. Building one is a hallmark of senior/principal work. We'll cover what
+          goes into a design system, and build its type-safe styling core (a <code>cn</code> combiner + a
+          <code>cva</code> variant API) in <code>projects/p08-design-system/</code> — the exact primitives behind
+          shadcn/ui + CVA, with <strong>tests proving both runtime and type behaviour</strong>.
+        </p>
+
+        <h2>1. What a design system contains</h2>
+        <ul>
+          <li><strong>Design tokens:</strong> colours, spacing, typography, radii — the single source of style
+          values (often CSS variables / a Tailwind theme).</li>
+          <li><strong>Primitives:</strong> accessible, unstyled behaviour (Radix/React Aria — lesson 05-08).</li>
+          <li><strong>Components:</strong> Button, Input, Dialog… built from primitives + tokens + variants.</li>
+          <li><strong>Documentation:</strong> a living catalogue (Storybook) showing every component and state.</li>
+          <li><strong>Conventions:</strong> naming, prop patterns (the <code>asChild</code>/polymorphism, slots),
+          versioning (Changesets, Part 3).</li>
+        </ul>
+
+        <h2>2. The variant core (P08)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">cva usage</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { cva, type VariantProps } from "./src/index.js";
+
+export const buttonVariants = cva("btn", {
+  variants: {
+    intent: { primary: "btn-primary", secondary: "btn-secondary", ghost: "btn-ghost" },
+    size: { sm: "btn-sm", md: "btn-md", lg: "btn-lg" },
+  },
+  defaultVariants: { intent: "primary", size: "md" },
+  compoundVariants: [{ intent: "ghost", size: "lg", class: "btn-ghost-lg" }],
+});
+
+// Extract the component's typed props FROM the variant config:
+type ButtonVariantProps = VariantProps&lt;typeof buttonVariants&gt;;
+// { intent?: "primary" | "secondary" | "ghost"; size?: "sm" | "md" | "lg" }
+
+buttonVariants({ intent: "ghost", size: "lg" }); // "btn btn-ghost btn-lg btn-ghost-lg"</pre>
+          <div class="annot">
+            <strong>One declaration encodes a component's entire styling API.</strong> The <code>cva</code> function
+            holds the base class, named variant groups, defaults, and compound variants (styles that apply only
+            when several variants combine). <code>VariantProps&lt;typeof fn&gt;</code> uses a conditional type +
+            <code>infer</code> (Part 2!) to extract the typed props — so your <code>&lt;Button&gt;</code> component gets
+            autocompleted, type-checked variants for free.
+          </div>
+        </div>
+
+        <h2>3. Wrapping it in a component</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Button.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { cn } from "./src/cn.js";
+import { buttonVariants, type VariantProps } from "./src/index.js";
+import type { ComponentProps } from "react";
+
+type ButtonProps = ComponentProps&lt;"button"&gt; &amp; VariantProps&lt;typeof buttonVariants&gt;;
+
+export function Button({ intent, size, className, ...rest }: ButtonProps) {
+  // cn merges the variant classes with any consumer overrides:
+  return &lt;button className={cn(buttonVariants({ intent, size }), className)} {...rest} /&gt;;
+}
+// &lt;Button intent="ghost" size="lg" onClick={...}&gt;Save&lt;/Button&gt; — fully typed,
+// supports all native button props (04-03) AND the design-system variants.</pre>
+          <div class="annot">
+            <strong>This is the canonical design-system component.</strong> It composes the native element props
+            (<code>ComponentProps&lt;"button"&gt;</code> — 04-03), the variant props (<code>VariantProps</code>), and a
+            <code>className</code> escape hatch merged via <code>cn</code>. Every shadcn/ui component follows exactly
+            this shape. You now understand — and have built — the machinery.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">cd projects/p08-design-system &amp;&amp; pnpm install</span>
+<span class="cmd">pnpm test</span>        <span class="out"># cn + cva runtime tests</span>
+<span class="out">✓ src/cn.test.ts (5)   ✓ src/variants.test.ts (4)   9 passed</span>
+<span class="cmd">pnpm test:types</span>  <span class="out"># VariantProps inference proof</span>
+<span class="out">✓ src/types.test-d.ts   Type Errors  no errors</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Package it as a monorepo workspace</div>
+            <p style="margin:6px 0 0">
+              In a real org, the design system is a <code>packages/ui</code> workspace (Part 3) consumed by every
+              app via <code>workspace:*</code>, versioned with Changesets, documented in Storybook, and built on
+              Radix primitives + Tailwind tokens. The pure variant/cn core you built is the heart; everything else
+              is packaging and docs.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Add a Badge + dark tokens</div>
+            <p style="margin:6px 0 0">
+              Add <code>badgeVariants</code> (tone: neutral/success/danger; size: sm/md) using <code>cva</code>, with
+              a type test for its <code>VariantProps</code>. Define design tokens as CSS variables with a
+              <code>[data-theme="dark"]</code> override. Build the <code>&lt;Badge&gt;</code> component wrapping it with
+              <code>cn</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>A <b>design system</b> = tokens + primitives + components + docs + conventions, shared across teams.</li>
+            <li><b><code>cva</code></b> encodes a component's full styling API (base, variants, defaults, compound) in one declaration.</li>
+            <li><b><code>VariantProps&lt;typeof fn&gt;</code></b> extracts typed props via conditional types + <code>infer</code> (Part 2).</li>
+            <li>The canonical component composes native props + variant props + a <code>cn</code>-merged <code>className</code>.</li>
+            <li>Ship it as a versioned monorepo package (Part 3) built on Radix + Tailwind — exactly like shadcn/ui.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

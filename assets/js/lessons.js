@@ -197,8 +197,8 @@ window.COURSE = {
       icon: "🏛️",
       subtitle: "System design, design systems, security and L7++ leadership.",
       lessons: [
-        { id: "08-01", title: "SOLID & Design Patterns in TypeScript", file: "lessons/part-08-architecture-and-principal/08-01-solid-patterns.html", status: "soon" },
-        { id: "08-02", title: "Building a Design System", file: "lessons/part-08-architecture-and-principal/08-02-design-system.html", status: "soon" },
+        { id: "08-01", title: "SOLID & Design Patterns in TypeScript", file: "lessons/part-08-architecture-and-principal/08-01-solid-patterns.html", status: "available" },
+        { id: "08-02", title: "Building a Design System", file: "lessons/part-08-architecture-and-principal/08-02-design-system.html", status: "available" },
         { id: "08-03", title: "Frontend System Design & Scalability", file: "lessons/part-08-architecture-and-principal/08-03-system-design.html", status: "soon" },
         { id: "08-04", title: "Micro-Frontends & Module Federation", file: "lessons/part-08-architecture-and-principal/08-04-micro-frontends.html", status: "soon" },
         { id: "08-05", title: "Performance Budgets & Core Web Vitals", file: "lessons/part-08-architecture-and-principal/08-05-performance-budgets.html", status: "soon" },
