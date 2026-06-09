@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-05 · Testing, CI/CD &amp; Observability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 5</div>
+        <h1>Testing, CI/CD &amp; Observability</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Capstone</span>
+          <span class="chip">⏱️ ~45 min</span>
+          <span class="chip">✅ Production-ready</span>
+        </div>
+        <p class="lead">
+          A feature isn't done when it works on your machine — it's done when it's tested, gated by CI, and
+          observable in production. We put ProjectHub on a professional footing with a layered test strategy, a CI
+          pipeline that blocks regressions, and the observability to run it confidently.
+        </p>
+
+        <h2>1. The testing pyramid, applied</h2>
+        <table>
+          <thead><tr><th>Layer</th><th>What we test</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td><b>Static</b></td><td>Types, lint, format</td><td>tsc, ESLint, Prettier (Part 3)</td></tr>
+            <tr><td><b>Unit</b></td><td>RBAC, billing, board logic, validators</td><td>Vitest (P02/P04/P05/P07 style)</td></tr>
+            <tr><td><b>Integration</b></td><td>Components + their behaviour</td><td>Testing Library (05-10)</td></tr>
+            <tr><td><b>API</b></td><td>tRPC procedures against a test DB</td><td>Vitest + a transactional test database</td></tr>
+            <tr><td><b>E2E</b></td><td>Critical journeys (sign up → create project → invite)</td><td>Playwright (05-10)</td></tr>
+          </tbody>
+        </table>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · You already wrote most of these</div>
+            <p style="margin:6px 0 0">
+              The capstone's pure cores — permissions, billing, board store, validators — are tested exactly like
+              Projects P01–P08 (131 tests across them). Add a handful of API tests (procedures against a test DB)
+              and a few high-value Playwright journeys, and you have confident coverage without testing everything.
+              Test behaviour and contracts, not implementation.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. The CI pipeline</h2>
+        <div class="editor" data-lang="yaml">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">.github/workflows/ci.yml</span><span class="lang-tag">yaml</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo typecheck lint test build   # all packages, cached (Part 3)
+      - run: pnpm turbo test:e2e                      # Playwright on a preview
+# Every PR runs this gate; only green code merges. Vercel ships preview deploys
+# per PR and auto-deploys main (07-11).</pre>
+          <div class="annot">
+            <strong>One Turbo command runs the whole gate across the monorepo, cached.</strong> typecheck + lint +
+            test + build for every package, then E2E. This is the <code>check</code> script from Part 3 (03-04/09)
+            scaled to a monorepo. A PR that fails any step is blocked; Vercel gives each PR a preview URL to test
+            against (07-11).
+          </div>
+        </div>
+
+        <h2>3. Production observability</h2>
+        <ul>
+          <li><strong>Errors:</strong> Sentry across client + server, wired into error boundaries (05-04) and tRPC
+          (07-11).</li>
+          <li><strong>Logs:</strong> structured, with a per-request trace id (08-06).</li>
+          <li><strong>Vitals &amp; analytics:</strong> Core Web Vitals + product analytics, against a performance
+          budget (08-05).</li>
+          <li><strong>Health &amp; alerts:</strong> a health endpoint, an SLO, and alerts on user-facing symptoms
+          (08-06).</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Make a slice production-ready</div>
+            <p style="margin:6px 0 0">
+              Take one feature (e.g. "invite member"): write a unit test for the permission/seat logic, an API test
+              for the procedure against a test DB, and a Playwright test for the journey. Wire it into the Turbo CI
+              gate. Add a Sentry breadcrumb and a structured log line. That's the full professional treatment.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Layer tests: <b>static → unit → integration → API → E2E</b> — most are the pure-core style you've used all course.</li>
+            <li>A single <b>Turbo CI gate</b> (typecheck/lint/test/build + E2E) blocks regressions; previews per PR.</li>
+            <li>Make it <b>observable</b>: Sentry, structured logs with trace ids, vitals + a performance budget, SLOs + alerts.</li>
+            <li>Test <b>behaviour and contracts</b>, not implementation; cover critical journeys, not everything.</li>
+            <li>"Done" means tested, gated, deployable, and observable.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -218,12 +218,12 @@ window.COURSE = {
       icon: "🎓",
       subtitle: "Build a production full-stack SaaS end-to-end. Graduation.",
       lessons: [
-        { id: "09-01", title: "ProjectHub: Architecture & Planning", file: "lessons/part-09-capstone/09-01-architecture-planning.html", status: "soon" },
-        { id: "09-02", title: "Building the Data Layer & Auth", file: "lessons/part-09-capstone/09-02-data-layer-auth.html", status: "soon" },
-        { id: "09-03", title: "The Application Core & Design System", file: "lessons/part-09-capstone/09-03-app-core-design-system.html", status: "soon" },
-        { id: "09-04", title: "Real-Time, Roles & Permissions", file: "lessons/part-09-capstone/09-04-realtime-roles.html", status: "soon" },
-        { id: "09-05", title: "Testing, CI/CD & Observability", file: "lessons/part-09-capstone/09-05-testing-cicd.html", status: "soon" },
-        { id: "09-06", title: "Deployment & Course Conclusion", file: "lessons/part-09-capstone/09-06-deployment-conclusion.html", status: "soon" }
+        { id: "09-01", title: "ProjectHub: Architecture & Planning", file: "lessons/part-09-capstone/09-01-architecture-planning.html", status: "available" },
+        { id: "09-02", title: "Building the Data Layer & Auth", file: "lessons/part-09-capstone/09-02-data-layer-auth.html", status: "available" },
+        { id: "09-03", title: "The Application Core & Design System", file: "lessons/part-09-capstone/09-03-app-core-design-system.html", status: "available" },
+        { id: "09-04", title: "Real-Time, Roles & Permissions", file: "lessons/part-09-capstone/09-04-realtime-roles.html", status: "available" },
+        { id: "09-05", title: "Testing, CI/CD & Observability", file: "lessons/part-09-capstone/09-05-testing-cicd.html", status: "available" },
+        { id: "09-06", title: "Deployment & Course Conclusion", file: "lessons/part-09-capstone/09-06-deployment-conclusion.html", status: "available" }
       ]
     }
   ]

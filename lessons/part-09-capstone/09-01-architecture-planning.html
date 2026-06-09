@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-01 · ProjectHub: Architecture &amp; Planning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 1</div>
+        <h1>ProjectHub: Architecture &amp; Planning</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Capstone</span>
+          <span class="chip">⏱️ ~40 min</span>
+          <span class="chip">🏗️ Plan before you build</span>
+        </div>
+        <p class="lead">
+          This is it — the graduation project. <strong>ProjectHub</strong> is a production-grade, multi-tenant
+          team-collaboration SaaS (think a focused Linear/Asana). Over the next six lessons we architect and build
+          it end-to-end, weaving together <em>everything</em> from the entire course. We start the way a principal
+          engineer always does: not with code, but with a plan.
+        </p>
+
+        <h2>1. What we're building</h2>
+        <p>
+          ProjectHub lets organizations manage projects and tasks with their team: create an org, invite members
+          with roles, organize work on boards, collaborate in real time, and manage billing. The features
+          deliberately exercise the whole curriculum.
+        </p>
+        <table>
+          <thead><tr><th>Feature</th><th>Draws on</th></tr></thead>
+          <tbody>
+            <tr><td>Auth, orgs, roles &amp; permissions</td><td>P05 (RBAC), P07 (auth core), 07-08</td></tr>
+            <tr><td>Projects &amp; task boards</td><td>P04 (Kanban + Zustand), 05/06</td></tr>
+            <tr><td>Typed data layer &amp; API</td><td>Drizzle (07-06), tRPC (07-07), Zod (P02)</td></tr>
+            <tr><td>Real-time updates</td><td>websockets / Server-Sent Events, optimistic UI (04-12)</td></tr>
+            <tr><td>Design system &amp; polished UI</td><td>P08, Tailwind/shadcn (06-10), Motion (06-11)</td></tr>
+            <tr><td>Billing (seats/plans)</td><td>P07 billing core, Stripe</td></tr>
+          </tbody>
+        </table>
+
+        <h2>2. The architecture</h2>
+        <div class="editor" data-lang="text">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">monorepo layout</span><span class="lang-tag">text</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">projecthub/                  # pnpm + Turborepo monorepo (Part 3)
+  apps/
+    web/                     # Next.js 15 App Router (Part 7)
+  packages/
+    ui/                      # the design system (P08 + shadcn)
+    db/                      # Drizzle schema + queries (07-06)
+    api/                     # tRPC routers + Zod inputs (07-07, P02)
+    auth/                    # session + RBAC core (P05/P07, 07-08)
+    config/                  # shared tsconfig, eslint, env schema (07-10)
+// Clear module boundaries (08-01): each package has one responsibility,
+// the app composes them. Pure logic in packages, framework glue in app/web.</pre>
+          <div class="annot">
+            <strong>The structure embodies the course's principles.</strong> A Turborepo monorepo (Part 3) with a
+            design-system package (P08), a typed data layer (Drizzle), a typed API (tRPC), and an auth/RBAC core
+            (P05/P07). Each package has a single responsibility (08-01); the Next.js app composes them. Pure,
+            testable logic lives in packages; thin framework glue lives in the app.
+          </div>
+        </div>
+
+        <h2>3. The plan (an RFC in miniature)</h2>
+        <ul>
+          <li><strong>Requirements:</strong> multi-tenant (org isolation), real-time, role-based access, billed by
+          seat, accessible, fast (Core Web Vitals).</li>
+          <li><strong>Data model:</strong> orgs → members (with roles) → projects → tasks; plus sessions and
+          subscriptions.</li>
+          <li><strong>Rendering:</strong> Server Components for initial loads (07-02), client islands for
+          interactivity, streaming for the dashboard (07-03).</li>
+          <li><strong>State:</strong> server state via tRPC + TanStack Query; local board UI via Zustand (P04
+          patterns); forms via RHF + Zod (06-09).</li>
+          <li><strong>Non-functionals:</strong> tests at every layer, CI gate, observability, performance budget.</li>
+        </ul>
+        <div class="callout concept">
+          <span class="ic">🧭</span>
+          <div class="body">
+            <div class="tt">Concept · Planning is the principal's first move</div>
+            <p style="margin:6px 0 0">
+              We write the architecture and trade-offs <em>before</em> coding (08-11). This RFC-style plan surfaces
+              decisions early, aligns the (imaginary) team, and becomes the map for the next five lessons. "Weeks of
+              coding can save you hours of planning" — said no principal engineer ever.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Write the capstone plan</div>
+            <p style="margin:6px 0 0">
+              Before building, write your own one-page plan for ProjectHub: the data model (entities + relations),
+              the package boundaries, the rendering strategy per page, and the top three risks. Sketch the org →
+              project → task → member relationships. This plan guides everything that follows.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>ProjectHub is a multi-tenant team SaaS that exercises the <b>entire course</b>.</li>
+            <li>Architecture: a <b>Turborepo monorepo</b> with ui / db / api / auth / config packages + a Next.js app.</li>
+            <li>Each package has <b>one responsibility</b>; pure logic in packages, framework glue in the app.</li>
+            <li><b>Plan before building</b> — data model, rendering, state, and non-functionals — RFC-style (08-11).</li>
+            <li>Everything that follows is composing tools you already know and have tested.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

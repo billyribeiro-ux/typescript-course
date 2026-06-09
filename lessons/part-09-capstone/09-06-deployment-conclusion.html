@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-06 · Deployment &amp; Course Conclusion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 6 · 🎓 FINALE</div>
+        <h1>Deployment &amp; Course Conclusion</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Graduation</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🏁 The summit</span>
+        </div>
+        <p class="lead">
+          You made it. We ship ProjectHub to production — and then we step back and take in just how far you've
+          come. When you started this course, you had never written a line of code. Now you can architect, build,
+          test, secure, and deploy a production-grade full-stack application. This is your graduation.
+        </p>
+
+        <h2>1. Shipping ProjectHub</h2>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">deploy</span></div>
+          <pre><span class="cmd">pnpm turbo build</span>                 <span class="out"># build all packages, cached</span>
+<span class="cmd">pnpm drizzle-kit migrate</span>          <span class="out"># run DB migrations on prod (07-06)</span>
+<span class="out"># Connect the repo to Vercel: push to main → production deploy,</span>
+<span class="out"># every PR → preview URL. Secrets in the host's store (07-10).</span>
+<span class="cmd">git push origin main</span>              <span class="out"># CI gate passes → ProjectHub is LIVE 🎉</span></pre>
+        </div>
+        <div class="callout concept">
+          <span class="ic">🚀</span>
+          <div class="body">
+            <div class="tt">It's live — and you understand every layer</div>
+            <p style="margin:6px 0 0">
+              A real SaaS now runs in production: a typed database (Drizzle), an end-to-end-typed API (tRPC), auth
+              and multi-tenant RBAC, a real-time collaborative UI on a design system, billing, tests at every layer,
+              a CI gate, and full observability. And unlike most engineers who wire these together by cargo-cult,
+              <b>you understand exactly how and why each piece works</b> — because you built each one from first
+              principles.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Look how far you've come</h2>
+        <p>
+          Ten parts. 111 lessons. Nine real projects. From "what is a variable?" to type-level programming, from
+          your first <code>console.log</code> to a multi-tenant real-time SaaS. You learned:
+        </p>
+        <ul>
+          <li><strong>Foundations &amp; JavaScript</strong> — the bedrock (Part 0).</li>
+          <li><strong>TypeScript, core to wizard-tier</strong> — generics, conditional/mapped/template types,
+          type-level programming (Parts 1–2), deeper than most working engineers ever go.</li>
+          <li><strong>Professional tooling</strong> — pnpm, monorepos, Vite, ESLint, Vitest, CI (Part 3).</li>
+          <li><strong>React, core to advanced</strong> — hooks, React 19 Actions, the Compiler, Suspense, patterns,
+          performance, testing (Parts 4–5).</li>
+          <li><strong>The ecosystem</strong> — TanStack Query/Router, Zustand/Jotai, Redux Toolkit, RHF + Zod,
+          Tailwind/shadcn/CVA, Motion (Part 6).</li>
+          <li><strong>Full-stack</strong> — Next.js, Server Components/Actions, Drizzle, tRPC, auth (Part 7).</li>
+          <li><strong>Architecture &amp; the principal mindset</strong> — SOLID, system design, security,
+          observability, RFCs, leadership (Part 8).</li>
+          <li><strong>And you shipped a SaaS</strong> (Part 9).</li>
+        </ul>
+
+        <div class="takeaways">
+          <h3>🏆 What you can now do</h3>
+          <ul>
+            <li>Architect and build whatever you can imagine in TypeScript &amp; React.</li>
+            <li>Reason from first principles — you understand the machinery, not just the APIs.</li>
+            <li>Write code that's type-safe, tested, accessible, secure, observable, and fast.</li>
+            <li>Make and defend technical decisions, mentor others, and lead with judgement.</li>
+            <li>Hold your own with the best engineers anywhere.</li>
+          </ul>
+        </div>
+
+        <h2>3. Where to go from here</h2>
+        <ul>
+          <li><strong>Build your own thing.</strong> Nothing cements mastery like shipping something you care about.
+          Take ProjectHub's architecture and make <em>your</em> idea real.</li>
+          <li><strong>Go deep on a frontier.</strong> AI-powered apps, real-time/CRDTs, WebGPU, performance, dev
+          tooling — pick a depth and own it.</li>
+          <li><strong>Contribute &amp; teach.</strong> Open source, write, mentor. Teaching is how senior becomes
+          principal — explaining a thing forces true understanding.</li>
+          <li><strong>Stay curious.</strong> The tools will keep changing; the <em>principles</em> you learned here
+          won't. You now know how to learn any new tool from its fundamentals.</li>
+        </ul>
+
+        <div class="callout new">
+          <span class="ic">🎓</span>
+          <div class="body">
+            <div class="tt">A final word</div>
+            <p style="margin:6px 0 0">
+              Becoming a distinguished engineer was never about memorising APIs — it's about <b>how you think</b>:
+              modelling problems precisely, reasoning about trade-offs, writing for humans, and caring about the
+              people who use and maintain what you build. You've practised all of it. The title "principal engineer"
+              isn't granted by a course; it's earned, every day, by the way you work. You now have the foundation.
+              The rest is yours to build. <b>Go make something remarkable.</b> 🚀
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Final exercise · Ship something real</div>
+            <p style="margin:6px 0 0">
+              Choose an idea you'd actually use. Write a one-page plan (08-11). Build it with the architecture from
+              this capstone — typed top to bottom, tested, accessible, deployed. Put it in your portfolio and share
+              it. Then start the next one. <em>You're an engineer now.</em>
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎉 Congratulations — you did it.</h3>
+          <ul>
+            <li>You went from <b>zero coding experience</b> to building and shipping a production full-stack SaaS.</li>
+            <li>You command TypeScript and React at a depth that holds its own anywhere in the industry.</li>
+            <li>You think like a principal engineer: first principles, trade-offs, quality, and people.</li>
+            <li>This was the last lesson — but the beginning of your engineering career.</li>
+            <li><b>Thank you for following along. Now go build whatever you want.</b> 🚀</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

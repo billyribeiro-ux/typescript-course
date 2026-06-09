@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-04 · Real-Time, Roles &amp; Permissions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 4</div>
+        <h1>Real-Time, Roles &amp; Permissions</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Capstone</span>
+          <span class="chip">⏱️ ~45 min</span>
+          <span class="chip">⚡ Live collaboration</span>
+        </div>
+        <p class="lead">
+          ProjectHub is a <em>collaboration</em> tool, so changes must appear for everyone in real time, and the UI
+          must respect each member's role. We add live updates (so a teammate's task move appears instantly) and
+          wire role-based permissions through both the API and the UI.
+        </p>
+
+        <h2>1. Real-time updates</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">realtime.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use client";
+// When the server pushes a change for this project, invalidate the query so
+// TanStack Query refetches — every connected client stays in sync.
+function useProjectRealtime(projectId: string) {
+  const queryClient = useQueryClient();
+  useEffect(() =&gt; {
+    const es = new EventSource(`/api/projects/${projectId}/stream`); // SSE
+    es.onmessage = () =&gt;
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    return () =&gt; es.close();            // cleanup (04-07)
+  }, [projectId, queryClient]);
+}
+// Options: Server-Sent Events (simple, one-way), WebSockets (two-way), or a
+// managed service (Pusher/Ably/Supabase Realtime). The mover sees an OPTIMISTIC
+// update instantly (06-04); others get it via this push + refetch.</pre>
+          <div class="annot">
+            <strong>Real-time = a push that invalidates the cache.</strong> A teammate's mutation broadcasts an
+            event (via SSE/WebSocket); each client invalidates the affected query (06-04) and refetches, so everyone
+            converges on the same state. The user who made the change sees it instantly via an optimistic update.
+            This is the same caching/invalidation model you already know, plus a push channel.
+          </div>
+        </div>
+
+        <h2>2. Permissions, end to end</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">permissions-ui.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// SERVER (the source of truth): every mutation authorizes (P05/P07):
+delete: protectedProcedure.input(z.object({ id: z.string() }))
+  .mutation(({ ctx, input }) =&gt; {
+    authorize(ctx.member.role, "project:edit");   // enforced server-side
+    // ...org-scoped delete...
+  });
+
+// CLIENT (UX only): hide what the user can't do, using the SAME rules:
+const { member } = useSession();
+{can(member.role, "project:edit") &amp;&amp; &lt;DeleteButton /&gt;}
+// The UI check is convenience; the SERVER check is security (08-08).</pre>
+          <div class="annot">
+            <strong>Permissions live in one place and are used twice.</strong> The shared <code>can()</code> /
+            <code>authorize()</code> rules (Project P05/P07) enforce security on the <em>server</em> (the real gate)
+            and shape the <em>UI</em> on the client (hiding buttons a viewer can't use). Same source of truth, two
+            purposes — never trust the client for security (08-08).
+          </div>
+        </div>
+
+        <h2>3. Presence &amp; collaboration polish</h2>
+        <ul>
+          <li><strong>Presence:</strong> show who's online / viewing a project (avatars), via the realtime channel.</li>
+          <li><strong>Optimistic everything:</strong> moves, edits, and comments feel instant (04-12 / 06-04), with
+          rollback on failure.</li>
+          <li><strong>Conflict handling:</strong> last-write-wins for simple fields; for rich text, a CRDT library
+          (Yjs) — know the trade-offs.</li>
+          <li><strong>Animation:</strong> Motion (06-11) for cards entering/leaving and reordering — polish that
+          signals quality.</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Live board + role gating</div>
+            <p style="margin:6px 0 0">
+              Add SSE so moving a task in one browser tab updates another tab's board (invalidate + refetch). Then
+              gate the move/delete actions: enforce <code>authorize</code> in the procedure and hide the controls in
+              the UI for a <code>viewer</code>. Verify a viewer literally cannot delete even by calling the
+              procedure directly.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Real-time</b> = a server push (SSE/WebSocket) that <b>invalidates the cache</b> so all clients refetch.</li>
+            <li>The mutating user sees an <b>optimistic update</b>; others converge via the push.</li>
+            <li><b>Permissions</b> use one shared rule set: enforced on the <b>server</b> (security), reflected in the <b>UI</b> (UX).</li>
+            <li>Never trust the client for authorization (08-08) — hide buttons for convenience, gate procedures for safety.</li>
+            <li>Presence, optimistic UI, and animation are the polish that signals a professional product.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

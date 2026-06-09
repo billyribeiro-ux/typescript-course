@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-03 · The Application Core &amp; Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 3</div>
+        <h1>The Application Core &amp; Design System</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Capstone</span>
+          <span class="chip">⏱️ ~55 min</span>
+          <span class="chip">🎨 Build the product</span>
+        </div>
+        <p class="lead">
+          With data and auth in place, we build the product itself: the typed API layer, the UI built on our design
+          system, and the project boards. This is where every front-end skill from the course comes together into a
+          polished, real application.
+        </p>
+
+        <h2>1. The typed API (tRPC + Zod)</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">packages/api/routers/project.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export const projectRouter = router({
+  list: protectedProcedure.query(({ ctx }) =&gt;
+    db.select().from(projects).where(eq(projects.orgId, ctx.member.orgId))), // scoped
+
+  create: protectedProcedure
+    .input(z.object({ name: z.string().min(1).max(80) }))     // Zod validation (P02)
+    .mutation(({ ctx, input }) =&gt; {
+      authorize(ctx.member.role, "project:create");            // RBAC (P05/P07)
+      return db.insert(projects)
+        .values({ name: input.name, orgId: ctx.member.orgId }) // org-scoped insert
+        .returning();
+    }),
+});</pre>
+          <div class="annot">
+            <strong>Each procedure is auth-gated, validated, authorized, and org-scoped</strong> — the four
+            guarantees from Project P07, now backed by a real database. The client gets these procedures fully typed
+            with zero codegen (07-07), built on TanStack Query for caching. This is end-to-end type safety from the
+            database to the button.
+          </div>
+        </div>
+
+        <h2>2. The UI on the design system</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">apps/web/app/projects/page.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { Button, Card } from "@projecthub/ui";  // the design system (P08 + shadcn)
+
+// Server Component: fetch on the server, render fast (07-02)
+export default async function ProjectsPage() {
+  const projects = await api.project.list();    // tRPC server caller
+  return (
+    &lt;main&gt;
+      &lt;div className="flex items-center justify-between"&gt;
+        &lt;h1 className="text-2xl font-bold"&gt;Projects&lt;/h1&gt;
+        &lt;NewProjectButton /&gt;                     {/* client island */}
+      &lt;/div&gt;
+      &lt;div className="grid gap-4 md:grid-cols-3"&gt;
+        {projects.map((p) =&gt; (
+          &lt;Card key={p.id}&gt;&lt;h2&gt;{p.name}&lt;/h2&gt;&lt;/Card&gt;   {/* design-system component */}
+        ))}
+      &lt;/div&gt;
+    &lt;/main&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Server shell + client islands + design system.</strong> The page is a Server Component (07-02)
+            that fetches via tRPC and renders our <code>@projecthub/ui</code> components (P08 + shadcn, Tailwind
+            06-10). Interactive bits like <code>NewProjectButton</code> are small client islands using
+            <code>useMutation</code> + a RHF/Zod dialog (06-09). Consistent, accessible, fast.
+          </div>
+        </div>
+
+        <h2>3. The task board</h2>
+        <p>
+          Each project has a board — and we already built this in <strong>Project P04</strong>! The Kanban store
+          (Zustand, normalized state, immutable moves) drops straight in, now backed by tRPC mutations for
+          persistence and Motion (06-11) for card animations. The local board state is client state (Zustand); the
+          tasks themselves are server state (TanStack Query via tRPC). We reuse, not reinvent.
+        </p>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The capstone is composition, not novelty</div>
+            <p style="margin:6px 0 0">
+              Notice you're not learning new concepts here — you're <em>composing</em> P02 (validation), P04
+              (boards), P05/P07 (RBAC/API), P08 (design system), and Part 7 (Next.js). That's the lesson: a large
+              app is well-understood pieces, assembled with judgement. You already know how to build every piece.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Build a feature end-to-end</div>
+            <p style="margin:6px 0 0">
+              Implement "create task": a tRPC <code>task.create</code> procedure (auth + Zod + RBAC + org-scoped
+              insert), a design-system dialog with a RHF/Zod form (06-09), a <code>useMutation</code> with optimistic
+              update + cache invalidation (06-04), and the new task appearing on the board. One vertical slice
+              touching every layer.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>The <b>typed API</b> (tRPC + Zod + Drizzle) gives each procedure auth + validation + RBAC + org-scoping.</li>
+            <li>UI = <b>Server Component shells</b> + client islands, built on the <b>design system</b> (P08/shadcn/Tailwind).</li>
+            <li>The task board <b>reuses Project P04</b> (Zustand) — client board state + server task state.</li>
+            <li>A feature is a <b>vertical slice</b> through every layer: schema → procedure → hook → component.</li>
+            <li>The capstone is <b>composition of known pieces</b>, not new concepts.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

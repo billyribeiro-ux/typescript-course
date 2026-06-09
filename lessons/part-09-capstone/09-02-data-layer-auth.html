@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09-02 · Building the Data Layer &amp; Auth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "09-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 9 · Capstone — Lesson 2</div>
+        <h1>Building the Data Layer &amp; Auth</h1>
+        <div class="lesson-meta">
+          <span class="chip">🎓 Capstone</span>
+          <span class="chip">⏱️ ~50 min</span>
+          <span class="chip">🗄️ Foundation</span>
+        </div>
+        <p class="lead">
+          Every app is built bottom-up from its data. We define ProjectHub's schema with Drizzle (multi-tenant from
+          day one), set up authentication and sessions, and establish the org-scoped access that every query will
+          respect. Get this layer right and the rest of the app rests on solid ground.
+        </p>
+
+        <h2>1. The multi-tenant schema</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">packages/db/schema.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { pgTable, uuid, text, timestamp, integer } from "drizzle-orm/pg-core";
+
+export const orgs = pgTable("orgs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  plan: text("plan").$type&lt;"free" | "pro" | "enterprise"&gt;().notNull().default("free"),
+});
+
+export const members = pgTable("members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull().references(() =&gt; orgs.id),
+  userId: uuid("user_id").notNull().references(() =&gt; users.id),
+  role: text("role").$type&lt;"owner" | "admin" | "member" | "viewer"&gt;().notNull(),
+});
+
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull().references(() =&gt; orgs.id), // EVERY row is org-scoped
+  name: text("name").notNull(),
+});
+export type Org = typeof orgs.$inferSelect;
+export type Member = typeof members.$inferSelect;</pre>
+          <div class="annot">
+            <strong>Multi-tenancy means every row belongs to an org.</strong> The <code>orgId</code> foreign key on
+            <code>projects</code> (and tasks, etc.) is the tenant boundary — every query <em>must</em> filter by it
+            so org A can never see org B's data. The <code>$type</code> helper makes columns use our string-literal
+            unions (01-03), and types are inferred from the schema (07-06). This is the database backbone.
+          </div>
+        </div>
+
+        <h2>2. Auth &amp; the request context</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">packages/api/context.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Build the per-request context: who is the user, and which org are they acting in?
+export async function createContext(): Promise&lt;Context&gt; {
+  const session = await auth();                 // Auth.js session (07-08)
+  if (!session?.user) return { user: null, member: null };
+  // Resolve the user's membership in the active org (role + orgId):
+  const member = await db.query.members.findFirst({
+    where: (m, { eq }) =&gt; eq(m.userId, session.user.id),
+  });
+  return { user: session.user, member };
+}
+// tRPC procedures consume this ctx; protectedProcedure requires ctx.member
+// (auth + tenancy), and authorize(ctx.member.role, action) enforces RBAC (P07).</pre>
+          <div class="annot">
+            <strong>The context unifies identity, tenancy, and permissions.</strong> Each request resolves the
+            session (07-08) and the user's <code>member</code> record (role + orgId). This is exactly the
+            <code>Context</code> from Project P07's API core — <code>protectedProcedure</code> requires a member,
+            and <code>authorize(role, action)</code> applies the RBAC matrix. Auth, tenancy, and roles, in one
+            place.
+          </div>
+        </div>
+
+        <h2>3. Org-scoped queries (the safety rule)</h2>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Every query filters by orgId — no exceptions</div>
+            <p style="margin:6px 0 0">
+              The cardinal multi-tenant rule: <b>never</b> query by id alone — always
+              <code>where(eq(projects.orgId, ctx.member.orgId))</code> too. A single forgotten filter is a data
+              leak across tenants. Centralize this in your data-access functions (a repository layer, 08-01) so it's
+              impossible to forget, and test it (a member of org A must get zero rows from org B).
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Schema + a scoped query</div>
+            <p style="margin:6px 0 0">
+              Define the <code>tasks</code> table (org-scoped, belongs to a project, has a status + assignee).
+              Write a typed Drizzle query <code>getProjectTasks(ctx, projectId)</code> that filters by BOTH the
+              project and <code>ctx.member.orgId</code>. Write a test asserting a different org's member gets no
+              rows.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Build <b>bottom-up from data</b>: a Drizzle schema where every tenant-owned row has an <code>orgId</code>.</li>
+            <li>The per-request <b>context</b> unifies session (auth), membership (tenancy), and role (RBAC) — P07's model.</li>
+            <li><b>Every query filters by <code>orgId</code></b> — centralize it so cross-tenant leaks are impossible.</li>
+            <li>Types flow from the schema (07-06); string-literal unions via <code>$type</code> (01-03).</li>
+            <li>This layer is the foundation everything else composes on.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
