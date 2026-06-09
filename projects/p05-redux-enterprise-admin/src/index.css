@@ -1,0 +1,7 @@
+:root { font-family: system-ui, sans-serif; color: #1b1f24; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.app { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+.app-header { display: flex; justify-content: space-between; align-items: center; }
+.filters, .add-user { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; }

@@ -160,11 +160,11 @@ window.COURSE = {
         { id: "06-05", title: "Client State with Zustand", file: "lessons/part-06-the-ecosystem/06-05-zustand.html", status: "available" },
         { id: "06-06", title: "Atomic State with Jotai", file: "lessons/part-06-the-ecosystem/06-06-jotai.html", status: "available" },
         { id: "06-07", title: "Redux Toolkit Fundamentals", file: "lessons/part-06-the-ecosystem/06-07-redux-toolkit.html", status: "available" },
-        { id: "06-08", title: "RTK Query for Data Fetching", file: "lessons/part-06-the-ecosystem/06-08-rtk-query.html", status: "soon" },
-        { id: "06-09", title: "Forms at Scale: React Hook Form + Zod", file: "lessons/part-06-the-ecosystem/06-09-react-hook-form-zod.html", status: "soon" },
-        { id: "06-10", title: "Styling: Tailwind v4, shadcn/ui & CVA", file: "lessons/part-06-the-ecosystem/06-10-tailwind-shadcn-cva.html", status: "soon" },
-        { id: "06-11", title: "Animation with Motion & TanStack Table", file: "lessons/part-06-the-ecosystem/06-11-motion-tanstack-table.html", status: "soon" },
-        { id: "06-12", title: "Project P05: The Redux Enterprise Admin", file: "lessons/part-06-the-ecosystem/06-12-project-redux-admin.html", status: "soon" }
+        { id: "06-08", title: "RTK Query for Data Fetching", file: "lessons/part-06-the-ecosystem/06-08-rtk-query.html", status: "available" },
+        { id: "06-09", title: "Forms at Scale: React Hook Form + Zod", file: "lessons/part-06-the-ecosystem/06-09-react-hook-form-zod.html", status: "available" },
+        { id: "06-10", title: "Styling: Tailwind v4, shadcn/ui & CVA", file: "lessons/part-06-the-ecosystem/06-10-tailwind-shadcn-cva.html", status: "available" },
+        { id: "06-11", title: "Animation with Motion & TanStack Table", file: "lessons/part-06-the-ecosystem/06-11-motion-tanstack-table.html", status: "available" },
+        { id: "06-12", title: "Project P05: The Redux Enterprise Admin", file: "lessons/part-06-the-ecosystem/06-12-project-redux-admin.html", status: "available" }
       ]
     },
     {

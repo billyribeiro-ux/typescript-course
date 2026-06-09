@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-12 · Project P05 — The Redux Enterprise Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-12";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 12 · 📊 PROJECT</div>
+        <h1>Project P05 — The Redux Enterprise Admin</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏗️ Build</span>
+          <span class="chip">⏱️ ~90 min</span>
+          <span class="chip">✅ 14 tests</span>
+        </div>
+        <p class="lead">
+          An enterprise-style users admin built with <strong>Redux Toolkit</strong> — the structured,
+          battle-tested state pattern you'll meet at large companies. We use normalized entities, typed slices,
+          memoized selectors, and a test setup that proves both the pure logic and the UI. The project lives in
+          <code>projects/p05-redux-enterprise-admin/</code> with <strong>14 passing tests</strong>.
+        </p>
+
+        <h2>1. Normalized entities with createEntityAdapter</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">usersSlice.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const usersAdapter = createEntityAdapter&lt;User&gt;({
+  sortComparer: (a, b) =&gt; a.name.localeCompare(b.name),
+});
+
+const usersSlice = createSlice({
+  name: "users",
+  initialState: usersAdapter.getInitialState({}, seedUsers),
+  reducers: {
+    addUser: {
+      reducer: usersAdapter.addOne,
+      prepare: (input: { name: string; email: string; role: Role }) =&gt; ({
+        payload: { id: nanoid(), active: true, ...input } satisfies User,
+      }),
+    },
+    setRole: (state, action: PayloadAction&lt;{ id: string; role: Role }&gt;) =&gt; {
+      const user = state.entities[action.payload.id];
+      if (user) user.role = action.payload.role; // Immer "mutation"
+    },
+  },
+});</pre>
+          <div class="annot">
+            <strong><code>createEntityAdapter</code> gives you normalized state for free</strong> — entities keyed
+            by id, sorted selectors, and CRUD reducers (<code>addOne</code>/<code>removeOne</code>/…). The
+            <code>prepare</code> callback generates the id with <code>nanoid</code> before the reducer runs, and
+            <code>satisfies User</code> (02-10!) checks the payload shape. This is the same normalized shape as the
+            P04 Kanban board — the professional default.
+          </div>
+        </div>
+
+        <h2>2. Store, derived types &amp; memoized selectors</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">store.ts (excerpt)</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">export const store = configureStore({
+  reducer: { users: usersReducer, filters: filtersReducer, auth: authReducer },
+});
+export type RootState = ReturnType&lt;typeof store.getState&gt;; // derived (02-04)
+export type AppDispatch = typeof store.dispatch;
+
+export const useAppSelector = useSelector.withTypes&lt;RootState&gt;();
+export const useAppDispatch = useDispatch.withTypes&lt;AppDispatch&gt;();
+
+// Memoized derived data — only recomputes when inputs change:
+export const selectVisibleUsers = createSelector(
+  [selectAllUsers, (s: RootState) =&gt; s.filters],
+  (users, filters) =&gt; users.filter((u) =&gt;
+    (filters.role === "all" || u.role === filters.role) &amp;&amp;
+    (u.name + u.email).toLowerCase().includes(filters.search.trim().toLowerCase())),
+);</pre>
+          <div class="annot">
+            <strong>Types are derived from the store</strong> (lesson 02-04), so they never drift.
+            <code>createSelector</code> memoizes derived data — <code>selectVisibleUsers</code> only recomputes when
+            the users or filters actually change, not on every render. Components read it with the typed
+            <code>useAppSelector</code>. This is the canonical RTK architecture.
+          </div>
+        </div>
+
+        <h2>3. Testing Redux: pure logic + UI</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tests (excerpt)</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Pure: dispatch actions to an isolated store, assert on selectors:
+const store = makeStore();
+store.dispatch(setRoleFilter("admin"));
+expect(selectVisibleUsers(store.getState())).toHaveLength(1);
+
+// UI: render inside a fresh &lt;Provider&gt; (preloaded state supported):
+renderWithStore(&lt;UsersTable /&gt;, { filters: { search: "", role: "admin" } });
+expect(screen.getAllByTestId("user-row")).toHaveLength(1);
+
+// Interaction updates the real store:
+await user.selectOptions(screen.getByLabelText("Role for Linus Torvalds"), "admin");
+expect(store.getState().users.entities.u2?.role).toBe("admin");</pre>
+          <div class="annot">
+            <strong>A <code>makeStore()</code> factory is the key to clean Redux tests.</strong> Each test gets a
+            fresh, isolated store (optionally preloaded with state), so there's no shared-state pollution. Pure
+            slice/selector tests need no rendering; component tests render inside a <code>&lt;Provider&gt;</code> with the
+            same factory. Because reducers are pure, they're as easy to test as P01/P02.
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">cd projects/p05-redux-enterprise-admin &amp;&amp; pnpm install &amp;&amp; pnpm test</span>
+<span class="out">✓ src/features/users/usersSlice.test.ts (8 tests)</span>
+<span class="out">✓ src/components/UsersTable.test.tsx (4 tests)</span>
+<span class="out">✓ src/components/AddUserForm.test.tsx (2 tests)</span>
+<span class="out">Test Files  3 passed (3)   Tests  14 passed (14)</span></pre>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Add RTK Query + roles enforcement</div>
+            <p style="margin:6px 0 0">
+              1) Replace the seeded users with an <b>RTK Query</b> API slice (06-08) that fetches them, with
+              tag-based invalidation on add/remove. 2) Add role-based UI: only an <code>admin</code> current user
+              can change roles or remove users (read <code>selectCurrentUser</code>). 3) Add a sortable
+              <b>TanStack Table</b> view (06-11). Keep every slice test green.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>createEntityAdapter</b> gives normalized entity state with CRUD reducers + sorted selectors.</li>
+            <li><b>Derive</b> <code>RootState</code>/<code>AppDispatch</code> from the store; use pre-typed hooks.</li>
+            <li><b>createSelector</b> memoizes derived data (filtered/visible lists) for performance.</li>
+            <li>Test Redux with a <b>makeStore()</b> factory: pure slice/selector tests + Provider-wrapped component tests.</li>
+            <li>🎉 <b>Part 6 complete.</b> You command the React ecosystem. Next: full-stack with Next.js, Drizzle &amp; tRPC.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

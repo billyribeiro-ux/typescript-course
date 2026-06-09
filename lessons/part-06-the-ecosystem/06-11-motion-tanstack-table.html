@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-11 · Animation with Motion &amp; TanStack Table</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-11";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 11</div>
+        <h1>Animation with Motion &amp; TanStack Table</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🎬 Polish &amp; data grids</span>
+        </div>
+        <p class="lead">
+          Two libraries that elevate a UI from functional to professional. <strong>Motion</strong> (formerly
+          Framer Motion) adds production-grade animations with a declarative API. <strong>TanStack Table</strong>
+          is a headless data-grid engine for sorting, filtering, and pagination — you bring the markup. Both
+          showcase the patterns from Part 5 (declarative APIs, headless design).
+        </p>
+
+        <h2>1. Motion: declarative animation</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">motion.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { motion, AnimatePresence } from "motion/react";
+
+function Toast({ items }: { items: { id: string; text: string }[] }) {
+  return (
+    &lt;AnimatePresence&gt;          {/* animates items entering AND leaving */}
+      {items.map((item) =&gt; (
+        &lt;motion.div
+          key={item.id}
+          initial={{ opacity: 0, y: 20 }}     // start state
+          animate={{ opacity: 1, y: 0 }}      // animate to
+          exit={{ opacity: 0, x: 100 }}       // on removal
+          transition={{ type: "spring", stiffness: 300 }}
+        &gt;
+          {item.text}
+        &lt;/motion.div&gt;
+      ))}
+    &lt;/AnimatePresence&gt;
+  );
+}
+// motion.div is a div you can animate via props. AnimatePresence handles
+// exit animations (impossible with plain CSS when an element unmounts).</pre>
+          <div class="annot">
+            <strong>Motion makes animation declarative.</strong> You describe <code>initial</code>/<code>animate</code>/
+            <code>exit</code> states and the transition; Motion handles the frames. <code>AnimatePresence</code>
+            solves the hard problem of animating elements as they <em>leave</em> the DOM (e.g. removing a Kanban
+            card from P04). It also does gestures, drag, layout animations, and scroll-linked effects.
+          </div>
+        </div>
+
+        <h2>2. TanStack Table: headless data grids</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">table.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useReactTable, getCoreRowModel, getSortedRowModel,
+         flexRender, type ColumnDef } from "@tanstack/react-table";
+
+interface User { id: number; name: string; role: string; }
+const columns: ColumnDef&lt;User&gt;[] = [
+  { accessorKey: "name", header: "Name" },
+  { accessorKey: "role", header: "Role" },
+];
+
+function UsersTable({ data }: { data: User[] }) {
+  const table = useReactTable({
+    data, columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),  // enable sorting
+  });
+  return (
+    &lt;table&gt;
+      &lt;thead&gt;{table.getHeaderGroups().map((hg) =&gt; (
+        &lt;tr key={hg.id}&gt;{hg.headers.map((h) =&gt; (
+          &lt;th key={h.id} onClick={h.column.getToggleSortingHandler()}&gt;
+            {flexRender(h.column.columnDef.header, h.getContext())}
+          &lt;/th&gt;))}&lt;/tr&gt;))}
+      &lt;/thead&gt;
+      &lt;tbody&gt;{table.getRowModel().rows.map((row) =&gt; (
+        &lt;tr key={row.id}&gt;{row.getVisibleCells().map((cell) =&gt; (
+          &lt;td key={cell.id}&gt;{flexRender(cell.column.columnDef.cell, cell.getContext())}&lt;/td&gt;
+        ))}&lt;/tr&gt;))}&lt;/tbody&gt;
+    &lt;/table&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>TanStack Table is the logic, not the look (05-08 headless).</strong> You define typed
+            <code>columns</code> and feed <code>data</code>; the hook gives you sorting, filtering, pagination,
+            grouping, and virtualization state — and <em>you</em> render the <code>&lt;table&gt;</code> markup however
+            you like (styled with Tailwind/shadcn). Fully typed to your row shape, it powers admin tables and data
+            grids of any complexity.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Accessibility &amp; reduced motion</div>
+            <p style="margin:6px 0 0">
+              Respect <code>prefers-reduced-motion</code> — Motion has a <code>useReducedMotion()</code> hook to
+              tone down animations for users who request it (05-09). And keep data tables semantic
+              (<code>&lt;table&gt;</code>/<code>&lt;th scope&gt;</code>) so they're screen-reader friendly. Polish should never
+              cost accessibility.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Animate the Kanban + add a table view</div>
+            <p style="margin:6px 0 0">
+              1) Add Motion to Project P04: wrap cards in <code>motion.li</code> + <code>AnimatePresence</code> so
+              they animate on add/remove/move. 2) Add a "table view" of all cards using TanStack Table with sortable
+              columns (title, column, created). Style both with Tailwind.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Motion</b> animates declaratively via <code>initial</code>/<code>animate</code>/<code>exit</code>; <code>AnimatePresence</code> handles exit animations.</li>
+            <li>Motion also does gestures, drag, and layout animations — production-grade polish.</li>
+            <li><b>TanStack Table</b> is a <b>headless</b> data-grid engine: typed columns + sorting/filtering/pagination state; you render the markup.</li>
+            <li>Both are fully typed and compose with Tailwind/shadcn for styling.</li>
+            <li>Respect <code>prefers-reduced-motion</code> and keep tables semantic for accessibility.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

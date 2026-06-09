@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-10 · Styling: Tailwind v4, shadcn/ui &amp; CVA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 10</div>
+        <h1>Styling: Tailwind v4, shadcn/ui &amp; CVA</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🎨 Modern styling</span>
+        </div>
+        <p class="lead">
+          The dominant 2026 styling stack: <strong>Tailwind CSS v4</strong> (utility classes), <strong>shadcn/ui</strong>
+          (copy-paste accessible components built on Radix), and <strong>CVA</strong> (type-safe style variants).
+          Together they let you build beautiful, consistent, accessible UIs fast — and you own all the code. This
+          is how modern product teams ship polished interfaces.
+        </p>
+
+        <h2>1. Tailwind: utility-first CSS</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">tailwind.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Style with utility classes directly in JSX — no separate CSS files:
+function Card() {
+  return (
+    &lt;div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm
+                    hover:shadow-md transition-shadow"&gt;
+      &lt;h2 className="text-xl font-bold text-gray-900"&gt;Title&lt;/h2&gt;
+      &lt;p className="mt-2 text-gray-600"&gt;Body text&lt;/p&gt;
+      &lt;button className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-white
+                         hover:bg-blue-700 focus-visible:ring-2"&gt;
+        Action
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+// Responsive (md:), state (hover:/focus:), dark mode (dark:) — all inline.</pre>
+          <div class="annot">
+            <strong>Utility classes keep styles colocated with markup</strong> — no naming things, no switching
+            files, no dead CSS. Prefixes handle responsive (<code>md:</code>), states (<code>hover:</code>), and
+            dark mode (<code>dark:</code>). <b>Tailwind v4</b> is configured in CSS (<code>@theme</code>) and is far
+            faster. It feels verbose at first, then becomes the quickest way to build UI you'll ever use.
+          </div>
+        </div>
+
+        <h2>2. CVA: type-safe variants</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">button-variants.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { cva, type VariantProps } from "class-variance-authority";
+
+// Define a button's style variants in a type-safe way:
+const button = cva("rounded-lg font-medium transition-colors", {
+  variants: {
+    intent: {
+      primary: "bg-blue-600 text-white hover:bg-blue-700",
+      ghost: "bg-transparent text-blue-600 hover:bg-blue-50",
+    },
+    size: { sm: "px-3 py-1 text-sm", md: "px-4 py-2", lg: "px-6 py-3 text-lg" },
+  },
+  defaultVariants: { intent: "primary", size: "md" },
+});
+
+type ButtonProps = VariantProps&lt;typeof button&gt; &amp; { children: React.ReactNode };
+function Button({ intent, size, children }: ButtonProps) {
+  return &lt;button className={button({ intent, size })}&gt;{children}&lt;/button&gt;;
+}
+// &lt;Button intent="ghost" size="lg"&gt; — autocompleted &amp; type-checked variants!</pre>
+          <div class="annot">
+            <strong>CVA turns Tailwind classes into typed component variants.</strong> <code>VariantProps</code>
+            extracts the variant names as a type (your Part 2 utility-type skills!), so
+            <code>&lt;Button intent="ghost"&gt;</code> is autocompleted and a typo is a compile error. This is how you
+            build a consistent, type-safe design system on top of Tailwind.
+          </div>
+        </div>
+
+        <h2>3. shadcn/ui: components you own</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Copy-paste, not a dependency</div>
+            <p style="margin:6px 0 0">
+              <b>shadcn/ui</b> isn't an installed component library — you run a CLI that <em>copies</em> accessible,
+              Tailwind-styled components (built on Radix primitives + CVA) into <em>your</em> codebase. You own and
+              can edit every line. No version lock-in, no fighting a library's API — just great defaults you
+              customise. It's the most popular way to build React UIs in 2026.
+            </p>
+          </div>
+        </div>
+        <div class="terminal">
+          <div class="editor-bar"><div class="dots"><i></i><i></i><i></i></div><span class="fname">terminal</span></div>
+          <pre><span class="cmd">pnpm dlx shadcn@latest init</span>          <span class="out"># set up Tailwind + config</span>
+<span class="cmd">pnpm dlx shadcn@latest add button dialog</span> <span class="out"># copy components into src/components/ui</span>
+<span class="out"># Now import { Button } from "@/components/ui/button" — and edit it freely.</span></pre>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · The cn() helper</div>
+            <p style="margin:6px 0 0">
+              Combine <code>clsx</code> (conditional classes) + <code>tailwind-merge</code> (resolves conflicting
+              utilities) into a <code>cn()</code> helper — shadcn includes it. <code>cn("p-2", isActive &amp;&amp;
+              "bg-blue-600", className)</code> merges cleanly and lets consumers override. It's the glue for
+              flexible, composable styled components.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A variant-driven Badge</div>
+            <p style="margin:6px 0 0">
+              Build a <code>Badge</code> component with CVA variants: <code>tone</code> (neutral/success/danger) and
+              <code>size</code> (sm/md). Type its props with <code>VariantProps</code>. Then scaffold a shadcn
+              <code>Dialog</code> and a <code>Button</code>, and confirm you can edit their source directly.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Tailwind v4</b>: utility classes colocated with markup; prefixes for responsive/state/dark mode.</li>
+            <li><b>CVA</b> turns Tailwind into <b>type-safe variants</b>; <code>VariantProps</code> types your component (Part 2 skills).</li>
+            <li><b>shadcn/ui</b> copies accessible Radix+Tailwind components into your repo — you own and edit them.</li>
+            <li>The <code>cn()</code> helper (clsx + tailwind-merge) composes and overrides classes cleanly.</li>
+            <li>This stack is the fastest path to polished, consistent, accessible UIs in 2026.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

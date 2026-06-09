@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-09 · Forms at Scale: React Hook Form + Zod</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 9</div>
+        <h1>Forms at Scale: React Hook Form + Zod</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem · essential</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">📝 Real forms</span>
+        </div>
+        <p class="lead">
+          Controlled forms (04-06) are fine for small cases but get verbose and re-render on every keystroke.
+          <strong>React Hook Form (RHF)</strong> manages forms with minimal re-renders and clean APIs, and
+          <strong>Zod</strong> (the library you built a clone of in P02!) defines your validation schema <em>and</em>
+          your form's type from one source. This combo is the 2026 standard for forms.
+        </p>
+
+        <h2>1. A Zod schema is the single source of truth</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">schema.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { z } from "zod";
+
+// Define validation rules once...
+export const signupSchema = z.object({
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(8, "At least 8 characters"),
+  age: z.number().int().min(18, "Must be 18+"),
+  terms: z.literal(true, { message: "You must accept the terms" }),
+});
+
+// ...and derive the TypeScript type from it (just like P02's Infer!):
+export type SignupForm = z.infer&lt;typeof signupSchema&gt;;
+// { email: string; password: string; age: number; terms: true }</pre>
+          <div class="annot">
+            <strong>This is exactly your Project P02.</strong> <code>z.infer&lt;typeof schema&gt;</code> is the same
+            "one declaration → validator + type" idea you built — <code>z.infer</code> is Zod's <code>Infer</code>.
+            The schema validates at runtime <em>and</em> types your form at compile time. Change a rule, and the
+            type updates everywhere automatically.
+          </div>
+        </div>
+
+        <h2>2. Wiring RHF + Zod</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">SignupForm.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, type SignupForm } from "./schema.js";
+
+function Signup() {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm&lt;SignupForm&gt;({ resolver: zodResolver(signupSchema) });
+
+  const onSubmit = async (data: SignupForm) =&gt; {  // data is validated + typed
+    await api.signup(data);
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit(onSubmit)}&gt;
+      &lt;input type="email" {...register("email")} /&gt;
+      {errors.email &amp;&amp; &lt;p role="alert"&gt;{errors.email.message}&lt;/p&gt;}
+
+      &lt;input type="password" {...register("password")} /&gt;
+      {errors.password &amp;&amp; &lt;p role="alert"&gt;{errors.password.message}&lt;/p&gt;}
+
+      &lt;button disabled={isSubmitting}&gt;Sign up&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong><code>register</code> connects an input to the form with almost no code</strong> — and unlike
+            controlled inputs, typing doesn't re-render the whole form (RHF uses refs internally). The
+            <code>zodResolver</code> runs your schema on submit, populating <code>errors</code> with typed,
+            per-field messages. <code>handleSubmit</code> only calls <code>onSubmit</code> with fully-validated,
+            typed data.
+          </div>
+        </div>
+
+        <h2>3. Why this scales</h2>
+        <ul>
+          <li><strong>Performance:</strong> uncontrolled inputs + ref tracking mean minimal re-renders, even on
+          huge forms.</li>
+          <li><strong>One source of truth:</strong> the Zod schema is validation + types + (often) the API
+          contract. No drift.</li>
+          <li><strong>Composability:</strong> reuse schemas (e.g. share an <code>addressSchema</code>), build
+          multi-step wizards, and validate the same schema on the server (Part 7).</li>
+          <li><strong>Accessibility:</strong> pair with the a11y patterns (05-09) — labelled inputs,
+          <code>role="alert"</code> errors, <code>aria-invalid</code>.</li>
+        </ul>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · Zod 4 &amp; the validation landscape</div>
+            <p style="margin:6px 0 0">
+              <b>Zod 4</b> brings big performance gains and a smaller bundle. Alternatives like <b>Valibot</b>
+              (ultra-light) and <b>ArkType</b> exist, and the <b>Standard Schema</b> spec lets libraries
+              interoperate. The <em>concepts</em> are exactly what you built in P02 — you understand them from the
+              inside.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A validated profile form</div>
+            <p style="margin:6px 0 0">
+              Build a profile form with RHF + Zod: <code>name</code> (min 2), <code>email</code>, <code>website</code>
+              (optional URL), and <code>bio</code> (max 200). Show per-field errors accessibly, disable submit while
+              submitting, and log the typed data on submit. Then add a cross-field rule (e.g. password +
+              confirmPassword must match) with <code>.refine()</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>React Hook Form</b> manages forms with minimal re-renders via <code>register</code> + uncontrolled inputs.</li>
+            <li><b>Zod</b> defines validation <em>and</em> the form type (<code>z.infer</code>) — the exact pattern from your P02 project.</li>
+            <li><code>zodResolver</code> connects them; <code>handleSubmit</code> yields fully-validated, typed data.</li>
+            <li>Errors are typed and per-field — render them accessibly (<code>role="alert"</code>).</li>
+            <li>One schema = validation + types + (often) the API contract, reusable on the server.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

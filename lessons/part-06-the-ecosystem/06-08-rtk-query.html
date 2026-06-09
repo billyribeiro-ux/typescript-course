@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-08 · RTK Query for Data Fetching</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 8</div>
+        <h1>RTK Query for Data Fetching</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🔌 Redux's data layer</span>
+        </div>
+        <p class="lead">
+          <strong>RTK Query</strong> is Redux Toolkit's built-in data-fetching solution — its answer to TanStack
+          Query, integrated with the Redux store. If your app already uses Redux, RTK Query gives you caching,
+          auto-generated hooks, and cache invalidation without adding another library. You define an "API slice"
+          and it generates fully-typed hooks for you.
+        </p>
+
+        <h2>1. Defining an API slice</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">api.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+interface Product { id: number; name: string; price: number; }
+
+export const api = createApi({
+  reducerPath: "api",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/" }),
+  tagTypes: ["Product"],
+  endpoints: (build) =&gt; ({
+    getProducts: build.query&lt;Product[], void&gt;({
+      query: () =&gt; "products",
+      providesTags: ["Product"],          // this data is tagged "Product"
+    }),
+    addProduct: build.mutation&lt;Product, Partial&lt;Product&gt;&gt;({
+      query: (body) =&gt; ({ url: "products", method: "POST", body }),
+      invalidatesTags: ["Product"],       // adding invalidates the list → auto refetch
+    }),
+  }),
+});
+
+// RTK Query GENERATES typed hooks from your endpoints:
+export const { useGetProductsQuery, useAddProductMutation } = api;</pre>
+          <div class="annot">
+            <strong>You describe endpoints; RTK Query generates the hooks.</strong> <code>getProducts</code> becomes
+            <code>useGetProductsQuery()</code>, fully typed to return <code>Product[]</code>. The
+            <code>tagTypes</code>/<code>providesTags</code>/<code>invalidatesTags</code> system is declarative cache
+            invalidation: a mutation tagged to invalidate "Product" automatically refetches every query that
+            provides it. No manual <code>invalidateQueries</code> calls.
+          </div>
+        </div>
+
+        <h2>2. Using the generated hooks</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Products.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useGetProductsQuery, useAddProductMutation } from "./api.js";
+
+function Products() {
+  const { data, isLoading, isError } = useGetProductsQuery();
+  const [addProduct, { isLoading: isAdding }] = useAddProductMutation();
+
+  if (isLoading) return &lt;Spinner /&gt;;
+  if (isError) return &lt;p&gt;Failed to load&lt;/p&gt;;
+  return (
+    &lt;&gt;
+      &lt;ul&gt;{data!.map((p) =&gt; &lt;li key={p.id}&gt;{p.name}&lt;/li&gt;)}&lt;/ul&gt;
+      &lt;button disabled={isAdding}
+        onClick={() =&gt; addProduct({ name: "New", price: 9.99 })}&gt;
+        Add (list auto-refetches)
+      &lt;/button&gt;
+    &lt;/&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>The hooks look just like TanStack Query's</strong> — <code>data</code>/<code>isLoading</code>/
+            <code>isError</code> for queries, a trigger + status for mutations. The difference: RTK Query lives in
+            your Redux store (visible in DevTools, integrated with other slices). Add the API's reducer + middleware
+            to <code>configureStore</code> and you're done.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · RTK Query vs TanStack Query</div>
+            <p style="margin:6px 0 0">
+              <b>Already using Redux?</b> RTK Query is the natural, integrated choice — one store, one DevTools, the
+              tag-based invalidation. <b>Not using Redux?</b> TanStack Query is lighter and framework-agnostic.
+              Both are excellent caches for server state; don't use both. The concepts (cache keys/tags, invalidation,
+              generated/wrapped hooks) transfer between them.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A tagged CRUD API</div>
+            <p style="margin:6px 0 0">
+              Build an API slice for "todos" with <code>getTodos</code>, <code>addTodo</code>,
+              <code>toggleTodo</code>, <code>deleteTodo</code>. Use a <code>"Todo"</code> tag so mutations
+              automatically refetch the list. Wire the generated hooks into a component and watch the list update
+              after each mutation with zero manual cache code.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>RTK Query</b> is Redux Toolkit's integrated data layer — caching + generated typed hooks.</li>
+            <li>Define an <b>API slice</b> with endpoints; it generates <code>useXxxQuery</code>/<code>useXxxMutation</code> hooks.</li>
+            <li><b>Tags</b> (<code>providesTags</code>/<code>invalidatesTags</code>) give declarative, automatic cache invalidation.</li>
+            <li>Choose RTK Query if you're on Redux; TanStack Query otherwise — don't use both.</li>
+            <li>The caching concepts transfer between the two.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
