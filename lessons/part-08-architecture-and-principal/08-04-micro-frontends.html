@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-04 · Micro-Frontends &amp; Module Federation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 4</div>
+        <h1>Micro-Frontends &amp; Module Federation</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🧩 Team-scale architecture</span>
+        </div>
+        <p class="lead">
+          When a single app is built by dozens of teams, one giant codebase and deploy becomes a bottleneck.
+          <strong>Micro-frontends</strong> split a frontend into independently-developed, independently-deployed
+          pieces — each team owns theirs end-to-end. It's a powerful but heavy architecture; knowing when (and when
+          <em>not</em>) to use it is the principal-level skill.
+        </p>
+
+        <h2>1. The idea &amp; the approaches</h2>
+        <table>
+          <thead><tr><th>Approach</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td><b>Route-based</b></td><td>Different apps own different URL paths (reverse proxy routes to each)</td></tr>
+            <tr><td><b>Build-time</b></td><td>Teams publish packages; a shell composes them (simpler, coupled deploys)</td></tr>
+            <tr><td><b>Module Federation</b></td><td>Apps load each other's code at <em>runtime</em> over the network</td></tr>
+            <tr><td><b>Web Components</b></td><td>Framework-agnostic custom elements as the integration boundary</td></tr>
+          </tbody>
+        </table>
+
+        <h2>2. Module Federation in one breath</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Runtime code sharing</div>
+            <p style="margin:6px 0 0">
+              <b>Module Federation</b> (Webpack/Rspack, and Vite plugins) lets a "host" app load a "remote" app's
+              components at runtime — each deployed separately, sharing dependencies (one copy of React). The
+              checkout team ships their <code>Checkout</code> remote; the shell consumes it without rebuilding. Teams
+              deploy on their own cadence.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. The trade-offs (read this twice)</h2>
+        <ul>
+          <li><strong>Wins:</strong> team autonomy, independent deploys, isolated failure, tech flexibility per
+          team.</li>
+          <li><strong>Costs:</strong> operational complexity, version/dependency drift, larger total payload,
+          cross-app consistency (shared design system becomes essential), harder end-to-end testing and
+          debugging.</li>
+        </ul>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Most teams don't need this</div>
+            <p style="margin:6px 0 0">
+              Micro-frontends solve an <em>organizational</em> scaling problem (many teams, one product), not a
+              technical one. For a single team, a well-structured <b>monorepo</b> (Part 3) with clear module
+              boundaries gives most of the benefit with far less pain. Reach for micro-frontends only when team
+              coordination is the real bottleneck — and say so in interviews.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Decide and justify</div>
+            <p style="margin:6px 0 0">
+              For three scenarios — a 5-person startup, a 200-engineer e-commerce platform, and a bank with strict
+              team isolation — decide whether you'd use a monorepo or micro-frontends, and write one paragraph
+              justifying each choice with the trade-offs. The <em>reasoning</em> is the deliverable.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Micro-frontends</b> split a frontend into independently-built/deployed pieces owned by separate teams.</li>
+            <li>Approaches: route-based, build-time, <b>Module Federation</b> (runtime), Web Components.</li>
+            <li>They buy <b>team autonomy</b> at the cost of operational complexity and consistency challenges.</li>
+            <li>It's an <b>organizational</b> solution — most teams are better served by a structured monorepo.</li>
+            <li>Knowing <em>when not to</em> adopt them is the senior signal.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

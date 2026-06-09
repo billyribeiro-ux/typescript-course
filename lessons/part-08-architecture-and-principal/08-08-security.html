@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-08 · Security: XSS, CSRF, Auth &amp; Supply Chain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-08";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 8</div>
+        <h1>Security: XSS, CSRF, Auth &amp; Supply Chain</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal · critical</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🔒 Don't get breached</span>
+        </div>
+        <p class="lead">
+          Security is not optional, and frontend engineers own a real share of it. A single vulnerability can leak
+          user data or take down a company. This lesson covers the threats every web engineer must understand — XSS,
+          CSRF, injection, auth mistakes, and supply-chain risk — and the concrete defenses. Think like an attacker;
+          build like a defender.
+        </p>
+
+        <h2>1. XSS — the frontend's #1 threat</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">xss.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// XSS = attacker-controlled content runs as code in a victim's browser.
+
+// ✅ React escapes text by default — this is SAFE even if comment is malicious:
+&lt;p&gt;{userComment}&lt;/p&gt;
+
+// ❌ dangerouslySetInnerHTML bypasses escaping — XSS hole if unsanitized:
+&lt;div dangerouslySetInnerHTML={{ __html: userComment }} /&gt;
+
+// ✅ If you MUST render HTML, sanitize it first:
+import DOMPurify from "dompurify";
+&lt;div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userComment) }} /&gt;</pre>
+          <div class="annot">
+            <strong>React's default escaping prevents most XSS</strong> — <code>{userInput}</code> is rendered as
+            text, not HTML. The danger is <code>dangerouslySetInnerHTML</code> (the name is a warning!): never feed
+            it unsanitized user content. Sanitize with DOMPurify, and add a <b>Content Security Policy (CSP)</b>
+            header as defense-in-depth (blocks inline scripts even if something slips through).
+          </div>
+        </div>
+
+        <h2>2. The threat checklist</h2>
+        <table>
+          <thead><tr><th>Threat</th><th>Defense</th></tr></thead>
+          <tbody>
+            <tr><td><b>XSS</b></td><td>Escape by default, sanitize HTML, set a CSP</td></tr>
+            <tr><td><b>CSRF</b></td><td>SameSite cookies, CSRF tokens, check Origin (libraries handle this)</td></tr>
+            <tr><td><b>SQL injection</b></td><td>Parameterized queries / an ORM (Drizzle — never string-concat SQL)</td></tr>
+            <tr><td><b>Broken auth/authz</b></td><td>Check permissions server-side on every action (07-08)</td></tr>
+            <tr><td><b>Secrets in client</b></td><td>Server-only env; never ship API secrets to the browser (07-10)</td></tr>
+            <tr><td><b>Supply chain</b></td><td>Lockfiles, audits, minimal deps, pinned versions</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Supply-chain security</h2>
+        <div class="callout concept">
+          <span class="ic">📦</span>
+          <div class="body">
+            <div class="tt">Concept · Your dependencies are your attack surface</div>
+            <p style="margin:6px 0 0">
+              A typical app has thousands of transitive dependencies — any one could be compromised. Defenses:
+              commit <b>lockfiles</b>, run <code>pnpm audit</code> / Dependabot, prefer <b>fewer, well-maintained</b>
+              packages, pin versions, and enable npm provenance. Be wary of typosquatted package names. A malicious
+              dependency runs with your app's full privileges.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Validate on the server, always</div>
+            <p style="margin:6px 0 0">
+              Client-side validation is for UX, not security — an attacker bypasses your UI entirely. <b>Every</b>
+              Server Action, Route Handler, and tRPC procedure must independently validate input (Zod) and check
+              authorization. The frontend can be lying; the server must not trust it. This is the single most
+              important security mindset.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Find and fix a hole</div>
+            <p style="margin:6px 0 0">
+              Audit a small app: find any <code>dangerouslySetInnerHTML</code> and add sanitization; add a basic CSP
+              header; run <code>pnpm audit</code> and address findings; and verify one mutation checks
+              authorization server-side (not just hiding a button). Write a one-page threat model for the app.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>XSS</b> is the top frontend threat — React escapes by default; sanitize any raw HTML; set a CSP.</li>
+            <li>Defend against <b>CSRF</b> (SameSite/tokens), <b>injection</b> (ORM/params), and <b>broken auth</b> (server checks).</li>
+            <li><b>Never</b> ship secrets to the client; validate &amp; authorize on the <b>server</b> for every action.</li>
+            <li><b>Supply chain</b>: lockfiles, audits, minimal/pinned deps — your dependencies are your attack surface.</li>
+            <li>Client validation is UX; <b>server validation is security</b> — never trust the frontend.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-09 · i18n &amp; Accessibility at Scale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-09";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 9</div>
+        <h1>i18n &amp; Accessibility at Scale</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🌍 For everyone, everywhere</span>
+        </div>
+        <p class="lead">
+          To serve a global audience, an app must speak users' languages (<strong>i18n</strong>) and work for users
+          with disabilities (<strong>a11y</strong>, deepened from 05-09). Retrofitting either is painful; designing
+          for both from the start is a senior habit. This lesson covers doing them <em>systematically</em> across a
+          large app.
+        </p>
+
+        <h2>1. Internationalization done right</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">i18n.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ Hard-coded, un-translatable, and wrong for other locales:
+&lt;p&gt;You have {count} messages&lt;/p&gt;
+
+// ✅ Externalized message with pluralization + interpolation:
+const t = useTranslations();
+&lt;p&gt;{t("inbox.count", { count })}&lt;/p&gt;
+// en: "{count, plural, =0 {No messages} one {# message} other {# messages}}"
+// Libraries: next-intl, react-i18next, FormatJS. ICU MessageFormat handles
+// plurals, gender, and ordinals correctly per language.</pre>
+          <div class="annot">
+            <strong>i18n is more than translating strings.</strong> Pluralization rules differ by language (some
+            have 4+ plural forms), and you must format dates, numbers, and currencies per locale
+            (<code>Intl.DateTimeFormat</code>/<code>Intl.NumberFormat</code>). Externalize every string to message
+            files, support <b>RTL</b> layouts (Arabic/Hebrew) with logical CSS properties, and never concatenate
+            translated fragments.
+          </div>
+        </div>
+
+        <h2>2. Accessibility as a system</h2>
+        <ul>
+          <li><strong>Bake it into the design system</strong> (P08): accessible primitives (Radix/React Aria) mean
+          every consuming app inherits a11y for free.</li>
+          <li><strong>Automate:</strong> <code>eslint-plugin-jsx-a11y</code> in CI, axe checks in tests (05-10), and
+          contrast checks in design tokens.</li>
+          <li><strong>Test with real assistive tech</strong> periodically — keyboard-only, screen readers — and
+          include people with disabilities in research.</li>
+          <li><strong>Set a standard:</strong> target WCAG 2.2 AA; make it part of "definition of done".</li>
+        </ul>
+
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Accessibility is a feature, and the law</div>
+            <p style="margin:6px 0 0">
+              In many jurisdictions, accessibility is a <b>legal requirement</b> (ADA, the European Accessibility
+              Act). Beyond compliance, it expands your market and improves UX for everyone (captions help in noisy
+              rooms; keyboard nav helps power users). Treat it as a first-class quality attribute, not a checkbox.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Internationalize + audit</div>
+            <p style="margin:6px 0 0">
+              Add next-intl (or react-i18next) to an app: externalize all strings, add a second locale, and format a
+              date + number per locale with <code>Intl</code>. Then run an axe audit, fix the issues, and verify the
+              UI works in an RTL locale with logical CSS properties.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>i18n</b> = externalized strings + correct <b>pluralization</b> (ICU) + locale-aware <b>Intl</b> formatting + RTL support.</li>
+            <li>Never concatenate translated fragments or hard-code user-facing text.</li>
+            <li>Make <b>accessibility systemic</b>: accessible design-system primitives, automated checks in CI, real AT testing.</li>
+            <li>Target <b>WCAG 2.2 AA</b> as a definition-of-done; it's often a legal requirement.</li>
+            <li>Both i18n and a11y are far cheaper designed-in than retrofitted.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

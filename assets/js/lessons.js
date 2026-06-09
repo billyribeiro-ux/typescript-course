@@ -199,15 +199,15 @@ window.COURSE = {
       lessons: [
         { id: "08-01", title: "SOLID & Design Patterns in TypeScript", file: "lessons/part-08-architecture-and-principal/08-01-solid-patterns.html", status: "available" },
         { id: "08-02", title: "Building a Design System", file: "lessons/part-08-architecture-and-principal/08-02-design-system.html", status: "available" },
-        { id: "08-03", title: "Frontend System Design & Scalability", file: "lessons/part-08-architecture-and-principal/08-03-system-design.html", status: "soon" },
-        { id: "08-04", title: "Micro-Frontends & Module Federation", file: "lessons/part-08-architecture-and-principal/08-04-micro-frontends.html", status: "soon" },
-        { id: "08-05", title: "Performance Budgets & Core Web Vitals", file: "lessons/part-08-architecture-and-principal/08-05-performance-budgets.html", status: "soon" },
-        { id: "08-06", title: "Observability, Logging & Error Tracking", file: "lessons/part-08-architecture-and-principal/08-06-observability.html", status: "soon" },
-        { id: "08-07", title: "Feature Flags & Progressive Delivery", file: "lessons/part-08-architecture-and-principal/08-07-feature-flags.html", status: "soon" },
-        { id: "08-08", title: "Security: XSS, CSRF, Auth & Supply Chain", file: "lessons/part-08-architecture-and-principal/08-08-security.html", status: "soon" },
-        { id: "08-09", title: "i18n & Accessibility at Scale", file: "lessons/part-08-architecture-and-principal/08-09-i18n-a11y-scale.html", status: "soon" },
-        { id: "08-10", title: "API Design, Contracts & Versioning", file: "lessons/part-08-architecture-and-principal/08-10-api-design.html", status: "soon" },
-        { id: "08-11", title: "The Principal Engineer: RFCs, ADRs & Strategy", file: "lessons/part-08-architecture-and-principal/08-11-principal-engineer.html", status: "soon" }
+        { id: "08-03", title: "Frontend System Design & Scalability", file: "lessons/part-08-architecture-and-principal/08-03-system-design.html", status: "available" },
+        { id: "08-04", title: "Micro-Frontends & Module Federation", file: "lessons/part-08-architecture-and-principal/08-04-micro-frontends.html", status: "available" },
+        { id: "08-05", title: "Performance Budgets & Core Web Vitals", file: "lessons/part-08-architecture-and-principal/08-05-performance-budgets.html", status: "available" },
+        { id: "08-06", title: "Observability, Logging & Error Tracking", file: "lessons/part-08-architecture-and-principal/08-06-observability.html", status: "available" },
+        { id: "08-07", title: "Feature Flags & Progressive Delivery", file: "lessons/part-08-architecture-and-principal/08-07-feature-flags.html", status: "available" },
+        { id: "08-08", title: "Security: XSS, CSRF, Auth & Supply Chain", file: "lessons/part-08-architecture-and-principal/08-08-security.html", status: "available" },
+        { id: "08-09", title: "i18n & Accessibility at Scale", file: "lessons/part-08-architecture-and-principal/08-09-i18n-a11y-scale.html", status: "available" },
+        { id: "08-10", title: "API Design, Contracts & Versioning", file: "lessons/part-08-architecture-and-principal/08-10-api-design.html", status: "available" },
+        { id: "08-11", title: "The Principal Engineer: RFCs, ADRs & Strategy", file: "lessons/part-08-architecture-and-principal/08-11-principal-engineer.html", status: "available" }
       ]
     },
     {

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-07 · Feature Flags &amp; Progressive Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 7</div>
+        <h1>Feature Flags &amp; Progressive Delivery</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">🚦 Ship safely</span>
+        </div>
+        <p class="lead">
+          <strong>Feature flags</strong> decouple <em>deploying</em> code from <em>releasing</em> a feature. You can
+          ship to production with a feature hidden, then turn it on for 1% of users, then 50%, then everyone — and
+          flip it off instantly if something breaks. This is how mature teams ship constantly without fear. It's a
+          superpower for risk management.
+        </p>
+
+        <h2>1. The basic flag</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">flags.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A flag gates a feature at runtime — config, not a redeploy:
+function Checkout() {
+  const newFlow = useFlag("new-checkout-flow"); // from LaunchDarkly/PostHog/etc.
+  return newFlow ? &lt;NewCheckout /&gt; : &lt;LegacyCheckout /&gt;;
+}
+
+// Flags can target by user, %, region, plan, or an experiment cohort:
+//   "new-checkout-flow": { default: false, rollout: { internal: true, percent: 5 } }
+// Turn it on for 5% of users; if error rates spike, flip to 0% instantly.</pre>
+          <div class="annot">
+            <strong>A flag is runtime config that gates code paths.</strong> Deploy the new checkout dark (off),
+            enable it for internal users, then ramp the percentage while watching metrics (08-05/06). If something's
+            wrong, disable it in seconds — no rollback deploy. This separates the risky moment (release) from the
+            routine one (deploy).
+          </div>
+        </div>
+
+        <h2>2. Progressive delivery patterns</h2>
+        <ul>
+          <li><strong>Canary release:</strong> route a small % of traffic to the new version; expand if healthy.</li>
+          <li><strong>A/B test / experiment:</strong> show variants to cohorts and measure impact on a metric.</li>
+          <li><strong>Kill switch:</strong> a flag to instantly disable a problematic feature or integration.</li>
+          <li><strong>Trunk-based + flags:</strong> merge incomplete features behind a flag (off) to avoid
+          long-lived branches.</li>
+        </ul>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Flags are debt — clean them up</div>
+            <p style="margin:6px 0 0">
+              Every flag is a branch in your code and a config to maintain. Once a feature is fully rolled out,
+              <b>remove the flag and the dead path</b>. Stale flags accumulate into a confusing mess ("flag debt").
+              Track them and schedule cleanup, just like any technical debt.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Gate and ramp a feature</div>
+            <p style="margin:6px 0 0">
+              Add a simple flag system (a typed config or PostHog) to gate a new UI. Implement targeting by a
+              user attribute and a percentage rollout. Add a "kill switch" path. Then write the cleanup ticket you'd
+              file once the feature is at 100%.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Feature flags</b> decouple deploy from release — ship dark, ramp gradually, flip off instantly.</li>
+            <li>Target by user/%/region/cohort; ramp while watching metrics for safe rollouts.</li>
+            <li>Patterns: <b>canary</b>, <b>A/B experiments</b>, <b>kill switches</b>, and trunk-based merging behind flags.</li>
+            <li>Flags are <b>debt</b> — remove them and the dead path once a feature is fully rolled out.</li>
+            <li>This is how mature teams ship continuously with low risk.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

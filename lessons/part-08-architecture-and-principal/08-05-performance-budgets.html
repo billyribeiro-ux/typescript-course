@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-05 · Performance Budgets &amp; Core Web Vitals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 5</div>
+        <h1>Performance Budgets &amp; Core Web Vitals</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">📏 Measure what matters</span>
+        </div>
+        <p class="lead">
+          Performance is a feature — it affects conversion, SEO, and accessibility. Google's <strong>Core Web
+          Vitals</strong> are the industry-standard metrics for user-perceived speed, and a <strong>performance
+          budget</strong> is how you keep them from regressing as the app grows. This is how senior engineers make
+          performance a measurable, enforced commitment rather than a vague aspiration.
+        </p>
+
+        <h2>1. Core Web Vitals</h2>
+        <table>
+          <thead><tr><th>Metric</th><th>Measures</th><th>Good</th></tr></thead>
+          <tbody>
+            <tr><td><b>LCP</b> (Largest Contentful Paint)</td><td>Loading: when the main content appears</td><td>&lt; 2.5s</td></tr>
+            <tr><td><b>INP</b> (Interaction to Next Paint)</td><td>Responsiveness: lag after interactions</td><td>&lt; 200ms</td></tr>
+            <tr><td><b>CLS</b> (Cumulative Layout Shift)</td><td>Stability: unexpected layout jumps</td><td>&lt; 0.1</td></tr>
+          </tbody>
+        </table>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Field vs lab data</div>
+            <p style="margin:6px 0 0">
+              <b>Lab</b> data (Lighthouse) is a controlled test — great for debugging. <b>Field</b> data (real users,
+              via the Chrome UX Report / <code>web-vitals</code> library) is what actually counts and what Google
+              ranks on. Optimise in the lab, but <em>verify with field data</em> — your users have slower devices
+              and networks than your laptop.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. Common fixes mapped to vitals</h2>
+        <ul>
+          <li><strong>LCP:</strong> optimise the hero image (modern formats, responsive sizes, priority loading),
+          server-render/stream (Part 7), reduce render-blocking resources.</li>
+          <li><strong>INP:</strong> break up long tasks, use transitions (05-05), avoid heavy synchronous work in
+          handlers, ship less JS.</li>
+          <li><strong>CLS:</strong> reserve space for images/ads (width/height), avoid inserting content above
+          existing content, use font-display strategies.</li>
+        </ul>
+
+        <h2>3. A performance budget in CI</h2>
+        <div class="editor" data-lang="json">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">budget enforcement</span><span class="lang-tag">json</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// A budget defines limits CI enforces — a PR that exceeds them fails:
+{
+  "budgets": [
+    { "type": "bundle", "name": "main", "maximumWarning": "150kb", "maximumError": "200kb" },
+    { "metric": "LCP", "budget": 2500 },
+    { "metric": "CLS", "budget": 0.1 }
+  ]
+}
+// Tools: Lighthouse CI, bundlesize, size-limit. Run them in the CI gate (03-09)
+// so performance regressions are caught in the PR, not in production.</pre>
+          <div class="annot">
+            <strong>A budget turns performance into an enforceable contract.</strong> Set limits on bundle size and
+            vitals; wire a tool (Lighthouse CI, size-limit) into your CI (03-09) so a PR that blows the budget is
+            blocked. Without enforcement, performance silently erodes one "small" dependency at a time.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Audit and budget</div>
+            <p style="margin:6px 0 0">
+              Run Lighthouse on a project and note its LCP/INP/CLS. Add the <code>web-vitals</code> library to log
+              field metrics. Set a <code>size-limit</code> budget on the main bundle and add it to CI. Then make one
+              improvement (e.g. lazy-load a heavy component) and confirm the metric improves.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Core Web Vitals</b>: LCP (loading), INP (responsiveness), CLS (stability) — with target thresholds.</li>
+            <li>Trust <b>field data</b> (real users) over lab data; users have slower devices than you.</li>
+            <li>Map fixes to metrics: image/streaming for LCP, less JS/transitions for INP, reserved space for CLS.</li>
+            <li>A <b>performance budget</b> enforced in CI blocks regressions before they ship.</li>
+            <li>Performance is a measurable, owned commitment — not a vague aspiration.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

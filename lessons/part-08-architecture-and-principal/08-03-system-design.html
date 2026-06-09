@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-03 · Frontend System Design &amp; Scalability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 3</div>
+        <h1>Frontend System Design &amp; Scalability</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🗺️ Big-picture thinking</span>
+        </div>
+        <p class="lead">
+          At senior+ levels, you're asked to <em>design</em> systems, not just implement tickets — and frontend
+          system design is a staple interview at Meta/Google/etc. The skill: take a vague problem ("design a news
+          feed"), clarify requirements, and reason through the architecture, data flow, performance, and trade-offs
+          out loud. This lesson gives you the framework.
+        </p>
+
+        <h2>1. The system-design framework</h2>
+        <ol>
+          <li><strong>Clarify requirements.</strong> Functional (what it does) and non-functional (scale, latency,
+          devices, offline, a11y, i18n). Never start coding in your head before you know the constraints.</li>
+          <li><strong>Define the data model &amp; API.</strong> What entities exist? What does the client fetch, and
+          how (REST/GraphQL/tRPC, pagination, real-time)?</li>
+          <li><strong>Component architecture.</strong> Break the UI into components and decide where state lives
+          (server vs client; which library — Part 6).</li>
+          <li><strong>Address the hard parts.</strong> Performance, caching, optimistic updates, error/empty/loading
+          states, accessibility.</li>
+          <li><strong>Discuss trade-offs.</strong> There's no perfect answer — articulate what you'd optimise for and
+          why.</li>
+        </ol>
+
+        <h2>2. Worked example: an infinite news feed</h2>
+        <table>
+          <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+          <tbody>
+            <tr><td>Loading more</td><td>Cursor-based pagination + <code>useInfiniteQuery</code> (06-04)</td></tr>
+            <tr><td>Huge lists</td><td>Virtualization (render only visible items) — 05-02</td></tr>
+            <tr><td>Freshness</td><td>Background refetch / websockets for new posts</td></tr>
+            <tr><td>Interactions (like)</td><td>Optimistic updates with rollback (04-12 / 06-04)</td></tr>
+            <tr><td>Media</td><td>Lazy-load images, responsive sizes, blur placeholders</td></tr>
+            <tr><td>Resilience</td><td>Error boundaries + skeletons per region (05-03/04)</td></tr>
+          </tbody>
+        </table>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Every answer ties back to what you've learned</div>
+            <p style="margin:6px 0 0">
+              Notice that the feed design is just the course's techniques composed: TanStack Query for data,
+              virtualization for performance, optimistic updates for UX, error boundaries for resilience. System
+              design isn't new magic — it's <em>knowing which tools to combine and why</em>.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. Scalability concerns at the frontend</h2>
+        <ul>
+          <li><strong>Bundle size:</strong> code splitting, lazy routes, tree-shaking, careful dependency choices.</li>
+          <li><strong>Rendering strategy:</strong> static vs SSR vs streaming vs client (Part 7) per page's needs.</li>
+          <li><strong>Caching layers:</strong> CDN, server cache, query cache, browser cache — know which solves
+          which problem.</li>
+          <li><strong>Team scale:</strong> module boundaries, a design system, and conventions so many engineers can
+          work without colliding (micro-frontends next lesson).</li>
+        </ul>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Design out loud</div>
+            <p style="margin:6px 0 0">
+              Pick a product (autocomplete search, a chat app, a Google-Docs-style editor, an analytics dashboard).
+              Spend 30 minutes writing a design doc: requirements, data/API, component tree + state placement,
+              performance plan, and the top three trade-offs. Practise narrating your reasoning — that's what
+              interviews assess.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Frontend system design follows a framework: clarify → data/API → components/state → hard parts → trade-offs.</li>
+            <li>Capture <b>non-functional</b> requirements (scale, latency, devices, a11y, i18n), not just features.</li>
+            <li>Great designs <b>compose the course's tools</b> (Query, virtualization, optimistic UI, boundaries).</li>
+            <li>Scalability spans bundle size, rendering strategy, caching layers, and team/module boundaries.</li>
+            <li>Practise <b>narrating trade-offs</b> — there's no single right answer, and that's the point.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

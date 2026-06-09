@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-10 · API Design, Contracts &amp; Versioning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-10";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 10</div>
+        <h1>API Design, Contracts &amp; Versioning</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🤝 Contracts between teams</span>
+        </div>
+        <p class="lead">
+          An API is a contract that many clients depend on — changing it carelessly breaks people. Designing APIs
+          that are intuitive, consistent, and evolvable is a core senior+ skill, whether you're building REST
+          endpoints, a GraphQL schema, or tRPC procedures. This lesson covers the principles that apply across all
+          of them.
+        </p>
+
+        <h2>1. Principles of good API design</h2>
+        <ul>
+          <li><strong>Consistent &amp; predictable:</strong> uniform naming, casing, error shapes, and pagination
+          across every endpoint.</li>
+          <li><strong>Right granularity:</strong> not too chatty (N+1 round-trips), not a single mega-endpoint.</li>
+          <li><strong>Explicit errors:</strong> machine-readable codes + human messages; consistent status codes.</li>
+          <li><strong>Pagination &amp; filtering:</strong> cursor-based for large/real-time lists; documented limits.</li>
+          <li><strong>Idempotency:</strong> safe retries for mutations (idempotency keys) — networks are unreliable.</li>
+        </ul>
+
+        <h2>2. REST vs GraphQL vs tRPC</h2>
+        <table>
+          <thead><tr><th>Style</th><th>Best when</th></tr></thead>
+          <tbody>
+            <tr><td><b>REST</b></td><td>Public APIs, simple resources, broad client compatibility, caching by URL</td></tr>
+            <tr><td><b>GraphQL</b></td><td>Many clients with varied data needs; avoid over/under-fetching</td></tr>
+            <tr><td><b>tRPC</b></td><td>Internal TypeScript apps wanting end-to-end types with zero codegen (07-07)</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Contracts &amp; evolution</h2>
+        <div class="callout concept">
+          <span class="ic">🤝</span>
+          <div class="body">
+            <div class="tt">Concept · Schema-as-contract + backward compatibility</div>
+            <p style="margin:6px 0 0">
+              Define the contract explicitly — a Zod schema (your P02!), OpenAPI spec, or GraphQL/tRPC types — and
+              share it so clients and server agree. <b>Evolve additively:</b> add optional fields, never remove or
+              repurpose existing ones without a version bump. <b>Deprecate</b> with warnings and a timeline; only
+              remove after clients migrate. For breaking changes, version (<code>/v2</code>) and run both for a
+              transition window.
+            </p>
+          </div>
+        </div>
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · A field rename is a breaking change</div>
+            <p style="margin:6px 0 0">
+              Renaming <code>name</code> → <code>fullName</code>, tightening a type, or making an optional field
+              required all break existing clients. Treat your published API as immutable; <b>add</b> the new shape
+              alongside the old, migrate clients, then remove. Internal type safety (tRPC) helps you <em>find</em>
+              breakages, but external consumers still need a migration path.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Design + evolve an API</div>
+            <p style="margin:6px 0 0">
+              Design a small "tasks" API: define the resource, list endpoint with cursor pagination, a consistent
+              error shape, and a Zod contract. Then write down how you'd add a new required field
+              <em>without</em> breaking existing clients (hint: add it optional, default it, deprecate the old
+              behaviour, then tighten in v2).
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Good APIs are <b>consistent</b>, right-grained, explicit about errors, paginated, and idempotent for mutations.</li>
+            <li>Choose <b>REST</b> (public/cacheable), <b>GraphQL</b> (varied clients), or <b>tRPC</b> (internal TS, zero codegen).</li>
+            <li>Make the <b>schema the contract</b> (Zod/OpenAPI/types) and share it between client and server.</li>
+            <li><b>Evolve additively</b>; renames/removals are breaking — deprecate, version, and migrate.</li>
+            <li>Treat a published API as a long-term commitment to your consumers.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08-06 · Observability, Logging &amp; Error Tracking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "08-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 8 · Architecture — Lesson 6</div>
+        <h1>Observability, Logging &amp; Error Tracking</h1>
+        <div class="lesson-meta">
+          <span class="chip">🏛️ Principal</span>
+          <span class="chip">⏱️ ~26 min</span>
+          <span class="chip">🔭 See production</span>
+        </div>
+        <p class="lead">
+          We touched observability in Part 7; here we go deeper because <em>owning production</em> is core to
+          senior+ work. Observability is your ability to answer "what is my app doing right now, and why?" without
+          shipping new code to find out. Good observability turns mysteries into dashboards and 2am pages into
+          quick fixes.
+        </p>
+
+        <h2>1. Structured logging</h2>
+        <div class="editor" data-lang="typescript">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">logging.ts</span><span class="lang-tag">typescript</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// ❌ Unstructured — impossible to search/filter at scale:
+console.log("user " + userId + " bought " + sku);
+
+// ✅ Structured — JSON logs you can query by field (pino/winston):
+logger.info({ event: "purchase", userId, sku, amountCents, requestId }, "purchase completed");
+// Include a requestId/traceId so you can follow ONE request across services.
+// Log at appropriate levels: debug / info / warn / error.</pre>
+          <div class="annot">
+            <strong>Structured logs are searchable data, not prose.</strong> Logging objects (with a
+            <code>requestId</code>/<code>traceId</code>) lets your log platform filter by user, event, or trace —
+            essential when you have millions of lines. Never log secrets or PII. Use real log levels so you can dial
+            verbosity per environment.
+          </div>
+        </div>
+
+        <h2>2. The three signals</h2>
+        <table>
+          <thead><tr><th>Signal</th><th>Answers</th><th>Tool</th></tr></thead>
+          <tbody>
+            <tr><td><b>Logs</b></td><td>"What happened in this request?"</td><td>pino + Datadog/Loki</td></tr>
+            <tr><td><b>Metrics</b></td><td>"Is error rate/latency rising?"</td><td>Prometheus/Datadog</td></tr>
+            <tr><td><b>Traces</b></td><td>"Where did the time/error go across services?"</td><td>OpenTelemetry</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. Alerting &amp; SLOs</h2>
+        <div class="callout concept">
+          <span class="ic">🚨</span>
+          <div class="body">
+            <div class="tt">Concept · Alert on symptoms, define SLOs</div>
+            <p style="margin:6px 0 0">
+              An <b>SLO</b> (Service Level Objective) is a target like "99.9% of requests succeed in &lt; 300ms".
+              Alert on <em>user-facing symptoms</em> (error rate, latency, vitals) — not every internal blip — and
+              tie alerts to an <b>error budget</b> (how much failure you can tolerate). This prevents both silent
+              outages and alert fatigue. <b>RUM</b> (real user monitoring) ties it back to actual user experience
+              and Core Web Vitals (08-05).
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Instrument an app</div>
+            <p style="margin:6px 0 0">
+              Add a structured logger to a Next.js app with a per-request <code>requestId</code>. Wire Sentry for
+              errors (07-11) and capture a custom breadcrumb on a key action. Define one SLO for an important
+              endpoint and describe the alert you'd set. Confirm you can trace a single request end-to-end in your
+              logs.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Structured (JSON) logs</b> with a trace/request id are searchable; never log secrets/PII.</li>
+            <li>The three signals: <b>logs</b> (what happened), <b>metrics</b> (trends), <b>traces</b> (across services).</li>
+            <li>Define <b>SLOs</b> and alert on <b>user-facing symptoms</b> tied to an error budget — avoid alert fatigue.</li>
+            <li><b>RUM</b> connects observability to real user experience and Core Web Vitals.</li>
+            <li>Owning production — seeing it clearly — is core to senior+ engineering.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
