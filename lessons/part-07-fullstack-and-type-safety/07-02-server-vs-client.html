@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-02 · Server Components vs Client Components</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-02";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 2</div>
+        <h1>Server Components vs Client Components</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack · pivotal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">🔀 The boundary</span>
+        </div>
+        <p class="lead">
+          The single most important concept in modern Next.js: the split between <strong>Server Components</strong>
+          (the default — render on the server, no interactivity) and <strong>Client Components</strong> (opt-in
+          with <code>"use client"</code> — run in the browser, can use hooks and events). Getting this boundary
+          right is what separates fast, correct apps from confused ones.
+        </p>
+
+        <h2>1. The two kinds, side by side</h2>
+        <table>
+          <thead><tr><th></th><th>Server Component (default)</th><th>Client Component ("use client")</th></tr></thead>
+          <tbody>
+            <tr><td>Runs</td><td>On the server (build/request)</td><td>In the browser</td></tr>
+            <tr><td>Can be async / fetch / query DB</td><td>✅</td><td>❌ (use hooks/Query)</td></tr>
+            <tr><td>useState / useEffect / onClick</td><td>❌</td><td>✅</td></tr>
+            <tr><td>Ships JS to the browser</td><td>❌ (zero)</td><td>✅</td></tr>
+            <tr><td>Access secrets / env</td><td>✅ (safely)</td><td>❌ (public only)</td></tr>
+          </tbody>
+        </table>
+
+        <h2>2. Marking a Client Component</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Counter.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use client";   // ← this directive opts the file into the client
+
+import { useState } from "react";
+
+export function Counter() {
+  const [count, setCount] = useState(0);   // hooks require a Client Component
+  return &lt;button onClick={() =&gt; setCount(count + 1)}&gt;{count}&lt;/button&gt;;
+}</pre>
+          <div class="annot">
+            <strong><code>"use client"</code> at the top of a file marks it (and its imports) as client code.</strong>
+            Anything using <code>useState</code>, <code>useEffect</code>, event handlers, or browser APIs must be a
+            Client Component. Without the directive, you get a Server Component — and using a hook there is a build
+            error that tells you exactly what to do.
+          </div>
+        </div>
+
+        <h2>3. The pattern: server shells, client islands</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/dashboard/page.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// Server Component (default): fetches data, renders static shell.
+import { Counter } from "./Counter.js";          // a client island
+import { db } from "@/lib/db";
+
+export default async function Dashboard() {
+  const stats = await db.stats.get();             // server-only data access
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;Revenue: ${stats.revenue}&lt;/h1&gt;          {/* server-rendered */}
+      &lt;Counter /&gt;                                  {/* interactive client island */}
+    &lt;/main&gt;
+  );
+}
+// You can RENDER a Client Component inside a Server Component freely.
+// You can also pass server-fetched data DOWN to clients as props.</pre>
+          <div class="annot">
+            <strong>The mental model: server shells with client islands.</strong> Most of the page is a Server
+            Component (fast, no JS). The interactive bits are small Client Components nested inside. You can render
+            clients within servers and pass data down as props. The boundary is one-directional: a Client Component
+            can't <em>import</em> a Server Component, but it can receive one as <code>children</code>.
+          </div>
+        </div>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · "use client" is a boundary, not a label</div>
+            <p style="margin:6px 0 0">
+              Once a file has <code>"use client"</code>, <em>everything it imports</em> becomes part of the client
+              bundle. So keep client components small and push them to the leaves. Don't slap <code>"use client"</code>
+              on a big page just to make one button interactive — extract the button. Minimising the client boundary
+              is a key performance skill.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Split a page correctly</div>
+            <p style="margin:6px 0 0">
+              Build a product page where the product details are a Server Component (fetched on the server) and an
+              "Add to cart" button with a quantity selector is a small Client Component island. Pass the product id
+              from the server down to the client button as a prop. Verify in the Network tab that the page HTML
+              arrives with data and only the button's JS is shipped.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Server Components</b> (default) render on the server, can be async + query the DB, ship zero JS.</li>
+            <li><b>Client Components</b> (<code>"use client"</code>) run in the browser and can use hooks/events.</li>
+            <li>Pattern: <b>server shells with small client islands</b>; pass server data down as props.</li>
+            <li>A Client Component can't import a Server Component, but can receive one as <code>children</code>.</li>
+            <li><code>"use client"</code> is a boundary — keep it at the leaves to minimise the JS bundle.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

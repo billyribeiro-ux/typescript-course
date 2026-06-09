@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-04 · Server Actions &amp; Mutations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 4</div>
+        <h1>Server Actions &amp; Mutations</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack · pivotal</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">✍️ Writing data</span>
+        </div>
+        <p class="lead">
+          <strong>Server Actions</strong> are the killer feature of modern Next.js: server-side functions you can
+          call directly from your components and forms — no API route, no <code>fetch</code>, no manual
+          serialization. They give you fully type-safe mutations from button to database, and integrate with the
+          React 19 Actions you learned in lesson 04-12. This is the future of full-stack React.
+        </p>
+
+        <h2>1. A Server Action</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">actions.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use server";   // ← marks every export as a Server Action
+
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+
+const CreateTodo = z.object({ title: z.string().min(1) });
+
+export async function createTodo(formData: FormData) {
+  // Validate untrusted input with Zod (06-09 / your P02!):
+  const parsed = CreateTodo.safeParse({ title: formData.get("title") });
+  if (!parsed.success) return { error: "Title is required" };
+
+  await db.todo.create({ data: parsed.data }); // runs ONLY on the server
+  revalidatePath("/todos");                      // refresh the cached page
+  return { success: true };
+}</pre>
+          <div class="annot">
+            <strong><code>"use server"</code> makes a function callable from the client but executed on the
+            server.</strong> Next.js handles the network round-trip invisibly — you just call the function. Always
+            validate the input with Zod (it's untrusted!), do your database work, then
+            <code>revalidatePath</code> so the UI reflects the change. No API endpoint, no fetch boilerplate.
+          </div>
+        </div>
+
+        <h2>2. Calling it from a form</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">TodoForm.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">"use client";
+import { useActionState } from "react";        // lesson 04-12!
+import { createTodo } from "./actions.js";
+
+export function TodoForm() {
+  const [state, formAction, isPending] = useActionState(
+    async (_prev: unknown, formData: FormData) =&gt; createTodo(formData),
+    null
+  );
+  return (
+    &lt;form action={formAction}&gt;            {/* pass the action straight to the form */}
+      &lt;input name="title" /&gt;
+      &lt;button disabled={isPending}&gt;{isPending ? "Saving…" : "Add"}&lt;/button&gt;
+      {state &amp;&amp; "error" in state &amp;&amp; &lt;p role="alert"&gt;{state.error}&lt;/p&gt;}
+    &lt;/form&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>This is React 19 Actions (04-12) wired to the server.</strong> The <code>&lt;form action={...}&gt;</code>
+            calls the Server Action directly; <code>useActionState</code> gives you the result, pending state, and
+            errors. The same hook you used for client-only forms now performs a fully type-safe server mutation —
+            with progressive enhancement (the form even works before JS loads).
+          </div>
+        </div>
+
+        <h2>3. Why this is revolutionary</h2>
+        <ul>
+          <li><strong>No API layer for mutations:</strong> call server functions directly; Next handles transport.</li>
+          <li><strong>End-to-end type safety:</strong> the action's argument and return types flow to the client
+          with no codegen.</li>
+          <li><strong>Progressive enhancement:</strong> forms with <code>action</code> work without JavaScript.</li>
+          <li><strong>Composes with optimistic UI:</strong> wrap with <code>useOptimistic</code> (04-12) for instant
+          feedback.</li>
+        </ul>
+
+        <div class="callout gotcha">
+          <span class="ic">⚠️</span>
+          <div class="body">
+            <div class="tt">Gotcha · Actions are public endpoints</div>
+            <p style="margin:6px 0 0">
+              A Server Action is effectively a public API endpoint — anyone can call it. <b>Always validate input
+              (Zod) and check authorization inside the action</b> (is this user allowed to do this?). Never trust
+              that it's only called from your UI. Security lives in the action, not the form.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A full CRUD with actions</div>
+            <p style="margin:6px 0 0">
+              Build a todos page (Server Component lists them) with Server Actions to create, toggle, and delete —
+              each validating with Zod and calling <code>revalidatePath</code>. Use <code>useActionState</code> for
+              the add form and <code>useOptimistic</code> for instant toggle feedback. Add an auth check stub inside
+              each action.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Server Actions</b> (<code>"use server"</code>) are server functions callable from components/forms — no API route or fetch.</li>
+            <li>Wire them to <code>&lt;form action={...}&gt;</code> and React 19's <code>useActionState</code> (04-12) for pending/errors.</li>
+            <li>They give <b>end-to-end type safety</b> with no codegen and support progressive enhancement.</li>
+            <li>Always <b>validate (Zod) and authorize inside</b> the action — it's a public endpoint.</li>
+            <li>Compose with <code>useOptimistic</code> + <code>revalidatePath</code> for instant, consistent UIs.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

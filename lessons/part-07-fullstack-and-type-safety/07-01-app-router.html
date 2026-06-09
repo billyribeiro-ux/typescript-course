@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07-01 · Next.js 15: The App Router Mental Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "07-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 7 · Full-Stack — Lesson 1</div>
+        <h1>Next.js 15: The App Router Mental Model</h1>
+        <div class="lesson-meta">
+          <span class="chip">🌐 Full-stack</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">📁 File-based routing</span>
+        </div>
+        <p class="lead">
+          So far your React apps run entirely in the browser. <strong>Next.js</strong> is a full-stack framework
+          that runs React on the <em>server</em> too — for faster loads, better SEO, and the ability to talk
+          directly to databases. The <strong>App Router</strong> is its modern foundation, built on React Server
+          Components. This part takes you from client-only to true full-stack engineer.
+        </p>
+
+        <h2>1. File-based routing</h2>
+        <div class="editor" data-lang="text">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/ directory</span><span class="lang-tag">text</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">app/
+  layout.tsx          → root layout (wraps everything; html/body)
+  page.tsx            → "/"  (the home page)
+  about/
+    page.tsx          → "/about"
+  products/
+    page.tsx          → "/products"
+    [id]/
+      page.tsx        → "/products/:id"  (dynamic segment)
+      loading.tsx     → Suspense fallback for this route
+      error.tsx       → error boundary for this route
+  api/
+    health/route.ts   → "/api/health"  (a JSON endpoint)
+// The FOLDER STRUCTURE is your routing. Special files have special roles.</pre>
+          <div class="annot">
+            <strong>Routes are folders; <code>page.tsx</code> makes a route public.</strong> Special files give you
+            powerful primitives per-route: <code>layout.tsx</code> (shared shell, persists across navigation),
+            <code>loading.tsx</code> (an automatic Suspense fallback — 05-03!), <code>error.tsx</code> (an automatic
+            error boundary — 05-04!), and <code>route.ts</code> (API endpoints). <code>[id]</code> folders are
+            dynamic params.
+          </div>
+        </div>
+
+        <h2>2. The big shift: Server Components by default</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Components run on the server first</div>
+            <p style="margin:6px 0 0">
+              In the App Router, components are <b>React Server Components (RSC)</b> by default — they render on the
+              server, can be <code>async</code>, and can fetch data or query a database directly. Only components
+              that need interactivity (state, effects, event handlers) opt into the client with
+              <code>"use client"</code>. We go deep on this split next lesson; it's the core mental model.
+            </p>
+          </div>
+        </div>
+
+        <h2>3. A page that fetches on the server</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/products/page.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">// No "use client" → this is a Server Component. It can be async and fetch
+// data directly. The browser never runs this code or downloads its JS.
+export default async function ProductsPage() {
+  const products = await db.product.findMany(); // query the DB right here!
+
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;Products&lt;/h1&gt;
+      &lt;ul&gt;
+        {products.map((p) =&gt; (
+          &lt;li key={p.id}&gt;{p.name} — ${p.price}&lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+    &lt;/main&gt;
+  );
+}
+// HTML arrives fully rendered with data — fast first paint, great SEO,
+// zero client JS for this component.</pre>
+          <div class="annot">
+            <strong>This is impossible in a client-only app.</strong> A Server Component can <code>await</code> a
+            database query and render the result to HTML on the server. No loading spinner, no client-side fetch
+            waterfall, no API layer needed for reads, and no database credentials shipped to the browser. The page
+            arrives complete.
+          </div>
+        </div>
+
+        <h2>4. Layouts &amp; navigation</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">app/layout.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import Link from "next/link";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    &lt;html lang="en"&gt;
+      &lt;body&gt;
+        &lt;nav&gt;
+          &lt;Link href="/"&gt;Home&lt;/Link&gt;
+          &lt;Link href="/products"&gt;Products&lt;/Link&gt;
+        &lt;/nav&gt;
+        {children}   {/* the active page renders here */}
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+}
+// next/link prefetches routes for instant navigation. Layouts persist
+// across navigations (the nav doesn't re-render when you change pages).</pre>
+          <div class="annot">
+            <strong>Layouts compose and persist.</strong> The root layout wraps every page; nested
+            <code>layout.tsx</code> files wrap their route segments. <code>next/link</code> does client-side
+            navigation with automatic prefetching. Note: this is the same routing tree idea as React Router (06-01),
+            but driven by your folder structure and server-rendered by default.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Scaffold a Next.js app</div>
+            <p style="margin:6px 0 0">
+              Run <code>pnpm create next-app@latest</code> (TypeScript, App Router). Create routes for
+              <code>/</code>, <code>/about</code>, and <code>/blog/[slug]</code>. Make the blog page an async Server
+              Component that "fetches" a post by its <code>slug</code> param. Add a <code>loading.tsx</code> and an
+              <code>error.tsx</code> to the blog route and observe them work automatically.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Next.js</b> runs React on the server + client — faster loads, SEO, direct DB access.</li>
+            <li>The <b>App Router</b> is file-based: folders are routes, <code>page.tsx</code> makes them public.</li>
+            <li>Special files: <code>layout</code> (shared shell), <code>loading</code> (Suspense), <code>error</code> (boundary), <code>route.ts</code> (APIs).</li>
+            <li>Components are <b>Server Components by default</b> — async, can fetch/query directly, ship no client JS.</li>
+            <li><code>next/link</code> gives prefetched client navigation; layouts persist across pages.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
