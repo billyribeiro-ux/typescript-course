@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-04 · Advanced TanStack Query</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-04";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 4</div>
+        <h1>Advanced TanStack Query</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~32 min</span>
+          <span class="chip">✏️ Mutations &amp; more</span>
+        </div>
+        <p class="lead">
+          Reading data is half the story; real apps also <em>write</em> it. <code>useMutation</code> handles
+          creates/updates/deletes with pending and error states, and pairs with cache invalidation and
+          <strong>optimistic updates</strong> for instant-feeling UIs. We'll also cover infinite queries and
+          prefetching — the patterns that make data-heavy apps feel fast.
+        </p>
+
+        <h2>1. Mutations &amp; cache invalidation</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useMutation.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+function AddTodo() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (title: string) =&gt;
+      fetch("/api/todos", { method: "POST", body: JSON.stringify({ title }) }),
+    onSuccess: () =&gt; {
+      // Mark the todos list stale → Query refetches it automatically:
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+    },
+  });
+
+  return (
+    &lt;button
+      disabled={mutation.isPending}
+      onClick={() =&gt; mutation.mutate("New todo")}
+    &gt;
+      {mutation.isPending ? "Adding…" : "Add todo"}
+    &lt;/button&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>The read-write cycle:</strong> <code>useMutation</code> performs the write and gives you
+            <code>isPending</code>/<code>isError</code>. On success, you <code>invalidateQueries</code> the affected
+            keys, and TanStack Query refetches them so the UI reflects the new server state. This "invalidate after
+            mutate" loop keeps your cache and server in sync with almost no code.
+          </div>
+        </div>
+
+        <h2>2. Optimistic updates</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">optimistic.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">const mutation = useMutation({
+  mutationFn: toggleTodo,
+  // Update the cache IMMEDIATELY, before the server responds:
+  onMutate: async (id) =&gt; {
+    await queryClient.cancelQueries({ queryKey: ["todos"] });
+    const previous = queryClient.getQueryData&lt;Todo[]&gt;(["todos"]);
+    queryClient.setQueryData&lt;Todo[]&gt;(["todos"], (old) =&gt;
+      old?.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t)) ?? []);
+    return { previous }; // context for rollback
+  },
+  onError: (_err, _id, context) =&gt; {
+    queryClient.setQueryData(["todos"], context?.previous); // roll back
+  },
+  onSettled: () =&gt; queryClient.invalidateQueries({ queryKey: ["todos"] }),
+});</pre>
+          <div class="annot">
+            <strong>Optimistic updates make the UI feel instant.</strong> <code>onMutate</code> writes the expected
+            result to the cache immediately (snapshotting the old value); <code>onError</code> rolls back if the
+            request fails; <code>onSettled</code> refetches to reconcile with the truth. This is the same idea as
+            React 19's <code>useOptimistic</code> (04-12), at the data-cache layer.
+          </div>
+        </div>
+
+        <h2>3. Infinite queries &amp; prefetching</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">infinite-prefetch.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useInfiniteQuery } from "@tanstack/react-query";
+
+const { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
+  queryKey: ["feed"],
+  queryFn: ({ pageParam }) =&gt; fetchFeed(pageParam),
+  initialPageParam: 0,
+  getNextPageParam: (lastPage) =&gt; lastPage.nextCursor, // null = no more
+});
+// "Load more" / infinite scroll, with all pages cached together.
+
+// Prefetch on hover so the next page is instant when clicked:
+&lt;Link onMouseEnter={() =&gt;
+  queryClient.prefetchQuery({ queryKey: ["product", id], queryFn: () =&gt; fetchProduct(id) })
+} to={`/products/${id}`}&gt;…&lt;/Link&gt;;</pre>
+          <div class="annot">
+            <strong>Two power features:</strong> <code>useInfiniteQuery</code> handles paginated/infinite-scroll
+            lists with cursor-based loading and caches all pages. <code>prefetchQuery</code> warms the cache before
+            the user navigates (e.g. on hover), so the destination renders instantly. These are the patterns behind
+            snappy feeds and product browsers.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Wrap queries in custom hooks</div>
+            <p style="margin:6px 0 0">
+              Don't scatter <code>useQuery</code> calls everywhere. Wrap each in a custom hook
+              (<code>useProducts()</code>, <code>useProduct(id)</code>) that owns the query key and fetcher. This
+              centralises your data layer, keeps keys consistent, and makes components clean — the same
+              encapsulation principle as P03's <code>useWeather</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A todo app with mutations</div>
+            <p style="margin:6px 0 0">
+              Build a todo list with <code>useQuery</code> to read and <code>useMutation</code> to add/toggle,
+              invalidating the list on success. Then upgrade the toggle to an <em>optimistic</em> update with
+              rollback on error. Add hover-prefetching for a detail route.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b><code>useMutation</code></b> handles writes with pending/error states; <b>invalidate</b> affected query keys on success.</li>
+            <li><b>Optimistic updates</b> (<code>onMutate</code>/<code>onError</code>/<code>onSettled</code>) make writes feel instant with safe rollback.</li>
+            <li><b><code>useInfiniteQuery</code></b> powers paginated/infinite lists; <b><code>prefetchQuery</code></b> warms the cache ahead of navigation.</li>
+            <li>Wrap queries/mutations in <b>custom hooks</b> to centralise your data layer.</li>
+            <li>Together with 06-03, this is the complete, robust data layer for any React app.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

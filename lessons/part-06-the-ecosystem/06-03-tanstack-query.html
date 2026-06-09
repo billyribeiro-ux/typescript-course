@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-03 · Server State with TanStack Query</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-03";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 3</div>
+        <h1>Server State with TanStack Query</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem · pivotal</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🔄 The data layer</span>
+        </div>
+        <p class="lead">
+          Recall the painful <code>useEffect</code> fetching from lesson 04-07 — loading flags, error handling,
+          race conditions, no caching. <strong>TanStack Query</strong> solves all of it. It's the single most
+          important library in the React ecosystem: it manages <em>server state</em> (data that lives on a server)
+          with caching, background refetching, and deduplication built in. Master this and your data layer becomes
+          effortless.
+        </p>
+
+        <h2>1. The key insight: server state is different</h2>
+        <div class="callout concept">
+          <span class="ic">🧩</span>
+          <div class="body">
+            <div class="tt">Concept · Server state ≠ client state</div>
+            <p style="margin:6px 0 0">
+              <b>Client state</b> (form inputs, toggles, the Kanban board) is owned by your app — use
+              <code>useState</code>/Zustand. <b>Server state</b> is a <em>cache</em> of data that actually lives
+              elsewhere: it can be stale, shared across components, and needs refetching. TanStack Query is built
+              specifically for server state — don't manage it with <code>useState</code>.
+            </p>
+          </div>
+        </div>
+
+        <h2>2. useQuery</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">useQuery.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useQuery } from "@tanstack/react-query";
+
+function Products() {
+  const { data, isPending, isError, error } = useQuery({
+    queryKey: ["products"],                 // unique cache key
+    queryFn: async () =&gt; {                  // how to fetch
+      const res = await fetch("/api/products");
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json() as Promise&lt;Product[]&gt;;
+    },
+    staleTime: 60_000,                       // data is "fresh" for 60s
+  });
+
+  if (isPending) return &lt;Spinner /&gt;;
+  if (isError) return &lt;p&gt;Error: {error.message}&lt;/p&gt;;
+  return &lt;ul&gt;{data.map((p) =&gt; &lt;li key={p.id}&gt;{p.name}&lt;/li&gt;)}&lt;/ul&gt;;
+}</pre>
+          <div class="annot">
+            <strong>Compare this to the 04-07 effect mess.</strong> One <code>useQuery</code> gives you
+            <code>data</code>, <code>isPending</code>, <code>isError</code>, automatic caching by
+            <code>queryKey</code>, deduplication (10 components, one request), background refetching, and retries —
+            all for free. The <code>queryKey</code> is the identity of this data in the cache.
+          </div>
+        </div>
+
+        <h2>3. What you get automatically</h2>
+        <ul>
+          <li><strong>Caching:</strong> the same <code>queryKey</code> shares one cached result across the app.</li>
+          <li><strong>Deduplication:</strong> simultaneous requests for the same key are collapsed into one.</li>
+          <li><strong>Background refetch:</strong> stale data refetches on window focus, reconnect, or interval —
+          your UI silently stays fresh.</li>
+          <li><strong>Retries:</strong> failed requests retry with backoff.</li>
+          <li><strong>Garbage collection:</strong> unused cache entries are cleaned up.</li>
+        </ul>
+
+        <h2>4. Setup &amp; query keys</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">setup.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
+function App() {
+  return (
+    &lt;QueryClientProvider client={queryClient}&gt;
+      &lt;YourApp /&gt;
+    &lt;/QueryClientProvider&gt;
+  );
+}
+
+// Query keys are arrays — include every input the query depends on:
+useQuery({ queryKey: ["product", id], queryFn: () =&gt; fetchProduct(id) });
+useQuery({ queryKey: ["products", { category, page }], queryFn: ... });
+// When a key value changes (e.g. id), Query fetches + caches separately.</pre>
+          <div class="annot">
+            <strong>Query keys are the heart of the cache.</strong> Treat them like a dependency array: include every
+            variable the query depends on. <code>["product", id]</code> caches each product separately and refetches
+            automatically when <code>id</code> changes — no <code>useEffect</code> needed. A consistent key
+            convention (e.g. a "query key factory") keeps a large app organised.
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Replace your effect-fetch</div>
+            <p style="margin:6px 0 0">
+              Take the weather dashboard (P03) and replace the hand-rolled <code>useWeather</code> hook with a
+              <code>useQuery</code> keyed by the city. Notice how loading/error/caching come for free, how
+              switching cities back and forth is instant (cached), and how much code disappears.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Server state</b> (a cache of remote data) is different from client state — use TanStack Query for it.</li>
+            <li><b><code>useQuery</code></b> gives data + loading/error states + caching, dedup, background refetch, retries — automatically.</li>
+            <li><b>Query keys</b> are arrays identifying cached data; include every input the query depends on.</li>
+            <li>Wrap your app in a <code>QueryClientProvider</code>; tune freshness with <code>staleTime</code>.</li>
+            <li>It replaces the entire <code>useEffect</code>-fetch pattern (04-07) — far less code, far more robust.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

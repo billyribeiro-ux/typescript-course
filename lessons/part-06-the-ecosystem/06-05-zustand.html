@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-05 · Client State with Zustand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-05";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 5</div>
+        <h1>Client State with Zustand</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~28 min</span>
+          <span class="chip">🐻 Simple global state</span>
+        </div>
+        <p class="lead">
+          You used <strong>Zustand</strong> in Project P04; now we go deeper. It's the most popular lightweight
+          state manager — minimal boilerplate, no providers, great TypeScript support. We'll cover selectors and
+          performance, slices for organising larger stores, middleware (persist, devtools), and exactly when to
+          choose it over Context or Redux.
+        </p>
+
+        <h2>1. Selectors &amp; re-render performance</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">selectors.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { create } from "zustand";
+import { useShallow } from "zustand/shallow";
+
+interface Store { count: number; user: { name: string }; inc: () =&gt; void; }
+const useStore = create&lt;Store&gt;((set) =&gt; ({
+  count: 0,
+  user: { name: "Ada" },
+  inc: () =&gt; set((s) =&gt; ({ count: s.count + 1 })),
+}));
+
+// ✅ Select ONLY what you need — this component re-renders only when count changes:
+const count = useStore((s) =&gt; s.count);
+
+// ✅ Selecting multiple values? Use useShallow to avoid the new-object loop (P04!):
+const { count2, name } = useStore(useShallow((s) =&gt; ({ count2: s.count, name: s.user.name })));
+
+// Actions are stable references — select them freely:
+const inc = useStore((s) =&gt; s.inc);</pre>
+          <div class="annot">
+            <strong>Selectors are how Zustand stays fast.</strong> A component subscribes only to the slice it
+            selects and re-renders only when that slice changes. Selecting multiple values returns a new object each
+            render — wrap it in <code>useShallow</code> (the fix for P04's infinite-loop pitfall). Actions never
+            change identity, so selecting them is free.
+          </div>
+        </div>
+
+        <h2>2. Slices for larger stores</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">slices.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { create, type StateCreator } from "zustand";
+
+interface CartSlice { items: string[]; addItem: (i: string) =&gt; void; }
+interface UiSlice { sidebarOpen: boolean; toggleSidebar: () =&gt; void; }
+
+const createCartSlice: StateCreator&lt;CartSlice &amp; UiSlice, [], [], CartSlice&gt; = (set) =&gt; ({
+  items: [],
+  addItem: (i) =&gt; set((s) =&gt; ({ items: [...s.items, i] })),
+});
+const createUiSlice: StateCreator&lt;CartSlice &amp; UiSlice, [], [], UiSlice&gt; = (set) =&gt; ({
+  sidebarOpen: false,
+  toggleSidebar: () =&gt; set((s) =&gt; ({ sidebarOpen: !s.sidebarOpen })),
+});
+
+const useStore = create&lt;CartSlice &amp; UiSlice&gt;((...a) =&gt; ({
+  ...createCartSlice(...a),
+  ...createUiSlice(...a),
+}));</pre>
+          <div class="annot">
+            <strong>Slices keep a growing store organised.</strong> Each feature is a typed slice; you compose them
+            into one store with an intersection type (02-05). Components still select across the whole store, but
+            the code is modular. This scales a single Zustand store to a large app without it becoming a mess.
+          </div>
+        </div>
+
+        <h2>3. Middleware: persist &amp; devtools</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">middleware.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { create } from "zustand";
+import { persist, devtools } from "zustand/middleware";
+
+const useStore = create&lt;Store&gt;()(
+  devtools(                          // Redux DevTools integration
+    persist(                         // auto-save to localStorage
+      (set) =&gt; ({
+        theme: "light",
+        toggle: () =&gt; set((s) =&gt; ({ theme: s.theme === "light" ? "dark" : "light" })),
+      }),
+      { name: "app-storage" }        // storage key
+    )
+  )
+);
+// State now survives reloads AND is inspectable in Redux DevTools.</pre>
+          <div class="annot">
+            <strong>Middleware adds superpowers with one wrapper.</strong> <code>persist</code> saves the store to
+            <code>localStorage</code> (or any storage) and rehydrates on load; <code>devtools</code> connects it to
+            the Redux DevTools time-travel debugger. This is how you'd add persistence to the P04 Kanban board in
+            one line.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · When to use what</div>
+            <p style="margin:6px 0 0">
+              <b>useState/useReducer</b> for local state. <b>Context</b> for low-frequency global values (theme,
+              auth). <b>Zustand</b> for most shared client state — simple and fast. <b>Redux Toolkit</b> (06-07) for
+              large apps needing strict structure, middleware, and team conventions. <b>TanStack Query</b> for
+              server state. Don't put server data in Zustand — that's Query's job.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · Persist the Kanban board</div>
+            <p style="margin:6px 0 0">
+              Add the <code>persist</code> middleware to Project P04's store so the board survives reloads. Then add
+              a UI slice for a "compact view" toggle. Use <code>useShallow</code> where you select multiple values,
+              and confirm the store tests still pass.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Selectors</b> subscribe a component to a slice; multi-value selects need <code>useShallow</code>.</li>
+            <li><b>Slices</b> + intersection types organise a large store modularly.</li>
+            <li><b>Middleware</b>: <code>persist</code> (localStorage) and <code>devtools</code> (time-travel) add power in one wrapper.</li>
+            <li>Use Zustand for most shared <b>client</b> state; not for server state (use Query).</li>
+            <li>Pick the right tool: local → useState; global-low-freq → Context; shared → Zustand; big/structured → Redux.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

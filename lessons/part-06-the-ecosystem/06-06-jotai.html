@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-06 · Atomic State with Jotai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-06";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 6</div>
+        <h1>Atomic State with Jotai</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~24 min</span>
+          <span class="chip">⚛️ Bottom-up state</span>
+        </div>
+        <p class="lead">
+          <strong>Jotai</strong> takes a different philosophy from Zustand: instead of one big store, you build
+          state from tiny <strong>atoms</strong> that compose. Atoms can derive from other atoms (like a
+          spreadsheet), and components only re-render when an atom they use changes. It's an elegant model for
+          fine-grained, derived state — worth knowing as the leading alternative approach.
+        </p>
+
+        <h2>1. Atoms</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">atoms.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { atom, useAtom, useAtomValue } from "jotai";
+
+// An atom is a single piece of state — defined OUTSIDE components:
+const countAtom = atom(0);
+const nameAtom = atom("Ada");
+
+function Counter() {
+  // useAtom is like useState, but the state is shared via the atom:
+  const [count, setCount] = useAtom(countAtom);
+  return &lt;button onClick={() =&gt; setCount((c) =&gt; c + 1)}&gt;{count}&lt;/button&gt;;
+}
+
+function Display() {
+  const count = useAtomValue(countAtom); // read-only subscription
+  return &lt;p&gt;Count is {count}&lt;/p&gt;;       // re-renders only when countAtom changes
+}</pre>
+          <div class="annot">
+            <strong>An atom is a unit of state any component can share.</strong> <code>useAtom</code> reads + writes
+            (like <code>useState</code>), <code>useAtomValue</code> reads only. Components subscribe to specific
+            atoms, so unrelated state changes never re-render them — fine-grained reactivity without manual
+            selectors. No provider needed for the default store.
+          </div>
+        </div>
+
+        <h2>2. Derived atoms</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">derived.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { atom } from "jotai";
+
+const priceAtom = atom(100);
+const quantityAtom = atom(2);
+
+// A derived atom computes from others — recomputes automatically:
+const totalAtom = atom((get) =&gt; get(priceAtom) * get(quantityAtom)); // read-only
+
+// A writable derived atom (read + write logic):
+const discountedAtom = atom(
+  (get) =&gt; get(totalAtom) * 0.9,
+  (get, set, newTotal: number) =&gt; set(priceAtom, newTotal / get(quantityAtom))
+);
+// Change priceAtom or quantityAtom and totalAtom updates like a spreadsheet cell.</pre>
+          <div class="annot">
+            <strong>Derived atoms are the magic.</strong> <code>atom((get) =&gt; ...)</code> creates a value computed
+            from other atoms; when any dependency changes, it recomputes and re-renders only its consumers. It's a
+            reactive dependency graph — like a spreadsheet. Async atoms (returning a promise) integrate with
+            Suspense (05-03) too.
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <span class="ic">⚡</span>
+          <div class="body">
+            <div class="tt">Pro-tip · Zustand vs Jotai</div>
+            <p style="margin:6px 0 0">
+              <b>Zustand</b> is "top-down": one store, select slices. <b>Jotai</b> is "bottom-up": compose many
+              atoms. Jotai shines when you have lots of independent, derived pieces of state (form fields, editor
+              cells, granular UI) and want to avoid selector boilerplate. Both are excellent; the choice is largely
+              stylistic. Many apps don't need either — useState + Context + Query covers a lot.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A reactive cart total</div>
+            <p style="margin:6px 0 0">
+              Model a cart with an <code>itemsAtom</code> (array of <code>{ price, qty }</code>) and a derived
+              <code>totalAtom</code>. Render components that each use only the atom they need, and confirm that
+              updating one item re-renders only the total and that item — not the whole tree.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Jotai</b> builds state from small composable <b>atoms</b> (bottom-up), vs Zustand's single store (top-down).</li>
+            <li><code>useAtom</code> (read/write) and <code>useAtomValue</code> (read) subscribe to specific atoms — fine-grained re-renders.</li>
+            <li><b>Derived atoms</b> compute from other atoms and recompute automatically — a reactive graph like a spreadsheet.</li>
+            <li>Great for lots of independent/derived state; async atoms integrate with Suspense.</li>
+            <li>Zustand vs Jotai is largely stylistic — both are first-rate.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

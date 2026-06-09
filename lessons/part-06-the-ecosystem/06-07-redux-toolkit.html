@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-07 · Redux Toolkit Fundamentals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-07";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 7</div>
+        <h1>Redux Toolkit Fundamentals</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem · enterprise</span>
+          <span class="chip">⏱️ ~34 min</span>
+          <span class="chip">🏢 Structured state</span>
+        </div>
+        <p class="lead">
+          <strong>Redux</strong> is the original predictable state container, and <strong>Redux Toolkit
+          (RTK)</strong> is the modern, official way to use it — eliminating the old boilerplate. It's the standard
+          at large companies for its strict structure, powerful middleware, and unmatched DevTools. You'll meet it
+          constantly in enterprise codebases, so you must know it well. Everything you learned about reducers
+          (02-07, 04-09) applies directly.
+        </p>
+
+        <h2>1. A slice</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">counterSlice.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+
+interface CounterState { value: number; }
+const initialState: CounterState = { value: 0 };
+
+const counterSlice = createSlice({
+  name: "counter",
+  initialState,
+  reducers: {
+    // RTK uses Immer — you "mutate" a draft, it produces an immutable update:
+    increment: (state) =&gt; { state.value += 1; },
+    decrement: (state) =&gt; { state.value -= 1; },
+    addBy: (state, action: PayloadAction&lt;number&gt;) =&gt; { state.value += action.payload; },
+  },
+});
+
+export const { increment, decrement, addBy } = counterSlice.actions;
+export default counterSlice.reducer;</pre>
+          <div class="annot">
+            <strong>A slice bundles state + reducers + auto-generated actions.</strong> The magic: RTK includes
+            <b>Immer</b>, so you write "mutating" code (<code>state.value += 1</code>) and get a correct immutable
+            update under the hood — no spread gymnastics. Each reducer's action creator is generated for you
+            (<code>increment()</code>, <code>addBy(5)</code>). This is the reducer pattern from 04-09, minus the
+            boilerplate.
+          </div>
+        </div>
+
+        <h2>2. The store &amp; typed hooks</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">store.ts</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { configureStore } from "@reduxjs/toolkit";
+import { useDispatch, useSelector } from "react-redux";
+import counterReducer from "./counterSlice.js";
+
+export const store = configureStore({
+  reducer: { counter: counterReducer }, // combine slices here
+});
+
+// Infer the types FROM the store (don't hand-write them):
+export type RootState = ReturnType&lt;typeof store.getState&gt;;
+export type AppDispatch = typeof store.dispatch;
+
+// Pre-typed hooks for the whole app:
+export const useAppDispatch = useDispatch.withTypes&lt;AppDispatch&gt;();
+export const useAppSelector = useSelector.withTypes&lt;RootState&gt;();</pre>
+          <div class="annot">
+            <strong>Types are derived from the store</strong> (lesson 02-04's "derive types from implementation")
+            — <code>RootState</code> and <code>AppDispatch</code> come from <code>ReturnType</code>, so they're
+            always accurate. The pre-typed <code>useAppSelector</code>/<code>useAppDispatch</code> give every
+            component full type safety without re-annotating.
+          </div>
+        </div>
+
+        <h2>3. Using it in components</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">Counter.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useAppDispatch, useAppSelector } from "./store.js";
+import { increment, addBy } from "./counterSlice.js";
+
+function Counter() {
+  const value = useAppSelector((s) =&gt; s.counter.value); // read (typed)
+  const dispatch = useAppDispatch();                     // dispatch actions
+  return (
+    &lt;div&gt;
+      &lt;p&gt;{value}&lt;/p&gt;
+      &lt;button onClick={() =&gt; dispatch(increment())}&gt;+1&lt;/button&gt;
+      &lt;button onClick={() =&gt; dispatch(addBy(5))}&gt;+5&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+// Wrap your app in &lt;Provider store={store}&gt; at the root.</pre>
+          <div class="annot">
+            <strong>Read with a selector, write by dispatching an action.</strong> The flow is the discriminated-
+            union reducer pattern (02-07) at app scale: actions describe <em>what happened</em>, reducers compute
+            the new state, components select what they need. Redux DevTools then gives you a full, time-travelable
+            log of every action — invaluable for debugging complex apps.
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · When Redux still wins</div>
+            <p style="margin:6px 0 0">
+              For most apps, Zustand or Context + Query is lighter. But Redux Toolkit remains the choice for
+              <b>large teams and complex domains</b>: strict conventions everyone follows, powerful middleware
+              (sagas/listeners), the best DevTools, and <b>RTK Query</b> (next lesson) for data fetching. Knowing it
+              is essential for enterprise and most job interviews.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A cart slice</div>
+            <p style="margin:6px 0 0">
+              Build a <code>cartSlice</code> with state <code>{ items: CartItem[] }</code> and reducers
+              <code>addItem</code>, <code>removeItem</code>, <code>changeQty</code>, <code>clear</code> (write them
+              with Immer's mutating style). Add a derived total via a memoized selector. Wire it into a store with
+              typed hooks and a component. These slices are pure — unit-test the reducers directly.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li><b>Redux Toolkit</b> is the modern, low-boilerplate Redux — the enterprise standard.</li>
+            <li><b><code>createSlice</code></b> bundles state + reducers + auto actions, using <b>Immer</b> so you write "mutating" updates safely.</li>
+            <li><b>Derive</b> <code>RootState</code>/<code>AppDispatch</code> from the store; use pre-typed hooks.</li>
+            <li>Read with <code>useAppSelector</code>, write by <code>dispatch</code>ing actions — the reducer pattern at scale.</li>
+            <li>Reducers are pure → easy to unit-test; DevTools give time-travel debugging.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>

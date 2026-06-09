@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06-01 · Routing with React Router 7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/course.css" />
+  <script>
+    window.COURSE_ROOT = "../../";
+    window.COURSE_LESSON_ID = "06-01";
+  </script>
+</head>
+<body class="no-js">
+  <header class="course-header">
+    <button class="icon-btn menu-toggle" data-menu-toggle title="Menu">☰</button>
+    <a class="brand" href="../../index.html"><span class="logo">TS</span><span>TS + React Mastery <small>2026</small></span></a>
+    <div class="breadcrumb" data-breadcrumb></div>
+    <div class="header-actions"><button class="icon-btn" data-theme-toggle title="Toggle theme">🌙</button></div>
+  </header>
+
+  <div class="sidebar-backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar"><nav data-toc></nav></aside>
+    <main class="content">
+      <article class="article">
+        <div class="lesson-eyebrow">Part 6 · The Ecosystem — Lesson 1</div>
+        <h1>Routing with React Router 7</h1>
+        <div class="lesson-meta">
+          <span class="chip">🧩 Ecosystem</span>
+          <span class="chip">⏱️ ~30 min</span>
+          <span class="chip">🗺️ Navigation</span>
+        </div>
+        <p class="lead">
+          A single-page app needs <strong>client-side routing</strong>: mapping URLs to components, navigating
+          without full page reloads, and reading params. <strong>React Router 7</strong> is the most widely used
+          router, and it has grown into a full framework. This lesson covers the core: defining routes, links,
+          nested layouts, URL params, and data loaders.
+        </p>
+
+        <h2>1. Defining routes</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">router.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { createBrowserRouter, RouterProvider } from "react-router";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: &lt;RootLayout /&gt;,        // a shared shell (nav, footer)
+    children: [
+      { index: true, element: &lt;Home /&gt; },             // "/"
+      { path: "products", element: &lt;Products /&gt; },    // "/products"
+      { path: "products/:id", element: &lt;Product /&gt; }, // "/products/42"
+      { path: "*", element: &lt;NotFound /&gt; },            // catch-all 404
+    ],
+  },
+]);
+
+function App() {
+  return &lt;RouterProvider router={router} /&gt;;
+}</pre>
+          <div class="annot">
+            <strong>Routes are a tree.</strong> Each route maps a URL path to an element. <code>children</code> create
+            nested routes that render inside their parent's <code>&lt;Outlet /&gt;</code>. <code>:id</code> is a dynamic
+            segment (a URL param), <code>index</code> is the default child, and <code>*</code> catches unmatched
+            URLs for a 404.
+          </div>
+        </div>
+
+        <h2>2. Layouts, Outlet &amp; Links</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">layout.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { Outlet, NavLink } from "react-router";
+
+function RootLayout() {
+  return (
+    &lt;div&gt;
+      &lt;nav&gt;
+        {/* Link/NavLink navigate WITHOUT a full page reload: */}
+        &lt;NavLink to="/" end&gt;Home&lt;/NavLink&gt;
+        &lt;NavLink to="/products"
+          className={({ isActive }) =&gt; (isActive ? "active" : "")}&gt;
+          Products
+        &lt;/NavLink&gt;
+      &lt;/nav&gt;
+      &lt;main&gt;
+        &lt;Outlet /&gt;   {/* child route renders here */}
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Use <code>&lt;Link&gt;</code>/<code>&lt;NavLink&gt;</code>, never a raw <code>&lt;a&gt;</code></strong> for
+            internal navigation — they update the URL and swap components without reloading the page.
+            <code>NavLink</code> knows when it's active (for styling). The parent layout renders shared chrome and
+            an <code>&lt;Outlet /&gt;</code> where the matched child appears.
+          </div>
+        </div>
+
+        <h2>3. Params, navigation &amp; loaders</h2>
+        <div class="editor" data-lang="tsx">
+          <div class="editor-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="fname">params-and-loader.tsx</span><span class="lang-tag">tsx</span>
+            <span class="spacer"></span>
+            <button data-reset title="Restore original">↺ Reset</button>
+            <button data-copy><span class="lbl">Copy</span></button>
+          </div>
+          <div class="monaco-host"></div>
+          <pre class="code-source">import { useParams, useNavigate, useLoaderData } from "react-router";
+
+// A loader runs BEFORE the route renders — data is ready on first paint:
+async function productLoader({ params }: { params: { id?: string } }) {
+  const res = await fetch(`/api/products/${params.id}`);
+  return res.json();
+}
+
+function Product() {
+  const { id } = useParams();              // read the :id segment
+  const product = useLoaderData();          // data from the loader
+  const navigate = useNavigate();           // programmatic navigation
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Product {id}&lt;/h1&gt;
+      &lt;button onClick={() =&gt; navigate("/products")}&gt;Back&lt;/button&gt;
+      &lt;button onClick={() =&gt; navigate(-1)}&gt;History back&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+          <div class="annot">
+            <strong>Loaders fetch data before rendering</strong> — eliminating the "render, then useEffect, then
+            spinner" waterfall (04-07). <code>useParams</code> reads URL segments, <code>useNavigate</code> moves
+            programmatically (after a form submit, say). React Router 7 can also run in "framework mode" with file
+            routes, SSR, and code splitting — converging with Next.js (Part 7).
+          </div>
+        </div>
+
+        <div class="callout new">
+          <span class="ic">✨</span>
+          <div class="body">
+            <div class="tt">2026 · React Router vs TanStack Router</div>
+            <p style="margin:6px 0 0">
+              <b>React Router 7</b> is the established, ubiquitous choice (and the basis of Remix). <b>TanStack
+              Router</b> (next lesson) is the newer challenger with best-in-class <em>type-safe</em> routing —
+              fully-typed params and search params. We teach both so you can choose per project.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout exercise">
+          <span class="ic">📝</span>
+          <div class="body">
+            <div class="tt">Exercise · A small multi-page app</div>
+            <p style="margin:6px 0 0">
+              Build a Vite app with a root layout (nav + <code>Outlet</code>), a home page, a
+              <code>/users</code> list, and a <code>/users/:id</code> detail page that reads the param. Add a 404
+              catch-all and a "back" button with <code>useNavigate</code>. Use a loader to fetch the user list.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>🎓 Key takeaways</h3>
+          <ul>
+            <li>Routes map URLs to components as a <b>tree</b>; nested <code>children</code> render in the parent's <code>&lt;Outlet /&gt;</code>.</li>
+            <li>Navigate with <code>&lt;Link&gt;</code>/<code>&lt;NavLink&gt;</code> (no reload) and <code>useNavigate</code> programmatically.</li>
+            <li><code>:param</code> segments are read with <code>useParams</code>; <code>*</code> catches 404s.</li>
+            <li><b>Loaders</b> fetch data before render, avoiding effect-based waterfalls.</li>
+            <li>React Router 7 is ubiquitous; TanStack Router (next) adds full type-safety.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="lesson-footer">
+        <div class="complete-row">
+          <button class="mark-btn" data-mark-complete>○ Mark this lesson complete</button>
+          <span class="label">Your progress is saved in this browser.</span>
+        </div>
+        <nav class="nav-buttons">
+          <a class="prev" data-nav-prev><span class="dir">◀ Previous</span><span class="ttl">Loading…</span></a>
+          <a class="next" data-nav-next><span class="dir">Next ▶</span><span class="ttl">Loading…</span></a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <button class="scroll-top" data-scroll-top title="Back to top">↑</button>
+  <script src="../../assets/js/lessons.js"></script>
+  <script src="../../assets/js/course.js"></script>
+</body>
+</html>
